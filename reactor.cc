@@ -1,30 +1,24 @@
 #include "reactor.h"
 
-#ifdef __HAVE_SELECT
+#if defined  __HAVE_SELECT || defined WIN32
 #include "reactor_impl_select.h"
-#endif //__HAVE_SELECT
-
-#ifdef __HAVE_POLL
-#include "reactor_impl_poll.h"
-#endif //__HAVE_POLL
-
-#ifdef __HAVE_EPOLL
+#elif defined __HAVE_EPOLL
 #include "reactor_impl_epoll.h"
-#endif //__HAVE_POLL
+#elif defined __HAVE_POLL
+#include "reactor_impl_poll.h"
+#endif 
 
 Reactor* Reactor::reactor_ = 0;
 
 Reactor::Reactor()
 {
-#ifdef  __HAVE_SELECT
+#if defined  __HAVE_SELECT || defined WIN32
 	reactor_impl_ = new Reactor_Impl_Select();
-#endif 
-#ifdef  __HAVE_POLL
-	reactor_impl_ = new Reactor_Impl_Poll();
-#endif
-#ifdef  __HAVE_EPOLL
+#elif defined  __HAVE_EPOLL
 	reactor_impl_ = new Reactor_Impl_Epoll();
-#endif
+#elif defined  __HAVE_POLL
+	reactor_impl_ = new Reactor_Impl_Poll();
+#endif 
 }
 
 Reactor::~Reactor() 

@@ -1,0 +1,33 @@
+﻿Build started 2014/2/17 11:04:14.
+     1>Project "Z:\git\tinynet\proj.win32\tinynet.vcxproj" on node 2 (build target(s)).
+     1>InitializeBuildStatus:
+         Creating "Debug\tinynet.unsuccessfulbuild" because "AlwaysCreate" was specified.
+       ClCompile:
+         D:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt ..\reactor.cc
+         reactor.cc
+       ManifestResourceCompile:
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\rc.exe /nologo /fo"Debug\tinynet.exe.embed.manifest.res" Debug\tinynet_manifest.rc 
+       Link:
+         D:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"Z:\git\tinynet\proj.win32\Debug\tinynet.exe" /INCREMENTAL /NOLOGO ws2_32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Debug\tinynet.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"Z:\git\tinynet\proj.win32\Debug\tinynet.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"Z:\git\tinynet\proj.win32\Debug\tinynet.lib" /MACHINE:X86 Debug\tinynet.exe.embed.manifest.res
+         Debug\event_handle_srv.obj
+         Debug\reactor.obj
+         Debug\reactor_impl_select.obj
+         Debug\test.obj
+       Manifest:
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /out:"Debug\tinynet.exe.embed.manifest" /manifest Debug\tinynet.exe.intermediate.manifest
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\rc.exe /nologo /fo"Debug\tinynet.exe.embed.manifest.res" Debug\tinynet_manifest.rc 
+       LinkEmbedManifest:
+         D:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"Z:\git\tinynet\proj.win32\Debug\tinynet.exe" /INCREMENTAL /NOLOGO ws2_32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Debug\tinynet.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"Z:\git\tinynet\proj.win32\Debug\tinynet.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"Z:\git\tinynet\proj.win32\Debug\tinynet.lib" /MACHINE:X86 Debug\tinynet.exe.embed.manifest.res
+         Debug\event_handle_srv.obj
+         Debug\reactor.obj
+         Debug\reactor_impl_select.obj
+         Debug\test.obj
+         tinynet.vcxproj -> Z:\git\tinynet\proj.win32\Debug\tinynet.exe
+       FinalizeBuildStatus:
+         Deleting file "Debug\tinynet.unsuccessfulbuild".
+         Touching "Debug\tinynet.lastbuildstate".
+     1>Done Building Project "Z:\git\tinynet\proj.win32\tinynet.vcxproj" (build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:02.68
