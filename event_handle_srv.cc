@@ -1,12 +1,19 @@
 #include <stdio.h>
 #include <stdlib.h>
+
+#ifndef __LINUX
+#include <WinSock2.h>
+#else
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <fcntl.h>
 #include <strings.h>
+#include <string.h>
 #include <arpa/inet.h>
 #include <unistd.h> 		//	gethostname
 #include <netdb.h>			//	gethostbyname
+#endif //__LINUX_
+
 #include "event_handle_srv.h"
 #include "reactor_impl_select.h"
 #include "reactor.h"
@@ -51,7 +58,7 @@ int Event_Handle_Srv::handle_output(int __fd)
 #if 1
 	static int __data = 0;
 	++__data;
-	int __send_size = send(__fd,&__data,sizeof(int),0);
+	int __send_size = send(__fd,(char*)&__data,sizeof(int),0);
 	if( 0 == __send_size )
 	{
 		perror("error at send");  
@@ -82,6 +89,22 @@ int Event_Handle_Srv::handle_timeout(int __fd)
 
 void Event_Handle_Srv::_init(unsigned int __port)
 {
+#ifndef __LINUX
+	WORD __version_requested = MAKEWORD(2,2);
+	WSADATA __data;
+	if (0 != WSAStartup( __version_requested, &__data))
+	{
+		//Tell the user that we could not find a usable WinSock DLL.
+		return;
+	}
+	if ( LOBYTE( __data.wVersion ) != 2 ||
+		HIBYTE( __data.wVersion ) != 2 )
+	{
+		// Tell the user that we could not find a usable WinSock DLL.
+		WSACleanup();
+		return;
+	}
+#endif //__LINUX
 	fd_ = socket(AF_INET,SOCK_STREAM,0); 
 	if ( -1 == fd_ )
 	{
@@ -89,7 +112,7 @@ void Event_Handle_Srv::_init(unsigned int __port)
 		exit(1);
 	}
 	struct sockaddr_in __serveraddr;  
-	bzero(&__serveraddr,sizeof(sockaddr_in));  
+	memset(&__serveraddr,0,sizeof(sockaddr_in));  
 	__serveraddr.sin_family = AF_INET;  
 	__serveraddr.sin_port = htons(__port);  
 #if 1
@@ -123,7 +146,7 @@ void Event_Handle_Srv::_init(unsigned int __port)
 	}	
 	_set_noblock(fd_);
 	int __option_name = 1;
-	if(setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &__option_name, sizeof(int)) == -1)  
+	if(setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, (char*)&__option_name, sizeof(int)) == -1)  
 	{  
 		perror("setsockopt");  
 		exit(1);  
@@ -132,6 +155,13 @@ void Event_Handle_Srv::_init(unsigned int __port)
 
 void Event_Handle_Srv::_set_noblock(int __fd)
 {
+#ifndef __LINUX
+	unsigned long __non_block = 1;
+	if (SOCKET_ERROR == ioctlsocket(__fd, FIONBIO, &__non_block))
+	{
+		printf("_set_noblock() error at ioctlsocket,error code = %d\n", WSAGetLastError());
+	}
+#else
 	int __opts = fcntl(__fd,F_GETFL);  
 	if(0 > __opts)  
     	{  
@@ -144,4 +174,5 @@ void Event_Handle_Srv::_set_noblock(int __fd)
        		perror("error at fcntl(sock,F_SETFL)");  
        		exit(1);  
    	}  
+#endif //__LINUX
 }

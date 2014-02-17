@@ -1,6 +1,6 @@
 PROJECT(tinynet)
 SET(SRC_LIST reactor.h reactor.cc event_handle.h event_handle_srv.h event_handle_srv.cc reactor_impl.h reactor_impl_select.h reactor_impl_select.cc reactor_impl_epoll.h reactor_impl_epoll.cc reactor_impl_poll.h reactor_impl_poll.cc test.cc)
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
-ADD_DEFINITIONS(-D__HAVE_SELECT)
+ADD_DEFINITIONS(-D__HAVE_SELECT -D__LINUX)
 SET(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb")
 ADD_EXECUTABLE(test ${SRC_LIST})

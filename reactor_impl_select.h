@@ -1,4 +1,9 @@
+#ifndef __LINUX
+#include <WinSock.h>
+#else
 #include <sys/select.h>
+#endif //__LINUX
+
 #include <stdio.h>
 #include <map>
 #include "reactor_impl.h"
