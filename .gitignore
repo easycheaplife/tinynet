@@ -38,3 +38,5 @@ CMakeFiles/
 Makefile
 CMakeCache.txt
 cmake_install.cmake
+echo_c
+test

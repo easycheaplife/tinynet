@@ -5,13 +5,13 @@
 class Server_Impl : public Event_Handle_Srv
 {
 public:
-	Server_Impl(Reactor* __reactor) : Event_Handle_Srv(__reactor) {}
+	Server_Impl(Reactor* __reactor,const char* __host = "0.0.0.0",unsigned int __port = 9876) : Event_Handle_Srv(__reactor,__host,__port) {}
 
 	~Server_Impl() {}
 
 	void on_connected(int __fd) { printf("on_connected __fd = %d \n",__fd);}
 
-	void on_read(int __fd,const char* __data,unsigned int __length) { printf("on_read data is %s,length is %d\n",__data,__length);}
+	void on_read(int __fd,const char* __data,unsigned int __length) { printf("on_read data is %s,length is %d\n",__data,__length); broadcast(__fd,__data,__length);}
 };
 
 int main()
@@ -23,6 +23,6 @@ int main()
 	*/
 	Reactor* __reactor = Reactor::instance();
 	Server_Impl __event_handle_srv(__reactor);
-	__reactor->event_loop(5000);
+	__reactor->event_loop(5000*1000);
 	return 0;
 }

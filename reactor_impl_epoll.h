@@ -1,4 +1,5 @@
 #include <sys/epoll.h>
+#include <unistd.h>
 #include "reactor_impl.h"
 
 #define MAX_EVENTS 10
@@ -21,7 +22,7 @@ public:
 	int event_loop(unsigned long __millisecond);
 
 	//	__fd is the broadcaster
-	void broadcast(int __fd,const char* __data,unsigned int __length) {}
+	void broadcast(int __fd,const char* __data,unsigned int __length);
 private:
 	void _init();
 	
