@@ -116,5 +116,11 @@ void Reactor_Impl_Epoll::_mod_event(int __fd,uint32_t __event)
 
 int Reactor_Impl_Epoll::handle_close( int __fd )
 {
+	close(__fd);
 	return -1;
+}
+
+void Reactor_Impl_Epoll::broadcast(int __fd,const char* __data,unsigned int __length)
+{
+	//	do nothing,broadcast should be done at layer of logic.
 }
