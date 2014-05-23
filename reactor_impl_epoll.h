@@ -17,6 +17,9 @@ public:
 	int handle_event(unsigned long __millisecond);
 	
 	int event_loop(unsigned long __millisecond);
+
+	//	__fd is the broadcaster
+	void broadcast(int __fd,const char* __data,unsigned int __length) {}
 private:
 	void _init();
 	

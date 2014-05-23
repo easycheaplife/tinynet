@@ -12,6 +12,7 @@
 #include <arpa/inet.h>
 #include <unistd.h> 		//	gethostname
 #include <netdb.h>			//	gethostbyname
+#include <sys/ioctl.h>		//	ioctl
 #endif //__LINUX_
 
 #include "event_handle_srv.h"
@@ -24,6 +25,12 @@ Event_Handle_Srv::Event_Handle_Srv(Reactor* __reactor) : Event_Handle(__reactor)
 	reactor()->reactor_impl()->register_handle(this,get_handle(),kMaskAccept);
 };
 
+
+Event_Handle_Srv::~Event_Handle_Srv()
+{
+
+}
+
 int Event_Handle_Srv::handle_input(int __fd)
 {
 	if(__fd == fd_)
@@ -33,29 +40,68 @@ int Event_Handle_Srv::handle_input(int __fd)
 		{
 			_set_noblock(__fd_accept);
 			reactor()->reactor_impl()->register_handle(this,__fd_accept,kMaskRead,1);
+			on_connected(__fd_accept);
 		}
 	}
 	else
 	{
-		printf("new data comming,wiatting for recv\n");
-#if 1
-		char __buf[8192] = {0};
-		int __recv_size = recv(__fd,__buf,8192,0);
-		if(0 == __recv_size)
+		if(1)
 		{
-			perror("error at recv");  
-			return -1;
+			char __buf[8192] = {0};
+			int __recv_size = recv(__fd,__buf,8192,0);
+			if(0 == __recv_size)
+			{
+				perror("no data recv");  
+				return 0;
+			}
+			else if (-1 == __recv_size)
+			{
+				return -1;
+			}
+			on_read(__fd,__buf,__recv_size);
 		}
-#endif
-		reactor()->reactor_impl()->register_handle(this,__fd,kMaskWrite);
+		else
+		{
+			//	read head first
+			unsigned long __usable_size = 0;
+			int __length = 0;
+			int __recv_size = 0;
+			_get_usable(__fd,__usable_size);
+			if(__usable_size >= sizeof(int))
+			{
+				__recv_size = recv(__fd,(char*)&__length,4,0);
+				if(sizeof(int) != __recv_size)
+				{
+					printf("error: __recv_size = %d",__recv_size);  
+					return 0;
+				}
+			}
+			_get_usable(__fd,__usable_size);
+
+			if(__usable_size >= __length)
+			{
+				char __buf[8192] = {0};
+				int __recv_size = recv(__fd,__buf,__length,0);
+				if(0 == __recv_size)
+				{
+					return 0;
+				}
+				else if (-1 == __recv_size)
+				{
+					return -1;
+				}
+				on_read(__fd,__buf,__recv_size);
+			}
+		}
 	}
-	return -1;
+	return 0;
 }
 
 int Event_Handle_Srv::handle_output(int __fd)
 {
 	printf("handle_outputd\n");
-#if 1
+	//	test data, if open it, it will cause something wrong
+#if 0
 	static int __data = 0;
 	++__data;
 	int __send_size = send(__fd,(char*)&__data,sizeof(int),0);
@@ -130,7 +176,7 @@ void Event_Handle_Srv::_init(unsigned int __port)
 		}
 	}
 #endif
-	__serveraddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+	__serveraddr.sin_addr.s_addr = inet_addr("192.168.22.63");
 	int __ret = bind(fd_,(sockaddr*)&__serveraddr,sizeof(sockaddr_in));  
 	if ( -1 == fd_ )
 	{
@@ -145,12 +191,7 @@ void Event_Handle_Srv::_init(unsigned int __port)
 		exit(1);
 	}	
 	_set_noblock(fd_);
-	int __option_name = 1;
-	if(setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, (char*)&__option_name, sizeof(int)) == -1)  
-	{  
-		perror("setsockopt");  
-		exit(1);  
-	}  
+	_set_reuse_addr(fd_);
 }
 
 void Event_Handle_Srv::_set_noblock(int __fd)
@@ -176,3 +217,49 @@ void Event_Handle_Srv::_set_noblock(int __fd)
    	}  
 #endif //__LINUX
 }
+
+
+void Event_Handle_Srv::_set_reuse_addr(int __fd)
+{
+	int __option_name = 1;
+	if(setsockopt(__fd, SOL_SOCKET, SO_REUSEADDR, (char*)&__option_name, sizeof(int)) == -1)  
+	{  
+		perror("setsockopt SO_REUSEADDR");  
+		exit(1);  
+	}  
+}
+
+void Event_Handle_Srv::_set_no_delay(int __fd)
+{
+#ifndef __LINUX
+	//	The Nagle algorithm is disabled if the TCP_NODELAY option is enabled 
+	int __no_delay = TRUE;
+	if(SOCKET_ERROR == setsockopt( __fd, IPPROTO_TCP, TCP_NODELAY, (char*)&__no_delay, sizeof(int)))
+	{
+		perror("setsockopt TCP_NODELAY ");  
+		exit(1);  
+	}
+#endif //__LINUX
+}
+
+void Event_Handle_Srv::_get_usable( int __fd, unsigned long& __usable_size)
+{
+#ifndef __LINUX
+	if(SOCKET_ERROR == ioctlsocket(__fd, FIONREAD, &__usable_size))
+	{
+		printf("ioctlsocket failed with error %d\n", WSAGetLastError());
+	}
+#else
+	if(ioctl(__fd,FIONREAD,__usable_size))
+	{
+		perror("ioctl FIONREAD");
+	}
+#endif //__LINUX
+}
+
+
+void Event_Handle_Srv::broadcast(int __fd,const char* __data,unsigned int __length)
+{
+	reactor()->reactor_impl()->broadcast(__fd,__data,__length);
+}
+

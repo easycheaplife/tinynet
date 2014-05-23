@@ -1,6 +1,8 @@
 #include "reactor.h"
 
-#if defined  __HAVE_SELECT || defined WIN32
+#if  defined __HAVE_IOCP
+#include "reactor_impl_iocp.h"
+#elif defined  __HAVE_SELECT || defined WIN32
 #include "reactor_impl_select.h"
 #elif defined __HAVE_EPOLL
 #include "reactor_impl_epoll.h"
@@ -12,7 +14,9 @@ Reactor* Reactor::reactor_ = 0;
 
 Reactor::Reactor()
 {
-#if defined  __HAVE_SELECT || defined WIN32
+#if defined   __HAVE_IOCP
+	reactor_impl_ = new Reactor_Impl_Iocp();
+#elif defined  __HAVE_SELECT || defined WIN32
 	reactor_impl_ = new Reactor_Impl_Select();
 #elif defined  __HAVE_EPOLL
 	reactor_impl_ = new Reactor_Impl_Epoll();
@@ -23,7 +27,11 @@ Reactor::Reactor()
 
 Reactor::~Reactor() 
 {
-	delete reactor_impl_;
+	if(reactor_impl_)
+	{
+		delete reactor_impl_;
+		reactor_impl_ = NULL;
+	}
 }
 
 Reactor* Reactor::instance()
@@ -56,4 +64,13 @@ int Reactor::event_loop(unsigned long __millisecond)
 {
 	reactor_impl_->event_loop(__millisecond);
 	return -1;
+}
+
+void Reactor::destory()
+{
+	if(reactor_)
+	{
+		delete reactor_;
+		reactor_ = NULL;
+	}
 }

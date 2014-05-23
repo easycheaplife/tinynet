@@ -2,6 +2,7 @@
 #include <WinSock.h>
 #else
 #include <sys/select.h>
+ #include <sys/socket.h>
 #endif //__LINUX
 
 #include <stdio.h>
@@ -22,6 +23,10 @@ public:
 	int handle_event(unsigned long __millisecond);
 	
 	int event_loop(unsigned long __millisecond);
+
+	void broadcast(int __fd,const char* __data,unsigned int __length);
+	
+	void write(int __fd,const char* __data, int __length);
 private:
 	fd_set 							read_set_;
 	
