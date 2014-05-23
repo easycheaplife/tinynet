@@ -8,6 +8,8 @@ public:
 	~Reactor();
 	
 	static Reactor* instance();
+
+	static void destory();
 	
 	int register_handle(Event_Handle* __handle,int __fd,int __mask);
 	
