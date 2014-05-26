@@ -5,9 +5,9 @@
 class Server_Impl : public Event_Handle_Srv
 {
 public:
-	Server_Impl(Reactor* __reactor);
+	Server_Impl(Reactor* __reactor) : Event_Handle_Srv(__reactor) {}
 
-	~Server_Impl();
+	~Server_Impl() {}
 
 	void on_connected(int __fd) { printf("on_connected __fd = %d \n",__fd);}
 
