@@ -20,6 +20,21 @@
 *.out
 *.app
 
+# for win32
 *.sdf
 *.opensdf
 Debug/
+
+# for cmake
+CMakeCache.txt
+ALL_BUILD.vcxproj
+ALL_BUILD.vcxproj.filters
+ZERO_CHECK.vcxproj.filters
+ZERO_CHECK.vcxproj
+tinynet.sln
+test.vcxproj.filters
+test.vcxproj
+CMakeFiles/
+Makefile
+CMakeCache.txt
+cmake_install.cmake
