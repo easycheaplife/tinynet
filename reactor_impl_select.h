@@ -27,6 +27,8 @@ public:
 	void broadcast(int __fd,const char* __data,unsigned int __length);
 	
 	void write(int __fd,const char* __data, int __length);
+
+	void close(int __fd);
 private:
 	fd_set 							read_set_;
 	
@@ -40,5 +42,6 @@ private:
 	
 	Event_Handle* 					handle_;
 	
+	//	key is fd
 	std::map<int,Event_Handle*> 	events_;
 };

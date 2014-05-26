@@ -47,11 +47,11 @@ int Event_Handle_Srv::handle_input(int __fd)
 	{
 		if(1)
 		{
+			//	just transform data
 			char __buf[8192] = {0};
 			int __recv_size = recv(__fd,__buf,8192,0);
 			if(0 == __recv_size)
 			{
-				perror("no data recv");  
 				return 0;
 			}
 			else if (-1 == __recv_size)
@@ -62,7 +62,7 @@ int Event_Handle_Srv::handle_input(int __fd)
 		}
 		else
 		{
-			//	read head first
+			//	read head first.and then read the other msg
 			unsigned long __usable_size = 0;
 			int __length = 0;
 			int __recv_size = 0;
@@ -262,4 +262,33 @@ void Event_Handle_Srv::broadcast(int __fd,const char* __data,unsigned int __leng
 {
 	reactor()->reactor_impl()->broadcast(__fd,__data,__length);
 }
+
+int Event_Handle_Srv::read( int __fd,char* __buf, int __length )
+{
+	int __recv_size = recv(__fd,__buf,__length,0);
+	if(0 == __recv_size)
+	{
+		handle_close(__fd);
+	}
+	else if (-1 == __recv_size)
+	{
+#ifndef __LINUX
+		DWORD __last_error = ::GetLastError();
+		if(WSAEWOULDBLOCK  == __last_error)
+		{
+			//	close peer socket
+			handle_close(__fd);
+		}
+#else
+		if(EAGAIN == errno || EWOULDBLOCK == errno)
+		{
+			handle_close(__fd);
+		}
+#endif //__LINUX
+	}
+	return __recv_size;
+}
+
+
+
 
