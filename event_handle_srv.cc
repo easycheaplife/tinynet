@@ -13,6 +13,7 @@
 #include <unistd.h> 		//	gethostname
 #include <netdb.h>			//	gethostbyname
 #include <sys/ioctl.h>		//	ioctl
+#include <errno.h>
 #endif //__LINUX_
 
 #include "event_handle_srv.h"
