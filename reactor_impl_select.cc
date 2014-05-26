@@ -2,6 +2,7 @@
 #include "reactor_impl_select.h"
 #include "event_handle.h"
 
+
 Reactor_Impl_Select::Reactor_Impl_Select()
 {
 	FD_ZERO(&read_set_);  
@@ -88,7 +89,7 @@ int Reactor_Impl_Select::event_loop(unsigned long __millisecond)
 				if(__it->second->handle_input(__it->first))
 				{
 					//	error happened, disconnect the socket
-					__it = events_.erase(__it);
+					events_.erase(__it++);
 				}
 				else
 				{
