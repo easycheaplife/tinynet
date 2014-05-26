@@ -191,8 +191,25 @@ void Event_Handle_Cli::write( const char* __data,unsigned int __length )
 	int __send_bytes = send(fd_,__data,__length,0);
 	if(-1 == __send_bytes)
 	{
+#ifndef __LINUX
+		DWORD __last_error = ::GetLastError();
+		if(WSAEWOULDBLOCK  == __last_error)
+		{
+			//	disconnect from server
+			handle_close(fd_);
+			return;
+		}
+#else
+		//error happend but EAGAIN and EWOULDBLOCK meams that peer socket have been close
+		//EWOULDBLOCK means messages are available at the socket and O_NONBLOCK  is set on the socket's file descriptor
+		if(EAGAIN == errno && EWOULDBLOCK == errno)
+		{
+			//	disconnect from server
+			handle_close(fd_);
+			return;
+		}
+#endif // __LINUX
 		perror("error at send");  
-		exit(1);
 	}
 }
 
@@ -236,5 +253,32 @@ void Event_Handle_Cli::_get_usable( int __fd, unsigned long& __usable_size)
 	}
 #endif //__LINUX
 }
+
+int Event_Handle_Cli::read( int __fd,char* __buf, int __length )
+{
+	int __recv_size = recv(__fd,__buf,__length,0);
+	if(0 == __recv_size)
+	{
+		handle_close(__fd);
+	}
+	else if (-1 == __recv_size)
+	{
+#ifndef __LINUX
+		DWORD __last_error = ::GetLastError();
+		if(WSAEWOULDBLOCK  == __last_error)
+		{
+			//	close peer socket
+			handle_close(__fd);
+		}
+#else
+		if(EAGAIN == errno || EWOULDBLOCK == errno)
+		{
+			handle_close(__fd);
+		}
+#endif //__LINUX
+	}
+	return __recv_size;
+}
+
 
 

@@ -82,6 +82,7 @@ int Reactor_Impl_Select::event_loop(unsigned long __millisecond)
 		}
 		for(std::map<int,Event_Handle*>::iterator __it = events_.begin(); __it != events_.end(); )
 		{
+			//	something to be read
 			if(FD_ISSET(__it->first,&read_set_))
 			{
 				if(__it->second->handle_input(__it->first))
@@ -94,12 +95,13 @@ int Reactor_Impl_Select::event_loop(unsigned long __millisecond)
 					++__it;
 				}
 			}
-
+			//	something to be write
 			else if(FD_ISSET(__it->first,&write_set_))
 			{
 				__it->second->handle_output(__it->first);
 				++__it;
 			}
+			//	exception happened
 			else if(FD_ISSET(__it->first,&excepion_set_))
 			{
 				__it->second->handle_exception(__it->first);
@@ -132,9 +134,35 @@ void Reactor_Impl_Select::write( int __fd,const char* __data, int __length )
 	{
 #ifndef __LINUX
 		DWORD __last_error = ::GetLastError();
+		if(WSAEWOULDBLOCK  == __last_error)
+		{
+			//	close peer socket
+			
+			return;
+		}
+#else
+		//error happend but EAGAIN and EWOULDBLOCK meams that peer socket have been close
+		//EWOULDBLOCK means messages are available at the socket and O_NONBLOCK  is set on the socket's file descriptor
+		if(EAGAIN == errno && EWOULDBLOCK == errno)
+		{
+			//	close peer socket
+			
+			return;
+		}
 #endif // __LINUX
 		perror("error at send");  
-		exit(1);
 	}
-	printf("write : fd = %d, data = %s,length = %d\n",__fd,__data,__length);
+}
+
+void Reactor_Impl_Select::close( int __fd )
+{
+	//	warning:do this will be dangous, it causes iterator failed!
+	for(std::map<int,Event_Handle*>::iterator __it = events_.begin(); __it != events_.end(); ++__it)
+	{
+		if(__fd == __it->first)
+		{
+			events_.erase(__it);
+			return;
+		}
+	}
 }

@@ -22,6 +22,9 @@ public:
 
 	void write(const char* __data,unsigned int __length);
 
+	//	read data from network cache
+	int	read(int __fd,char* __buf, int __length); 
+
 public:
 	//	pure virtual function, subclass must define it.
 	virtual void on_read(int __fd,const char* __data,unsigned int __length) = 0;
