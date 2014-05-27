@@ -27,11 +27,30 @@ int main()
 		exit(1);
 	}
 	int __length = strlen("nice to meeet you!");
+	int __log_level = 1;
+	int __head = 0;
+	//	set head
+	__head |= (__length << 16);
+	__head = __head |= (__log_level << 12);
+	//	get head
+	int __res_length = 0;
+	__res_length = __head >> 16;
+	int __res_log_level = 0;
+	__res_log_level = (__head >> 12) & 0x0000000f;
+	
 	for(;;)
 	{
 		memset(__send_buf,0,256);
 		strcpy(__send_buf,"nice to meeet you!");
-		send(sock,(void*)&__length,4,0);
+		//	use packet head
+		if(1)
+		{
+			send(sock,(void*)&__head,4,0);
+		}
+		else
+		{
+			send(sock,(void*)&__length,4,0);
+		}
 		int send_bytes = send(sock,(void*)__send_buf,__length,0);
 		if(-1 != send_bytes)
 		{
