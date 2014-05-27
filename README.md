@@ -8,9 +8,6 @@
 
 
 usage:
-#include "reactor.h"
-#include "event_handle_srv.h"
-#include <stdio.h>
 
 class Server_Impl : public Event_Handle_Srv
 {
