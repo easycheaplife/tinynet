@@ -18,7 +18,7 @@ public:
 
 	void on_connected(int __fd) { printf("on_connected __fd = %d \n",__fd);}
 
-	void on_read(int __fd,const char* __data,unsigned int __length) { printf("on_read data is %s,length is %d\n",__data,__length);}
+	void on_read(int __fd,const char* __data,unsigned int __length) { }
 };
 
 int main()
