@@ -22,23 +22,18 @@
 #include "reactor_impl_select.h"
 #include "reactor.h"
 
-#define CC_CALLBACK_0(__selector__,__target__, ...) std::bind(&__selector__,__target__, ##__VA_ARGS__)
-
 Event_Handle_Cli::Event_Handle_Cli(Reactor* __reactor) : Event_Handle(__reactor)
 {
 	_init();
 	reactor()->reactor_impl()->register_handle(this,get_handle(),kMaskConnect);
-	//	start work thread
-	auto __thread = std::thread(CC_CALLBACK_0(Event_Handle_Cli::_work_thread,this));
-	__thread.detach();
 };
 
 int Event_Handle_Cli::handle_input(int __fd)
 {
 	if(1)
 	{
-		char __buf[8192] = {0};
-		int __recv_size = recv(__fd,__buf,8192,0);
+		char __buf[64*1024] = {0};
+		int __recv_size = recv(__fd,__buf,64*1024,0);
 		if(0 == __recv_size)
 		{
 			perror("no data recv");  
@@ -279,6 +274,14 @@ int Event_Handle_Cli::read( int __fd,char* __buf, int __length )
 	}
 	return __recv_size;
 }
+
+void Event_Handle_Cli::star_work_thread()
+{
+	//	start work thread
+	auto __thread = std::thread(CC_CALLBACK_0(Event_Handle_Cli::_work_thread,this));
+	__thread.detach();
+}
+
 
 
 

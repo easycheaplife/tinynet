@@ -2,6 +2,11 @@ class Reactor;
 class Event_Handle
 {
 public:
+
+	Event_Handle(){}
+
+	virtual ~Event_Handle() { }
+
 	virtual int handle_input(int __fd){ return -1; }
 	
 	virtual int handle_output(int __fd){ return -1; }

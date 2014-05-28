@@ -3,6 +3,8 @@
 
 #include "event_handle.h"
 
+#define CC_CALLBACK_0(__selector__,__target__, ...) std::bind(&__selector__,__target__, ##__VA_ARGS__)
+
 class Event_Handle_Cli : public  Event_Handle
 {
 public:
@@ -24,6 +26,9 @@ public:
 
 	//	read data from network cache
 	int	read(int __fd,char* __buf, int __length); 
+
+protected:
+	void star_work_thread();
 
 public:
 	//	pure virtual function, subclass must define it.
