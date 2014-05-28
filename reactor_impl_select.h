@@ -10,6 +10,15 @@
 #include <map>
 #include "reactor_impl.h"
 
+#ifndef __USE_STD_MAP
+#define __USE_STD_MAP
+#endif // !__USE_STD_MAP
+
+//	struct forward declaration 
+struct Event_Handle_Data;
+
+#define MAX_CONNECTION	1024
+
 class Reactor_Impl_Select : public Reactor_Impl
 {
 public:
@@ -42,7 +51,10 @@ private:
 	int								max_fd_;
 	
 	Event_Handle* 					handle_;
-	
+#ifdef __USE_STD_MAP
 	//	key is fd
 	std::map<int,Event_Handle*> 	events_;
+#else
+	Event_Handle_Data*				events_[MAX_CONNECTION];
+#endif // __USE_STD_MAP
 };

@@ -49,8 +49,8 @@ int Event_Handle_Srv::handle_input(int __fd)
 		if(1)
 		{
 			//	just transform data
-			char __buf[8192] = {0};
-			int __recv_size = recv(__fd,__buf,8192,0);
+			char __buf[64*1024] = {0};
+			int __recv_size = recv(__fd,__buf,64*1024,0);
 			if(0 == __recv_size)
 			{
 				return 0;
