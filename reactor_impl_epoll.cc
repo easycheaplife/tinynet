@@ -113,3 +113,8 @@ void Reactor_Impl_Epoll::_mod_event(int __fd,uint32_t __event)
 		exit(EXIT_FAILURE);
 	}
 }
+
+int Reactor_Impl_Epoll::handle_close( int __fd )
+{
+	return -1;
+}

@@ -15,6 +15,8 @@ public:
 	int remove_handle(Event_Handle* __handle,int __mask);
 	
 	int handle_event(unsigned long __millisecond);
+
+	int handle_close(int __fd);
 	
 	int event_loop(unsigned long __millisecond);
 

@@ -20,7 +20,7 @@
 #include "reactor_impl_select.h"
 #include "reactor.h"
 
-Event_Handle_Srv::Event_Handle_Srv(Reactor* __reactor) : Event_Handle(__reactor)
+Event_Handle_Srv::Event_Handle_Srv(Reactor* __reactor) : Event_Handle(__reactor),host_("0.0.0.0"),port_(9876)
 {
 	_init();
 	reactor()->reactor_impl()->register_handle(this,get_handle(),kMaskAccept);
@@ -51,15 +51,14 @@ int Event_Handle_Srv::handle_input(int __fd)
 			//	just transform data
 			char __buf[64*1024] = {0};
 			int __recv_size = recv(__fd,__buf,64*1024,0);
-			if(0 == __recv_size)
+			if(-1 != __recv_size)
 			{
-				return 0;
-			}
-			else if (-1 == __recv_size)
-			{
-				return -1;
-			}
-			on_read(__fd,__buf,__recv_size);
+				if(0 == __recv_size)
+				{
+					reactor()->reactor_impl()->handle_close(__fd);
+				}
+				on_read(__fd,__buf,__recv_size);
+			}		
 		}
 		else
 		{
@@ -134,7 +133,7 @@ int Event_Handle_Srv::handle_timeout(int __fd)
 	return -1;
 }
 
-void Event_Handle_Srv::_init(unsigned int __port)
+void Event_Handle_Srv::_init()
 {
 #ifndef __LINUX
 	WORD __version_requested = MAKEWORD(2,2);
@@ -161,7 +160,7 @@ void Event_Handle_Srv::_init(unsigned int __port)
 	struct sockaddr_in __serveraddr;  
 	memset(&__serveraddr,0,sizeof(sockaddr_in));  
 	__serveraddr.sin_family = AF_INET;  
-	__serveraddr.sin_port = htons(__port);  
+	__serveraddr.sin_port = htons(port_);  
 #if 1
 	//	get local ip address
 	static const int __name_len = 128;
@@ -177,7 +176,7 @@ void Event_Handle_Srv::_init(unsigned int __port)
 		}
 	}
 #endif
-	__serveraddr.sin_addr.s_addr = inet_addr("192.168.22.63");
+	__serveraddr.sin_addr.s_addr = inet_addr(host_.c_str());
 	int __ret = bind(fd_,(sockaddr*)&__serveraddr,sizeof(sockaddr_in));  
 	if ( -1 == fd_ )
 	{
@@ -289,6 +288,13 @@ int Event_Handle_Srv::read( int __fd,char* __buf, int __length )
 	}
 	return __recv_size;
 }
+
+void Event_Handle_Srv::init( const char* __host,unsigned int __port )
+{
+	host_ = __host;
+	port_ = __port;
+}
+
 
 
 
