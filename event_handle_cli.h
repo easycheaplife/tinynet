@@ -1,6 +1,6 @@
 #ifndef event_handle_cli_h__
 #define event_handle_cli_h__
-
+#include <string>
 #include "event_handle.h"
 
 #define CC_CALLBACK_0(__selector__,__target__, ...) std::bind(&__selector__,__target__, ##__VA_ARGS__)
@@ -49,6 +49,9 @@ private:
 private:
 	int  	fd_;
 
+	std::string		host_;
+
+	unsigned		port_;
 };
 
 #endif // event_handle_cli_h__

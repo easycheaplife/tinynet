@@ -84,3 +84,8 @@ void Reactor_Impl_Poll::_add_event(int __fd)
 	++cur_poll_fd_num_;	
 }
 
+int Reactor_Impl_Poll::handle_close( int __fd )
+{
+	return -1;
+}
+

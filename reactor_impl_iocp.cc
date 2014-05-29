@@ -142,3 +142,8 @@ unsigned int __stdcall Reactor_Impl_Iocp::work_thread_function( void* __pv )
 	}
 	return 0;
 }
+
+int Reactor_Impl_Iocp::handle_close( int __fd )
+{
+	return -1;
+}

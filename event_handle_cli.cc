@@ -22,7 +22,7 @@
 #include "reactor_impl_select.h"
 #include "reactor.h"
 
-Event_Handle_Cli::Event_Handle_Cli(Reactor* __reactor) : Event_Handle(__reactor)
+Event_Handle_Cli::Event_Handle_Cli(Reactor* __reactor) : Event_Handle(__reactor),host_("192.168.22.63"),port_(9876)
 {
 	_init();
 	reactor()->reactor_impl()->register_handle(this,get_handle(),kMaskConnect);
@@ -32,18 +32,17 @@ int Event_Handle_Cli::handle_input(int __fd)
 {
 	if(1)
 	{
-		char __buf[64*1024] = {0};
-		int __recv_size = recv(__fd,__buf,64*1024,0);
-		if(0 == __recv_size)
-		{
-			perror("no data recv");  
-			return 0;
-		}
-		else if (-1 == __recv_size)
-		{
-			return -1;
-		}
-		on_read(__fd,__buf,__recv_size);
+			//	just transform data
+			char __buf[64*1024] = {0};
+			int __recv_size = recv(__fd,__buf,64*1024,0);
+			if(-1 != __recv_size)
+			{
+				if(0 == __recv_size)
+				{
+					reactor()->reactor_impl()->handle_close(__fd);
+				}
+				on_read(__fd,__buf,__recv_size);
+			}		
 	}
 	else
 	{
@@ -144,8 +143,8 @@ void Event_Handle_Cli::_init(unsigned int __port)
 	struct sockaddr_in __clientaddr;  
 	memset(&__clientaddr,0,sizeof(sockaddr_in));  
 	__clientaddr.sin_family = AF_INET;  
-	__clientaddr.sin_port = htons(__port);  
-	__clientaddr.sin_addr.s_addr = inet_addr("192.168.22.63");
+	__clientaddr.sin_port = htons(port_);  
+	__clientaddr.sin_addr.s_addr = inet_addr(host_.c_str());
 	int __res = connect(fd_,(sockaddr*)&__clientaddr,sizeof(sockaddr_in));
 	if(-1 == __res)
 	{

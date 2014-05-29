@@ -26,6 +26,8 @@ public:
 	
 	virtual int event_loop(unsigned long __time) = 0;
 
+	virtual int handle_close(int __fd) = 0;
+
 	//	__fd is the broadcaster
 	virtual void broadcast(int __fd,const char* __data,unsigned int __length) = 0;
 };

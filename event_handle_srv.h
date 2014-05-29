@@ -1,3 +1,4 @@
+#include <string>
 #include "event_handle.h"
 
 class Event_Handle_Srv : public  Event_Handle
@@ -6,6 +7,8 @@ public:
 	Event_Handle_Srv(Reactor* __reactor);
 
 	virtual ~Event_Handle_Srv();
+
+	void init(const char* __host,unsigned int __port);
 	
 	//	-1 means error happened, 0 means no error.
 	virtual int handle_input(int __fd);
@@ -31,8 +34,9 @@ public:
 	virtual void on_connected(int __fd) = 0;
 
 	virtual void on_read(int __fd,const char* __data,unsigned int __length) = 0;
+
 private:
-	void 	_init(unsigned int __port = 9876);
+	void 	_init();
 	
 	void 	_set_noblock(int __fd);
 
@@ -42,5 +46,9 @@ private:
 
 	void	_set_no_delay(int __fd);
 private:
-	int  	fd_;
+	int  			fd_;
+
+	std::string		host_;
+
+	unsigned		port_;
 };
