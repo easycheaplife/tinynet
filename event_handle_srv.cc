@@ -20,7 +20,7 @@
 #include "reactor_impl_select.h"
 #include "reactor.h"
 
-Event_Handle_Srv::Event_Handle_Srv(Reactor* __reactor) : Event_Handle(__reactor),host_("0.0.0.0"),port_(9876)
+Event_Handle_Srv::Event_Handle_Srv(Reactor* __reactor,const char* __host,unsigned int __port) : Event_Handle(__reactor),host_(__host),port_(__port)
 {
 	_init();
 	reactor()->reactor_impl()->register_handle(this,get_handle(),kMaskAccept);

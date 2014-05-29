@@ -4,7 +4,7 @@
 class Event_Handle_Srv : public  Event_Handle
 {
 public:
-	Event_Handle_Srv(Reactor* __reactor);
+	Event_Handle_Srv(Reactor* __reactor,const char* __host,unsigned int __port);
 
 	virtual ~Event_Handle_Srv();
 
