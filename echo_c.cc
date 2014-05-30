@@ -62,8 +62,15 @@ void test_4_transform_monitor(int sock)
 		usleep(1000*10);
 	}
 }
-int main()
+int main(int __arg_num, char** __args)
 {
+	if(3 != __arg_num)
+	{
+		std::cout << "param error,please input correct param,for example : ./echo_c 192.168.122.63" <<std::endl;
+		exit(1);
+	}
+	const char* __host = __args[1];
+	unsigned int __port = atoi(__args[2]);
 	int sock = socket(AF_INET,SOCK_STREAM,0);
 	if(-1 == sock)
 	{
@@ -72,8 +79,8 @@ int main()
 	}
 	struct sockaddr_in clientaddr;
 	clientaddr.sin_family = AF_INET;
-	clientaddr.sin_addr.s_addr = inet_addr("192.168.22.63");
-	clientaddr.sin_port = htons(9876);
+	clientaddr.sin_addr.s_addr = inet_addr(__host);
+	clientaddr.sin_port = htons(__port);
 	int res = connect(sock,(sockaddr*)&clientaddr,sizeof(sockaddr_in));
 	if(-1 == res)
 	{
