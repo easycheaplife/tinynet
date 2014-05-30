@@ -7,8 +7,6 @@ public:
 	Event_Handle_Srv(Reactor* __reactor,const char* __host,unsigned int __port);
 
 	virtual ~Event_Handle_Srv();
-
-	void init(const char* __host,unsigned int __port);
 	
 	//	-1 means error happened, 0 means no error.
 	virtual int handle_input(int __fd);
@@ -33,9 +31,9 @@ public:
 	//	pure virtual function, subclass must define it.
 	virtual void on_connected(int __fd) = 0;
 
-	virtual void on_read(int __fd,const char* __data,unsigned int __length) = 0;
+	virtual void on_read(int __fd) = 0;
 
-private:
+protected:
 	void 	_init();
 	
 	void 	_set_noblock(int __fd);

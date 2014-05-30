@@ -27,15 +27,12 @@ public:
 	//	read data from network cache
 	int	read(int __fd,char* __buf, int __length); 
 
-protected:
-	void star_work_thread();
-
 public:
 	//	pure virtual function, subclass must define it.
-	virtual void on_read(int __fd,const char* __data,unsigned int __length) = 0;
+	virtual void on_read(int __fd) = 0;
 
-private:
-	void 	_init(unsigned int __port = 9876);
+protected:
+	void star_work_thread();
 
 	void 	_set_noblock(int __fd);
 
@@ -46,6 +43,10 @@ private:
 	void	_get_usable(int __fd,unsigned long& __usable_size);
 
 	void	_work_thread();
+
+private:
+	void 	_init(unsigned int __port = 9876);
+
 private:
 	int  	fd_;
 
