@@ -11,10 +11,6 @@
 #include <vector>
 #include "reactor_impl.h"
 
-#ifndef __USE_STD_MAP
-//#define __USE_STD_MAP
-#endif // !__USE_STD_MAP
-
 //	struct forward declaration 
 struct Event_Handle_Data;
 
@@ -50,10 +46,6 @@ private:
 	int								max_fd_;
 	
 	Event_Handle* 					handle_;
-#ifdef __USE_STD_MAP
-	//	key is fd
-	std::map<int,Event_Handle*> 	events_;
-#else
+
 	std::vector<Event_Handle_Data*>	events_;
-#endif // __USE_STD_MAP
 };
