@@ -31,11 +31,7 @@ int Reactor_Impl_Select::register_handle(Event_Handle* __handle,int __fd,int __m
 	{
 		if(1 == __connect)
 		{
-#ifdef __USE_STD_MAP
-			events_.insert(std::map<int,Event_Handle*>::value_type(__fd,__handle));
-#else
 			events_.push_back(new Event_Handle_Data(__fd,__handle));
-#endif // __USE_STD_MAP
 		}
 	}
 	if(max_fd_ < __fd)
@@ -65,14 +61,7 @@ int Reactor_Impl_Select::event_loop(unsigned long __millisecond)
 		struct timeval __tv;  
 		__tv.tv_sec = 0;  
 		__tv.tv_usec = __millisecond;
-#ifdef __USE_STD_MAP
-		for(std::map<int,Event_Handle*>::iterator __it = events_.begin(); __it != events_.end(); ++__it)
-		{
-			FD_SET(__it->first,&read_set_);  
-			FD_SET(__it->first,&write_set_);  
-			FD_SET(__it->first,&excepion_set_);  
-		}
-#else
+
 		for (std::vector<Event_Handle_Data*>::iterator __it = events_.begin(); __it != events_.end(); )
 		{
 			if(*__it)
@@ -99,7 +88,6 @@ int Reactor_Impl_Select::event_loop(unsigned long __millisecond)
 				}
 			}
 		}
-#endif // __USE_STD_MAP
 
 		//	you must set max_fd_ is max use fd under unix/linux system, if not,part of fd will not be detected.
 		//	if write_set_ is not null, that means the write status will be watched to see. 
@@ -127,36 +115,7 @@ int Reactor_Impl_Select::event_loop(unsigned long __millisecond)
 			handle_->handle_input(fd_);
 			continue;
 		}
-#ifdef __USE_STD_MAP
-		for(std::map<int,Event_Handle*>::iterator __it = events_.begin(); __it != events_.end(); )
-		{
-			//	something to be read
-			if(FD_ISSET(__it->first,&read_set_))
-			{
-				if(__it->second->handle_input(__it->first))
-				{
-					//	error happened, disconnect the socket
-					events_.erase(__it++);
-				}
-				else
-				{
-					++__it;
-				}
-			}
-			//	something to be write
-			else if(FD_ISSET(__it->first,&write_set_))
-			{
-				__it->second->handle_output(__it->first);
-				++__it;
-			}
-			//	exception happened
-			else if(FD_ISSET(__it->first,&excepion_set_))
-			{
-				__it->second->handle_exception(__it->first);
-				++__it;
-			}
-		}
-#else
+
 		for (std::vector<Event_Handle_Data*>::iterator __it = events_.begin(); __it != events_.end(); ++__it)
 		{
 			if (*__it)
@@ -182,26 +141,12 @@ int Reactor_Impl_Select::event_loop(unsigned long __millisecond)
 				}
 			}
 		}
-#endif // __USE_STD_MAP
 	}
 	return -1;
 }
 
 void Reactor_Impl_Select::broadcast(int __fd,const char* __data,unsigned int __length)
 {
-#ifdef __USE_STD_MAP
-	for(std::map<int,Event_Handle*>::iterator __it = events_.begin(); __it != events_.end(); ++__it)
-	{
-		if(__fd == __it->first)
-		{
-			continue;
-		}
-		else
-		{
-			write(__it->first,__data,__length);
-		}
-	}
-#else
 	for (std::vector<Event_Handle_Data*>::iterator __it = events_.begin(); __it != events_.end(); ++__it)
 	{
 		if(*__it)
@@ -216,8 +161,6 @@ void Reactor_Impl_Select::broadcast(int __fd,const char* __data,unsigned int __l
 			}
 		}
 	}
-#endif // __USE_STD_MAP
-
 }
 
 void Reactor_Impl_Select::write( int __fd,const char* __data, int __length )
@@ -251,16 +194,6 @@ void Reactor_Impl_Select::write( int __fd,const char* __data, int __length )
 
 int Reactor_Impl_Select::handle_close( int __fd )
 {
-#ifdef __USE_STD_MAP
-	//	warning:do this will be dangous, it causes iterator failed!
-	for(std::map<int,Event_Handle*>::iterator __it = events_.begin(); __it != events_.end(); ++__it)
-	{
-		if(__fd == __it->first)
-		{
-			events_.erase(__it);
-		}
-	}
-#else
 	for (std::vector<Event_Handle_Data*>::iterator __it = events_.begin(); __it != events_.end(); ++__it)
 	{
 		if(*__it)
@@ -271,6 +204,5 @@ int Reactor_Impl_Select::handle_close( int __fd )
 			}
 		}
 	}
-#endif // __USE_STD_MAP
 	return -1;
 }
