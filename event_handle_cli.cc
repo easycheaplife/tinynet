@@ -30,70 +30,13 @@ Event_Handle_Cli::Event_Handle_Cli(Reactor* __reactor,const char* __host,unsigne
 
 int Event_Handle_Cli::handle_input(int __fd)
 {
-	if(1)
-	{
-			//	just transform data
-			char __buf[64*1024] = {0};
-			int __recv_size = recv(__fd,__buf,64*1024,0);
-			if(-1 != __recv_size)
-			{
-				if(0 == __recv_size)
-				{
-					reactor()->reactor_impl()->handle_close(__fd);
-				}
-				on_read(__fd,__buf,__recv_size);
-			}		
-	}
-	else
-	{
-		//	read head first
-		unsigned long __usable_size = 0;
-		int __length = 0;
-		int __recv_size = 0;
-		_get_usable(__fd,__usable_size);
-		if(__usable_size >= sizeof(int))
-		{
-			__recv_size = recv(__fd,(char*)&__length,4,0);
-			if(sizeof(int) != __recv_size)
-			{
-				printf("error: __recv_size = %d",__recv_size);  
-				return 0;
-			}
-		}
-		_get_usable(__fd,__usable_size);
-
-		if(__usable_size >= __length)
-		{
-			char __buf[8192] = {0};
-			int __recv_size = recv(__fd,__buf,__length,0);
-			if(0 == __recv_size)
-			{
-				return 0;
-			}
-			else if (-1 == __recv_size)
-			{
-				return -1;
-			}
-			on_read(__fd,__buf,__recv_size);
-		}
-	}
-
+	on_read(__fd);
 	return -1;
 }
 
 int Event_Handle_Cli::handle_output(int __fd)
 {
 	printf("handle_outputd\n");
-#if 0
-	static int __data = 0;
-	++__data;
-	int __send_size = send(__fd,(char*)&__data,sizeof(int),0);
-	if( 0 == __send_size )
-	{
-		perror("error at send");  
-		return -1;
-	}
-#endif
 	reactor()->reactor_impl()->register_handle(this,__fd,kMaskRead);
 	return -1;
 }
@@ -253,7 +196,7 @@ int Event_Handle_Cli::read( int __fd,char* __buf, int __length )
 	int __recv_size = recv(__fd,__buf,__length,0);
 	if(0 == __recv_size)
 	{
-		handle_close(__fd);
+		
 	}
 	else if (-1 == __recv_size)
 	{
@@ -262,13 +205,14 @@ int Event_Handle_Cli::read( int __fd,char* __buf, int __length )
 		if(WSAEWOULDBLOCK  == __last_error)
 		{
 			//	close peer socket
-			handle_close(__fd);
 		}
+		closesocket(fd_);
 #else
 		if(EAGAIN == errno || EWOULDBLOCK == errno)
 		{
-			handle_close(__fd);
+
 		}
+		close(fd_);
 #endif //__LINUX
 	}
 	return __recv_size;

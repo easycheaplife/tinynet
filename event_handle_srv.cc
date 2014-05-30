@@ -46,53 +46,8 @@ int Event_Handle_Srv::handle_input(int __fd)
 	}
 	else
 	{
-		if(1)
-		{
-			//	just transform data
-			char __buf[64*1024] = {0};
-			int __recv_size = recv(__fd,__buf,64*1024,0);
-			if(-1 != __recv_size)
-			{
-				if(0 == __recv_size)
-				{
-					reactor()->reactor_impl()->handle_close(__fd);
-				}
-				on_read(__fd,__buf,__recv_size);
-			}		
-		}
-		else
-		{
-			//	read head first.and then read the other msg
-			unsigned long __usable_size = 0;
-			int __length = 0;
-			int __recv_size = 0;
-			_get_usable(__fd,__usable_size);
-			if(__usable_size >= sizeof(int))
-			{
-				__recv_size = recv(__fd,(char*)&__length,4,0);
-				if(sizeof(int) != __recv_size)
-				{
-					printf("error: __recv_size = %d",__recv_size);  
-					return 0;
-				}
-			}
-			_get_usable(__fd,__usable_size);
-
-			if(__usable_size >= __length)
-			{
-				char __buf[8192] = {0};
-				int __recv_size = recv(__fd,__buf,__length,0);
-				if(0 == __recv_size)
-				{
-					return 0;
-				}
-				else if (-1 == __recv_size)
-				{
-					return -1;
-				}
-				on_read(__fd,__buf,__recv_size);
-			}
-		}
+		//	read data from system buffer and write to ring buffer, that will reduce a memory copy in every data transform
+		on_read(__fd);
 	}
 	return 0;
 }
@@ -268,7 +223,7 @@ int Event_Handle_Srv::read( int __fd,char* __buf, int __length )
 	int __recv_size = recv(__fd,__buf,__length,0);
 	if(0 == __recv_size)
 	{
-		handle_close(__fd);
+		reactor()->reactor_impl()->handle_close(__fd);
 	}
 	else if (-1 == __recv_size)
 	{
@@ -277,24 +232,18 @@ int Event_Handle_Srv::read( int __fd,char* __buf, int __length )
 		if(WSAEWOULDBLOCK  == __last_error)
 		{
 			//	close peer socket
-			handle_close(__fd);
+			
 		}
 #else
 		if(EAGAIN == errno || EWOULDBLOCK == errno)
 		{
-			handle_close(__fd);
+
 		}
 #endif //__LINUX
+		reactor()->reactor_impl()->handle_close(__fd);
 	}
 	return __recv_size;
 }
-
-void Event_Handle_Srv::init( const char* __host,unsigned int __port )
-{
-	host_ = __host;
-	port_ = __port;
-}
-
 
 
 
