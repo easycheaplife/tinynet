@@ -8,7 +8,7 @@
 class Event_Handle_Cli : public  Event_Handle
 {
 public:
-	Event_Handle_Cli(Reactor* __reactor);
+	Event_Handle_Cli(Reactor* __reactor,const char* __host,unsigned int __port);
 
 	virtual int handle_input(int __fd);
 
