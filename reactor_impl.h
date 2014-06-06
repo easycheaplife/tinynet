@@ -2,9 +2,9 @@ class Event_Handle;
 
 enum Mask
 {
-	kMaskRead = 0,
+	kMaskAccept = 0,
+	kMaskRead ,
 	kMaskWrite,
-	kMaskAccept,
 	//	for client socket
 	kMaskConnect
 };
