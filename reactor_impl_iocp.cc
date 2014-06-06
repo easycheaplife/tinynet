@@ -98,14 +98,16 @@ public:
 			return FALSE;
 		}
 		int __not_read_bytes = buffer_length_ - used_size_;
-		if (__next_overlap_puls->buffer_length_ < __flush_size)
+		//	may be the __next_overlap_puls 's buffer have all used.
+		int __can_flush_bytes = __next_overlap_puls->buffer_length_ - __next_overlap_puls->used_size_;
+		if (__can_flush_bytes < __flush_size)
 		{
 			//	fix #2
 			//	to the contrary, add this->buffer_ to __next_overlap_puls->buffer_
 			//	first, copy __next_overlap_puls->buffer_ to this->buffer_
 			memcpy_s(buffer_,__not_read_bytes,buffer_ + used_size_,__not_read_bytes);
-			memcpy_s(buffer_ + __not_read_bytes,__next_overlap_puls->buffer_length_,__next_overlap_puls->buffer_,__next_overlap_puls->buffer_length_);
-			buffer_length_ = __not_read_bytes + __next_overlap_puls->buffer_length_;
+			memcpy_s(buffer_ + __not_read_bytes,__can_flush_bytes,__next_overlap_puls->buffer_,__can_flush_bytes);
+			buffer_length_ = __not_read_bytes + __can_flush_bytes;
 			used_size_ = 0;
 			memset(buffer_ + buffer_length_,0,DATA_BUFSIZE - buffer_length_);
 
@@ -1201,7 +1203,16 @@ void Reactor_Impl_Iocp::send_pending_send( Client_Context* __client_context )
 
 void Reactor_Impl_Iocp::broadcast( int __fd,const char* __data,unsigned int __length )
 {
+	while (active_cleint_context_)
+	{
+		if (active_cleint_context_->socket_ == __fd)
+		{
+			active_cleint_context_ = active_cleint_context_->next_;
+			continue;
+		}
 
+		active_cleint_context_ = active_cleint_context_->next_;
+	}
 }
 
 Reactor_Impl_Iocp::~Reactor_Impl_Iocp()
@@ -1542,17 +1553,22 @@ int Reactor_Impl_Iocp::read_packet( Client_Context* __client_context,Overlapped_
 	__enough = __overlapped_puls->is_enough(__packet_length + __head_size);
 	while (__enough)
 	{
-		BOOL __res = send_2_client(__client_context,__overlapped_puls->buffer_ + __overlapped_puls->used_size_,__packet_length + __head_size);
-		if( FALSE == __res )
+		__overlapped_puls->setp_used_size( __packet_length + __head_size );
+		if(0)
 		{
-			//add by Lee 2011-06-08
-			//socket close or other error happen
-			return ERROR_CONNECION_CLOSE;
+			BOOL __res = send_2_client(__client_context,__overlapped_puls->buffer_ + __overlapped_puls->used_size_,__packet_length + __head_size);
+			if( FALSE == __res )
+			{
+				//add by Lee 2011-06-08
+				//socket close or other error happen
+				return ERROR_CONNECION_CLOSE;
+			}
 		}
 		else
 		{
-			__overlapped_puls->setp_used_size( __packet_length + __head_size );
+			//send_2_all_client(__overlapped_puls->buffer_ + __overlapped_puls->used_size_,__packet_length + __head_size);
 		}
+
 		memset(__packet_head,0,__head_size);
 		__head = 0;
 		__packet_length = 0;
