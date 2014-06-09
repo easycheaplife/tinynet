@@ -105,20 +105,21 @@ public:
 			//	fix #2
 			//	to the contrary, add this->buffer_ to __next_overlap_puls->buffer_
 			//	first, copy __next_overlap_puls->buffer_ to this->buffer_
-			memcpy_s(buffer_,__not_read_bytes,buffer_ + used_size_,__not_read_bytes);
-			memcpy_s(buffer_ + __not_read_bytes,__can_flush_bytes,__next_overlap_puls->buffer_,__can_flush_bytes);
+			memmove_s(buffer_,__not_read_bytes,buffer_ + used_size_,__not_read_bytes);
+			memmove_s(buffer_ + __not_read_bytes,__can_flush_bytes,__next_overlap_puls->buffer_,__can_flush_bytes);
 			buffer_length_ = __not_read_bytes + __can_flush_bytes;
 			used_size_ = 0;
 			memset(buffer_ + buffer_length_,0,DATA_BUFSIZE - buffer_length_);
 
 			//	second, copy  this->buffer_ to __next_overlap_puls->buffer_
-			memcpy_s(__next_overlap_puls->buffer_,this->buffer_length_,this->buffer_,this->buffer_length_);
+			memmove_s(__next_overlap_puls->buffer_,this->buffer_length_,this->buffer_,this->buffer_length_);
 			__next_overlap_puls->buffer_length_ = this->buffer_length_;
+			__next_overlap_puls->used_size_ = 0;
 			return FALSE;
 		}
 		
-		memcpy_s(buffer_,__not_read_bytes,buffer_ + used_size_,__not_read_bytes);
-		memcpy_s(buffer_ + __not_read_bytes,__flush_size,__next_overlap_puls->buffer_,__flush_size);
+		memmove_s(buffer_,__not_read_bytes,buffer_ + used_size_,__not_read_bytes);
+		memmove_s(buffer_ + __not_read_bytes,__flush_size,__next_overlap_puls->buffer_ + __next_overlap_puls->used_size_,__flush_size);
 		buffer_length_ = __not_read_bytes + __flush_size;
 		used_size_ = 0;
 		memset(buffer_ + buffer_length_,0,DATA_BUFSIZE - buffer_length_);
@@ -1553,7 +1554,6 @@ int Reactor_Impl_Iocp::read_packet( Client_Context* __client_context,Overlapped_
 	__enough = __overlapped_puls->is_enough(__packet_length + __head_size);
 	while (__enough)
 	{
-		__overlapped_puls->setp_used_size( __packet_length + __head_size );
 		if(0)
 		{
 			BOOL __res = send_2_client(__client_context,__overlapped_puls->buffer_ + __overlapped_puls->used_size_,__packet_length + __head_size);
@@ -1566,8 +1566,9 @@ int Reactor_Impl_Iocp::read_packet( Client_Context* __client_context,Overlapped_
 		}
 		else
 		{
-			//send_2_all_client(__overlapped_puls->buffer_ + __overlapped_puls->used_size_,__packet_length + __head_size);
+			send_2_all_client(__overlapped_puls->buffer_ + __overlapped_puls->used_size_,__packet_length + __head_size);
 		}
+		__overlapped_puls->setp_used_size( __packet_length + __head_size );
 
 		memset(__packet_head,0,__head_size);
 		__head = 0;
@@ -1608,35 +1609,25 @@ int Reactor_Impl_Iocp::read_packet( Client_Context* __client_context,Overlapped_
 
 void Reactor_Impl_Iocp::send_2_all_client( const char* __data, int __length )
 {
-	Overlapped_Puls* __overlap_plus = allocate_overlapped_puls(__length);
-	if(NULL != __overlap_plus)
+	active_clienk_context_lock_.acquire_lock();
+	Client_Context* __first_client_context = active_cleint_context_;
+	while(__first_client_context)
 	{
-		memcpy(__overlap_plus->buffer_,__data,__length);
-		BOOL __res = TRUE;
-		active_clienk_context_lock_.acquire_lock();
-		Client_Context* __first_client_context = active_cleint_context_;
-		post_send(__first_client_context,__overlap_plus);
-		while(NULL != __first_client_context->next_ && TRUE == __res)
-		{
-			__res = post_send(__first_client_context,__overlap_plus);
-			__first_client_context = __first_client_context->next_;
-		}
-		active_clienk_context_lock_.release_lock();
+		send_2_client(__first_client_context,__data,__length);
+		__first_client_context = __first_client_context->next_;
 	}
-	release_overlapped_puls(__overlap_plus);
+	active_clienk_context_lock_.release_lock();
 }
 
 void Reactor_Impl_Iocp::send_2_all_client( Overlapped_Puls* __overlapped_puls )
 {
 	if(NULL != __overlapped_puls)
 	{
-		BOOL __res = TRUE;
 		active_clienk_context_lock_.acquire_lock();
 		Client_Context* __first_client_context = active_cleint_context_;
-		post_send(__first_client_context,__overlapped_puls);
-		while(NULL != __first_client_context->next_ && TRUE == __res)
+		while(NULL != __first_client_context)
 		{
-			__res = post_send(__first_client_context,__overlapped_puls);
+			send_2_client(__first_client_context,__overlapped_puls);
 			__first_client_context = __first_client_context->next_;
 		}
 		active_clienk_context_lock_.release_lock();
