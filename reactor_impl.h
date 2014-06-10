@@ -2,7 +2,7 @@ class Event_Handle;
 
 enum Mask
 {
-	kMaskAccept = 0,
+	kMaskAccept = 1,
 	kMaskRead ,
 	kMaskWrite,
 	//	for client socket

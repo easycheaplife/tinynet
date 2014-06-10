@@ -3,6 +3,10 @@
 #include "reactor_impl_iocp.h"
 #include "event_handle.h"
 
+#ifndef __USE_PACKET_SPLICE
+//#define __USE_PACKET_SPLICE
+#endif //__USE_PACKET_SPLICE
+
 #define TIME_OVERTIME					60*1000
 #define PRE_POST_RECV_NUM				2
 #define PRE_POST_ACCEPT_NUM				1
@@ -97,16 +101,19 @@ public:
 		{
 			return FALSE;
 		}
-		int __not_read_bytes = buffer_length_ - used_size_;
+		int __not_read_bytes = left_size();
 		//	may be the __next_overlap_puls 's buffer have all used.
-		int __can_flush_bytes = __next_overlap_puls->buffer_length_ - __next_overlap_puls->used_size_;
+		int __can_flush_bytes = __next_overlap_puls->left_size();
 		if (__can_flush_bytes < __flush_size)
 		{
 			//	fix #2
 			//	to the contrary, add this->buffer_ to __next_overlap_puls->buffer_
 			//	first, copy __next_overlap_puls->buffer_ to this->buffer_
-			memmove_s(buffer_,__not_read_bytes,buffer_ + used_size_,__not_read_bytes);
-			memmove_s(buffer_ + __not_read_bytes,__can_flush_bytes,__next_overlap_puls->buffer_,__can_flush_bytes);
+			if(0 != used_size_)
+			{
+				memmove_s(buffer_,__not_read_bytes,buffer_ + used_size_,__not_read_bytes);
+			}
+			memmove_s(buffer_ + __not_read_bytes,__can_flush_bytes,__next_overlap_puls->buffer_ + __next_overlap_puls->used_size_,__can_flush_bytes);
 			buffer_length_ = __not_read_bytes + __can_flush_bytes;
 			used_size_ = 0;
 			memset(buffer_ + buffer_length_,0,DATA_BUFSIZE - buffer_length_);
@@ -115,10 +122,13 @@ public:
 			memmove_s(__next_overlap_puls->buffer_,this->buffer_length_,this->buffer_,this->buffer_length_);
 			__next_overlap_puls->buffer_length_ = this->buffer_length_;
 			__next_overlap_puls->used_size_ = 0;
+			used_size_ = buffer_length_;
 			return FALSE;
 		}
-		
-		memmove_s(buffer_,__not_read_bytes,buffer_ + used_size_,__not_read_bytes);
+		if(0 != used_size_)
+		{
+			memmove_s(buffer_,__not_read_bytes,buffer_ + used_size_,__not_read_bytes);
+		}
 		memmove_s(buffer_ + __not_read_bytes,__flush_size,__next_overlap_puls->buffer_ + __next_overlap_puls->used_size_,__flush_size);
 		buffer_length_ = __not_read_bytes + __flush_size;
 		used_size_ = 0;
@@ -259,7 +269,60 @@ int Reactor_Impl_Iocp::event_loop(unsigned long __millisecond)
 {
 	while(true)
 	{
-
+#ifndef __USE_PACKET_SPLICE
+		active_clienk_context_lock_.acquire_lock();
+		Client_Context* __first_client_context = active_cleint_context_;
+		while(__first_client_context)
+		{
+			out_read_overlap_puls_lock_.acquire_lock();
+			
+			while(NULL != __first_client_context->out_order_reads_)
+			{
+				Overlapped_Puls* __temp_overlap_plus = __first_client_context->out_order_reads_;
+				if(__first_client_context->cur_read_sequence_ == __temp_overlap_plus->sequence_num_)
+				{
+					int __read_less_size = read_packet2(__first_client_context,__temp_overlap_plus);
+					if (0 == __read_less_size)
+					{
+						//add the sequence of the data to read
+						::InterlockedIncrement(&__first_client_context->cur_read_sequence_);
+						__first_client_context->out_order_reads_ = __first_client_context->out_order_reads_->next_;	
+						release_overlapped_puls(__temp_overlap_plus);
+						continue;
+					}
+					else
+					{
+						Overlapped_Puls* __temp_next_overlap_puls_read = __temp_overlap_plus->next_;
+						if (__temp_next_overlap_puls_read 
+							&& __temp_next_overlap_puls_read->sequence_num_ == (__first_client_context->cur_read_sequence_ + 1))
+						{
+							//flush buffer,remove nReadLeftSize from pTempOverLapPulsRead and add to current pOverLapPulsRead
+							if(__temp_overlap_plus->flush_buffer(__temp_next_overlap_puls_read,__read_less_size))
+							{
+								continue;
+							}
+							else
+							{
+								::InterlockedIncrement(&__first_client_context->cur_read_sequence_);
+							}
+						}
+						else
+						{
+							break;
+						}
+					}
+					__first_client_context->out_order_reads_ = __first_client_context->out_order_reads_->next_;	
+				}
+				else
+				{
+					break;
+				}
+			}
+			out_read_overlap_puls_lock_.release_lock();
+			__first_client_context = __first_client_context->next_;
+		}
+		active_clienk_context_lock_.release_lock();
+#endif //__USE_PACKET_SPLICE
 	}
 	return -1;
 }
@@ -294,7 +357,7 @@ void Reactor_Impl_Iocp::_ready()
 	//	Also,note that thread handles are closed right away, because we will not need them and the worker threads will continue to execute.
 
 	int __number_work_thread = _get_cpu_number();
-	work_thread_cur_ = /*__number_work_thread*/1;
+	work_thread_cur_ = __number_work_thread;
 	for(int __i = 0; __i < work_thread_cur_; ++__i)
 	{
 		_begin_thread(&work_thread_function,this);
@@ -895,7 +958,11 @@ void Reactor_Impl_Iocp::on_accept_completed( Overlapped_Puls* __overlapped_puls,
 		_close_socket(__overlapped_puls->sock_client_);
 	}
 	//	fix the bug #1
+#ifdef __USE_PACKET_SPLICE
 	process_packet(__client_context,__overlapped_puls);
+#else
+	process_packet3(__client_context,__overlapped_puls);
+#endif // __USE_PACKET_SPLICE
 }
 
 void Reactor_Impl_Iocp::on_read_completed( Client_Context* __client_context,Overlapped_Puls* __overlapped_puls,DWORD __bytes_transferred )
@@ -918,7 +985,11 @@ void Reactor_Impl_Iocp::on_read_completed( Client_Context* __client_context,Over
 	else
 	{
 		__overlapped_puls->buffer_length_ = __bytes_transferred;
+#ifdef __USE_PACKET_SPLICE
 		process_packet(__client_context,__overlapped_puls);
+#else
+		process_packet3(__client_context,__overlapped_puls);
+#endif // __USE_PACKET_SPLICE
 		if(TRUE == __client_context->close_)
 		{
 			return;
@@ -1082,7 +1153,7 @@ void Reactor_Impl_Iocp::process_packet( Client_Context* __client_context,Overlap
 	while(NULL != __overlapped_puls_read)
 	{
 		//read packet completed,the buffer of pOverLapPlus' data just one or multi complete packet;
-		int __read_less_size = read_packet(__client_context,__overlapped_puls_read);
+		int __read_less_size = read_packet2(__client_context,__overlapped_puls_read);
 		if( ERROR_READ_BUFFER_ERROR == __read_less_size )
 		{
 			//if ERROR_READ_BUFFER_ERROR happed, that means data error.
@@ -1093,6 +1164,7 @@ void Reactor_Impl_Iocp::process_packet( Client_Context* __client_context,Overlap
 		}
 		else if( ERROR_CONNECION_CLOSE == __read_less_size )
 		{
+			release_overlapped_puls(__overlapped_puls_read);
 			out_read_overlap_puls_lock_.release_lock();
 			return ;
 		}
@@ -1111,10 +1183,8 @@ void Reactor_Impl_Iocp::process_packet( Client_Context* __client_context,Overlap
 			Overlapped_Puls* __temp_next_overlap_puls_read = get_next_read_overlap_puls(__client_context,NULL);
 			if (!__temp_next_overlap_puls_read)
 			{
-				//add by Lee 2011-05-28
-				//if the next buffer is not exist, add current buffer to the out order buffer,and clear the used data,
-				//then continue process io
-				//to be continue...
+				//	if the next buffer is not exist, add current buffer to the out order buffer,and clear the used data,
+				//	then waiting next read completion.	--add by Lee 2011-05-28
 				::InterlockedDecrement(&__client_context->cur_read_sequence_);
 				::InterlockedDecrement(&__client_context->cur_read_sequence_);
 				get_next_read_overlap_puls(__client_context,__overlapped_puls_read);
@@ -1135,6 +1205,55 @@ void Reactor_Impl_Iocp::process_packet( Client_Context* __client_context,Overlap
 					__overlapped_puls_read = __overlapped_puls_read->next_;
 				}
 			}
+		}
+	}
+	out_read_overlap_puls_lock_.release_lock();
+}
+
+void Reactor_Impl_Iocp::process_packet2(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls)
+{
+	//	actually, it proves that error happened at process packet!
+	out_read_overlap_puls_lock_.acquire_lock();
+	Overlapped_Puls* __overlapped_puls_read = get_next_read_overlap_puls(__client_context,__overlapped_puls);
+	while(__overlapped_puls_read)
+	{
+		::InterlockedIncrement(&__client_context->cur_read_sequence_);
+		release_overlapped_puls(__overlapped_puls_read);
+		__overlapped_puls_read = get_next_read_overlap_puls(__client_context,NULL);
+	}
+	out_read_overlap_puls_lock_.release_lock();
+}
+
+void Reactor_Impl_Iocp::process_packet3(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls)
+{
+	out_read_overlap_puls_lock_.acquire_lock();
+	if(NULL != __overlapped_puls)
+	{
+		__overlapped_puls->next_ = NULL;
+		Overlapped_Puls* __temp_overlap_plus = __client_context->out_order_reads_;
+		Overlapped_Puls* __pre_overlap_plus = NULL;
+		//	traverse all client order reads until the end,and record the last overlappuls.
+		//	and make sure the out_order_reads_ in the order
+		while(NULL != __temp_overlap_plus)
+		{
+			if(__overlapped_puls->sequence_num_ < __temp_overlap_plus->sequence_num_)
+			{
+				break;
+			}
+			__pre_overlap_plus = __temp_overlap_plus;
+			__temp_overlap_plus = __temp_overlap_plus->next_;
+		}
+		//	insert the head of list
+		if(NULL == __pre_overlap_plus)
+		{
+			__overlapped_puls->next_ = __client_context->out_order_reads_;
+			__client_context->out_order_reads_ = __overlapped_puls;
+		}
+		//	insert the mid of list
+		else
+		{
+			__overlapped_puls->next_ = __pre_overlap_plus->next_;
+			__pre_overlap_plus->next_ = __overlapped_puls;
 		}
 	}
 	out_read_overlap_puls_lock_.release_lock();
@@ -1468,7 +1587,7 @@ Overlapped_Puls* Reactor_Impl_Iocp::get_next_read_overlap_puls( Client_Context* 
 {
 	if(NULL != __overlapped_puls)
 	{
-		//if client current read sequence is equal current overlappuls' s sequence,the overlappuls is the just we want to read
+		//	if client current read sequence is equal current overlappuls' s sequence,the overlappuls is the just we want to read
 		if(__client_context->cur_read_sequence_ == __overlapped_puls->sequence_num_)
 		{
 			return __overlapped_puls;
@@ -1476,8 +1595,8 @@ Overlapped_Puls* Reactor_Impl_Iocp::get_next_read_overlap_puls( Client_Context* 
 		__overlapped_puls->next_ = NULL;
 		Overlapped_Puls* __temp_overlap_plus = __client_context->out_order_reads_;
 		Overlapped_Puls* __pre_overlap_plus = NULL;
-		//traverse all client order reads until the end,and record the last overlappuls.
-		//and make sure the pOutOrderReads in the order
+		//	traverse all client order reads until the end,and record the last overlappuls.
+		//	and make sure the out_order_reads_ in the order
 		while(NULL != __temp_overlap_plus)
 		{
 			if(__overlapped_puls->sequence_num_ < __temp_overlap_plus->sequence_num_)
@@ -1487,13 +1606,13 @@ Overlapped_Puls* Reactor_Impl_Iocp::get_next_read_overlap_puls( Client_Context* 
 			__pre_overlap_plus = __temp_overlap_plus;
 			__temp_overlap_plus = __temp_overlap_plus->next_;
 		}
-		//insert the head of list
+		//	insert the head of list
 		if(NULL == __pre_overlap_plus)
 		{
 			__overlapped_puls->next_ = __client_context->out_order_reads_;
 			__client_context->out_order_reads_ = __overlapped_puls;
 		}
-		//insert the mid of list
+		//	insert the mid of list
 		else
 		{
 			__overlapped_puls->next_ = __pre_overlap_plus->next_;
@@ -1510,6 +1629,47 @@ Overlapped_Puls* Reactor_Impl_Iocp::get_next_read_overlap_puls( Client_Context* 
 		}
 	}
 	return NULL;
+}
+
+int Reactor_Impl_Iocp::read_packet2( Client_Context* __client_context,Overlapped_Puls* __overlapped_puls )
+{
+	const int __head_size = 12;
+	unsigned char __packet_head[__head_size] = {};
+	int __head = 0;
+	int __packet_length = 0;
+	int __log_level = 0;
+	int __frame_number = 0;
+	unsigned int __guid = 0;
+	BOOL __enough = __overlapped_puls->is_enough(__head_size);
+	while(__enough)
+	{
+		//	read packet head first
+		__overlapped_puls->read_data((char*)__packet_head,__head_size);
+		memcpy(&__packet_length,__packet_head,4);
+		memcpy(&__head,__packet_head + 4,4);
+		memcpy(&__guid,__packet_head + 8,4);
+
+		//	continue read other context
+		__enough = __overlapped_puls->is_enough(__packet_length + __head_size);
+		if (__enough)
+		{
+			send_2_all_client(__overlapped_puls->buffer_ + __overlapped_puls->used_size_,__packet_length + __head_size);
+			__overlapped_puls->setp_used_size( __packet_length + __head_size );
+		}
+		else
+		{
+			return __packet_length + __head_size - __overlapped_puls->left_size();
+		}
+		__enough = __overlapped_puls->is_enough(__head_size);
+	}
+	if (0 == __overlapped_puls->left_size())
+	{
+		return 0;
+	}
+	else
+	{
+		return __packet_length + __head_size - __overlapped_puls->left_size();
+	}
 }
 
 int Reactor_Impl_Iocp::read_packet( Client_Context* __client_context,Overlapped_Puls* __overlapped_puls )

@@ -13,11 +13,13 @@
 #include <WinBase.h>
 #include <mswsock.h>
 #include "reactor_impl.h"
-#include "easy_allocator.h"
 
 #ifndef __USE_CRITICAL_SECTION
 #define __USE_CRITICAL_SECTION
 #endif // __USE_CRITICAL_SECTION
+
+#include "easy_allocator.h"
+
 
 #define DATA_BUFSIZE					8192
 #define POOL_SIZE						1024
@@ -69,9 +71,15 @@ public:
 
 	void process_packet(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls);
 
+	void process_packet2(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls);
+
+	void process_packet3(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls);
+
 	void send_pending_send(Client_Context* __client_context);
 
 	int read_packet(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls);
+
+	int read_packet2(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls);
 
 	void send_2_all_client(const char* __data, int __length);
 

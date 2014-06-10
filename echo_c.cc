@@ -12,7 +12,7 @@
 static std::string __random_string[] = 
 {
 	"[0x000085e4][T]AdvertisingIndentitifer: '', IdentifierForVendor: '', DeviceName: 'PC', ModelName: 'x86', SystemName: '', SystemVersion: '', HardwareID: '74d435046509'",
-	"nice to meeet you!",
+	"nice to meet you!",
 	"It is the tears of the earth that keep here smiles in bloom.",
 	"The mighty desert is burning for the love of a blade of grass who shakes her head and laughs and flies away.",
 	"If you shed tears when you miss the sun, you also miss the stars.",
