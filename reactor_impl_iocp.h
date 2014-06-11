@@ -3,10 +3,14 @@
 /************************************************************************/
 /*  
  *  bugs:
- *  #1	using acceptex, when on_accept_completed called, that means a packet have received. you must add the data to input stream. 
- *  if not, you maybe think loss of data or the data of received is not in sequence.(2014-6-6 fixed)
- *  #2	client send small packet, such as a int, when reading data from overlapped_puls, the overlapped_puls puls next one can not compose
- *  a complete packet.it will be a error.(2014-6-10 fixed)
+ *  #1	2014-6-6 
+ *  using acceptex, when on_accept_completed called, that means a packet have received. you must add the data to input stream. 
+ *  if not, you maybe think loss of data or the data of received is not in sequence.
+ *  #2	2014-6-10 
+ *  client send small packet, such as a int, when reading data from overlapped_puls, the overlapped_puls puls next one can not compose
+ *  a complete packet.it will be a error.
+ *  #3	2014-6-11 
+ *  memory leaks when process packet.
  */
 /************************************************************************/
 #include <winsock2.h>

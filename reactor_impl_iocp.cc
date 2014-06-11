@@ -265,9 +265,10 @@ int Reactor_Impl_Iocp::event_loop(unsigned long __millisecond)
 		while(__first_client_context)
 		{
 			out_read_overlap_puls_lock_.acquire_lock();
-			
+			BOOL __to_be_release = FALSE;
 			while(NULL != __first_client_context->out_order_reads_)
 			{
+				__to_be_release = FALSE;
 				Overlapped_Puls* __temp_overlap_plus = __first_client_context->out_order_reads_;
 				if(__first_client_context->cur_read_sequence_ == __temp_overlap_plus->sequence_num_)
 				{
@@ -293,6 +294,9 @@ int Reactor_Impl_Iocp::event_loop(unsigned long __millisecond)
 							}
 							else
 							{
+								//	fix the bug #3
+								//	__temp_overlap_plus is no useless, you need recyle the object.
+								__to_be_release = TRUE;
 								::InterlockedIncrement(&__first_client_context->cur_read_sequence_);
 							}
 						}
@@ -302,6 +306,10 @@ int Reactor_Impl_Iocp::event_loop(unsigned long __millisecond)
 						}
 					}
 					__first_client_context->out_order_reads_ = __first_client_context->out_order_reads_->next_;	
+					if(__to_be_release)
+					{
+						release_overlapped_puls(__temp_overlap_plus);
+					}
 				}
 				else
 				{
@@ -732,6 +740,7 @@ void Reactor_Impl_Iocp::release_client_context( Client_Context* __client_context
 			InterlockedDecrement(&cur_connection_);
 		}
 	}
+	printf("connection closed,cur_connection_ = %d\n",cur_connection_);
 	client_context_lock_.release_lock();
 	//	to be continue ...
 }
@@ -1073,7 +1082,6 @@ void Reactor_Impl_Iocp::close_connection( Client_Context* __client_context )
 		//	add 2011-04-21 by Lee
 		//	now close the socket handle.this will do an abortive or graceful close, as requested.  
 		CancelIo((HANDLE)__client_context->socket_);
-		printf("connection closed socket = %d,cur_connection_ = %d\n",__client_context->socket_,cur_connection_);
 		_close_socket(__client_context->socket_);
 	}
 	__client_context->close_ = TRUE;
