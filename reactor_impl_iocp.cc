@@ -3,13 +3,9 @@
 #include "reactor_impl_iocp.h"
 #include "event_handle.h"
 
-#ifndef __USE_PACKET_SPLICE
-//#define __USE_PACKET_SPLICE
-#endif //__USE_PACKET_SPLICE
-
 #define TIME_OVERTIME					60*1000
-#define PRE_POST_RECV_NUM				2
-#define PRE_POST_ACCEPT_NUM				1
+#define PRE_POST_RECV_NUM				50
+#define PRE_POST_ACCEPT_NUM				50
 #define MAX_FREE_OVERLAPPED_PLUS_NUM	5000
 #define MAX_FREE_CLIENT_CONTEXT_NUM		5000
 #define MAX_CONNECT_NUM					5000
@@ -153,11 +149,6 @@ public:
 		{
 			used_size_ += __step_bytes;
 		}
-		else
-		{
-			//	error, the next packet is not enough for a complete packet.
-			int i = 0;
-		}
 	}
 
 	int	left_size()
@@ -269,7 +260,6 @@ int Reactor_Impl_Iocp::event_loop(unsigned long __millisecond)
 {
 	while(true)
 	{
-#ifndef __USE_PACKET_SPLICE
 		active_clienk_context_lock_.acquire_lock();
 		Client_Context* __first_client_context = active_cleint_context_;
 		while(__first_client_context)
@@ -281,7 +271,7 @@ int Reactor_Impl_Iocp::event_loop(unsigned long __millisecond)
 				Overlapped_Puls* __temp_overlap_plus = __first_client_context->out_order_reads_;
 				if(__first_client_context->cur_read_sequence_ == __temp_overlap_plus->sequence_num_)
 				{
-					int __read_less_size = read_packet2(__first_client_context,__temp_overlap_plus);
+					int __read_less_size = read_packet(__first_client_context,__temp_overlap_plus);
 					if (0 == __read_less_size)
 					{
 						//add the sequence of the data to read
@@ -296,7 +286,7 @@ int Reactor_Impl_Iocp::event_loop(unsigned long __millisecond)
 						if (__temp_next_overlap_puls_read 
 							&& __temp_next_overlap_puls_read->sequence_num_ == (__first_client_context->cur_read_sequence_ + 1))
 						{
-							//flush buffer,remove nReadLeftSize from pTempOverLapPulsRead and add to current pOverLapPulsRead
+							//	flush buffer,remove __read_less_size from __temp_next_overlap_puls_read and add to current __temp_overlap_plus
 							if(__temp_overlap_plus->flush_buffer(__temp_next_overlap_puls_read,__read_less_size))
 							{
 								continue;
@@ -322,7 +312,6 @@ int Reactor_Impl_Iocp::event_loop(unsigned long __millisecond)
 			__first_client_context = __first_client_context->next_;
 		}
 		active_clienk_context_lock_.release_lock();
-#endif //__USE_PACKET_SPLICE
 	}
 	return -1;
 }
@@ -460,7 +449,7 @@ unsigned int __stdcall Reactor_Impl_Iocp::work_thread_function( void* __pv )
 		{
 			//	there is not much for server to do,and this thread can die even if it still outstanding I/O request
 		}
-		//thread exit,thought call post PostQueuedCompletionStatus and set dwCompletionKey = -1
+		//	thread exit,thought call post PostQueuedCompletionStatus and set dwCompletionKey = -1
 		if(-1 == __per_handle)
 		{
 			_endthreadex(0);
@@ -522,13 +511,13 @@ unsigned int __stdcall Reactor_Impl_Iocp::listen_thread( void* __pv )
 		if(WSA_WAIT_TIMEOUT == __events)
 		{
 			__this->check_all_connection_timeout();
-			//if the client connect server for a long time but not recv or send any data,disconnect it
+			//	if the client connect server for a long time but not recv or send any data,disconnect it
 			__overlapped_puls = __this->penging_accept_overlap_puls_;
 			while(NULL != __overlapped_puls)
 			{
 				int __seconds = 0;
 				int __bytes = sizeof(__seconds);
-				//check all AcceptEx is timeout
+				//	check all AcceptEx is timeout
 				__error = getsockopt(__overlapped_puls->sock_client_, SOL_SOCKET, SO_CONNECT_TIME,(char*)&__seconds, (int*)&__bytes );
 				if ( NO_ERROR != (__error = WSAGetLastError())) 
 				{
@@ -617,7 +606,7 @@ Overlapped_Puls* Reactor_Impl_Iocp::allocate_overlapped_puls( int __buffer_len )
 	}
 	Overlapped_Puls* __overlapped_plus = NULL;
 	overlap_puls_lock_.acquire_lock();
-	//if free overlappuls list is NULL,new a buffer,else get a block from overlappuls list
+	//	if free overlap puls list is NULL,new a buffer,else get a block from overlappuls list
 	if(NULL == free_overlap_puls_)
 	{
 		if ((__overlapped_plus = (Overlapped_Puls*)HeapAlloc(GetProcessHeap(),HEAP_ZERO_MEMORY, sizeof(Overlapped_Puls) + DATA_BUFSIZE)) == NULL)
@@ -755,18 +744,18 @@ void Reactor_Impl_Iocp::_process_io( DWORD __per_handle,Overlapped_Puls* __overl
 	{
 		if( TRUE == __client_context->close_ )
 		{
-			//no use, it will lead to client not release corrrctly.i do not known the reason! 2011-06-16
-			//return ;
+			//	no use, it will lead to client not release corrrctly.i do not known the reason! 2011-06-16
+			//	return ;
 		}
 		::EnterCriticalSection(&__client_context->lock_);
 		if(OP_READ == __overlapped_puls->op_type_)
 		{
-			//client socket overlapped recv count sub by one
+			//	client socket overlapped recv count sub by one
 			InterlockedDecrement(&__client_context->num_post_recv_);
 		}
 		else if(OP_WRITE == __overlapped_puls->op_type_)
 		{
-			//client socket overlapped send count sub by one
+			//	client socket overlapped send count sub by one
 			InterlockedDecrement(&__client_context->num_post_send_);
 		}
 		::LeaveCriticalSection(&__client_context->lock_);
@@ -788,13 +777,13 @@ void Reactor_Impl_Iocp::_process_io( DWORD __per_handle,Overlapped_Puls* __overl
 	}
 	if(NO_ERROR != __error)
 	{
-		//do with errors
+		//	do with errors
 		//...
 		if(__overlapped_puls->op_type_ != OP_ACCEPT)
 		{
-			//call virtual function-----------------------------------------
+			//	call virtual function-----------------------------------------
 			on_connection_error(__client_context, __overlapped_puls, __error);
-			//call virtual function-----------------------------------------
+			//	call virtual function-----------------------------------------
 			close_connection(__client_context);
 			if(0 == __client_context->num_post_recv_ && 0 == __client_context->num_post_send_)
 			{
@@ -865,7 +854,7 @@ BOOL Reactor_Impl_Iocp::remove_pending_accept( Overlapped_Puls* __overlapped_pul
 	BOOL __res = FALSE;
 	pending_accept_lock_.acquire_lock();
 	Overlapped_Puls* __temp_overLap_plus = penging_accept_overlap_puls_;
-	//if the next overlappplus just we want to find
+	//	if the next overlapp plus just we want to find
 	if(__overlapped_puls == __temp_overLap_plus)
 	{
 		penging_accept_overlap_puls_ = __overlapped_puls->next_;
@@ -873,12 +862,12 @@ BOOL Reactor_Impl_Iocp::remove_pending_accept( Overlapped_Puls* __overlapped_pul
 	}
 	else
 	{
-		//travel all element until find the des
+		//	travel all element until find the des
 		while(NULL != __temp_overLap_plus && __overlapped_puls != __temp_overLap_plus->next_)
 		{
 			__temp_overLap_plus = __temp_overLap_plus->next_;
 		}
-		//find it
+		//	find it
 		if(NULL != __temp_overLap_plus)
 		{
 			__temp_overLap_plus->next_ = __overlapped_puls->next_;
@@ -929,9 +918,9 @@ void Reactor_Impl_Iocp::on_accept_completed( Overlapped_Puls* __overlapped_puls,
 			// Associate the accept socket with the completion port
 			_associate_completeion_port(completeion_port_,(HANDLE)__client_context->socket_,(DWORD)__client_context);
 			__overlapped_puls->buffer_length_ = __bytes_transferred;
-			//call virtual function-----------------------------------------
+			//	call virtual function-----------------------------------------
 			on_connection_established(__client_context,__overlapped_puls);
-			//call virtual function-----------------------------------------
+			//	call virtual function-----------------------------------------
 			//post a few WSARecv quest
 			for(int i = 0; i < PRE_POST_RECV_NUM; ++i)
 			{
@@ -958,24 +947,20 @@ void Reactor_Impl_Iocp::on_accept_completed( Overlapped_Puls* __overlapped_puls,
 		_close_socket(__overlapped_puls->sock_client_);
 	}
 	//	fix the bug #1
-#ifdef __USE_PACKET_SPLICE
 	process_packet(__client_context,__overlapped_puls);
-#else
-	process_packet3(__client_context,__overlapped_puls);
-#endif // __USE_PACKET_SPLICE
 }
 
 void Reactor_Impl_Iocp::on_read_completed( Client_Context* __client_context,Overlapped_Puls* __overlapped_puls,DWORD __bytes_transferred )
 {
-	//check to see if an error has occured on the socket and if so then close the socket and cleanup the SOCKET_INFORMATION structure
-	//associated with the socket.
+	//	check to see if an error has occured on the socket and if so then close the socket and cleanup the SOCKET_INFORMATION structure
+	//	associated with the socket.
 	if(0 == __bytes_transferred)
 	{
 		__overlapped_puls->buffer_length_ = 0;
 		on_connection_closing(__client_context,__overlapped_puls);
-		//call virtual function-----------------------------------------
+		//	call virtual function-----------------------------------------
 		close_connection(__client_context);
-		//call virtual function-----------------------------------------
+		//	call virtual function-----------------------------------------
 		if(0 == __client_context->num_post_recv_ && 0 == __client_context->num_post_send_)
 		{
 			release_client_context(__client_context);
@@ -985,11 +970,8 @@ void Reactor_Impl_Iocp::on_read_completed( Client_Context* __client_context,Over
 	else
 	{
 		__overlapped_puls->buffer_length_ = __bytes_transferred;
-#ifdef __USE_PACKET_SPLICE
 		process_packet(__client_context,__overlapped_puls);
-#else
-		process_packet3(__client_context,__overlapped_puls);
-#endif // __USE_PACKET_SPLICE
+
 		if(TRUE == __client_context->close_)
 		{
 			return;
@@ -1003,8 +985,8 @@ void Reactor_Impl_Iocp::on_read_completed( Client_Context* __client_context,Over
 				if(!post_recv(__client_context,__temp_overLap_puls))
 				{
 					close_connection(__client_context);
-					//this part will come out memory leak, how to work it out?
-					//add by Lee 2011-04-08
+					//	this part will come out memory leak, how to work it out?
+					//	add by Lee 2011-04-08
 					if(0 == __client_context->num_post_recv_ && 0 == __client_context->num_post_send_)
 					{
 						release_client_context(__client_context);
@@ -1027,9 +1009,9 @@ void Reactor_Impl_Iocp::on_write_completed( Client_Context* __client_context,Ove
 	{
 		__overlapped_puls->buffer_length_ = 0;
 		on_connection_closing(__client_context, __overlapped_puls);	
-		//call virtual function-----------------------------------------
+		//	call virtual function-----------------------------------------
 		close_connection(__client_context);
-		//call virtual function-----------------------------------------
+		//	call virtual function-----------------------------------------
 		if(0 == __client_context->num_post_recv_ && 0 == __client_context->num_post_send_)
 		{
 			release_client_context(__client_context);
@@ -1042,8 +1024,8 @@ void Reactor_Impl_Iocp::on_write_completed( Client_Context* __client_context,Ove
 		{
 			__client_context->cur_pending_send_ = NULL;
 		}
-		//update 2011-06-22
-		//if there any buffer waiting send
+		//	update 2011-06-22
+		//	if there any buffer waiting send
 		if ( __client_context->waiting_send_ )
 		{
 			send_pending_send( __client_context );
@@ -1056,7 +1038,7 @@ void Reactor_Impl_Iocp::on_write_completed( Client_Context* __client_context,Ove
 void Reactor_Impl_Iocp::close_connection( Client_Context* __client_context )
 {
 	active_clienk_context_lock_.acquire_lock();
-	if(0 == __client_context->socket_)
+	if(0 == __client_context->socket_ || INVALID_SOCKET == __client_context->socket_)
 	{
 		active_clienk_context_lock_.release_lock();
 		return ;
@@ -1074,23 +1056,24 @@ void Reactor_Impl_Iocp::close_connection( Client_Context* __client_context )
 		}
 		if(NULL != __temp_client_context)
 		{
-			//update 2011-04-05 by Lee
+			//	update 2011-04-05 by Lee
 			__temp_client_context->next_ = __client_context->next_;
 		}
 	}
-	//close socket
+	//	close socket
 	::EnterCriticalSection(&__client_context->lock_);
 	if(INVALID_SOCKET != __client_context->socket_)
 	{
-		//add 2011-04-13 by Lee
-		//force the subsequent closesocket to be abortative.
+		//	add 2011-04-13 by Lee
+		//	force the subsequent closesocket to be abortative.
 		LINGER  lingerStruct;
 		lingerStruct.l_onoff = 1;
 		lingerStruct.l_linger = 0;
 		setsockopt(__client_context->socket_, SOL_SOCKET, SO_LINGER,(char*)&lingerStruct, sizeof(lingerStruct));
-		//add 2011-04-21 by Lee
-		//now close the socket handle.this will do an abortive or graceful close, as requested.  
+		//	add 2011-04-21 by Lee
+		//	now close the socket handle.this will do an abortive or graceful close, as requested.  
 		CancelIo((HANDLE)__client_context->socket_);
+		printf("connection closed socket = %d,cur_connection_ = %d\n",__client_context->socket_,cur_connection_);
 		_close_socket(__client_context->socket_);
 	}
 	__client_context->close_ = TRUE;
@@ -1120,7 +1103,7 @@ BOOL Reactor_Impl_Iocp::add_connection( Client_Context* __client_context )
 
 void Reactor_Impl_Iocp::on_connection_established( Client_Context* __client_context,Overlapped_Puls* __overlapped_puls )
 {
-
+	printf("new connection socket = %d,cur_connection_ = %d\n",__client_context->socket_,cur_connection_);
 }
 
 BOOL Reactor_Impl_Iocp::post_recv( Client_Context* __client_context,Overlapped_Puls* __overlapped_puls )
@@ -1146,70 +1129,6 @@ BOOL Reactor_Impl_Iocp::post_recv( Client_Context* __client_context,Overlapped_P
 	return TRUE;
 }
 
-void Reactor_Impl_Iocp::process_packet( Client_Context* __client_context,Overlapped_Puls* __overlapped_puls )
-{
-	out_read_overlap_puls_lock_.acquire_lock();
-	Overlapped_Puls* __overlapped_puls_read = get_next_read_overlap_puls(__client_context,__overlapped_puls);
-	while(NULL != __overlapped_puls_read)
-	{
-		//read packet completed,the buffer of pOverLapPlus' data just one or multi complete packet;
-		int __read_less_size = read_packet2(__client_context,__overlapped_puls_read);
-		if( ERROR_READ_BUFFER_ERROR == __read_less_size )
-		{
-			//if ERROR_READ_BUFFER_ERROR happed, that means data error.
-			//just release memory,this a temp solution!!!
-			::InterlockedIncrement(&__client_context->cur_read_sequence_);
-			release_overlapped_puls(__overlapped_puls_read);
-			break;
-		}
-		else if( ERROR_CONNECION_CLOSE == __read_less_size )
-		{
-			release_overlapped_puls(__overlapped_puls_read);
-			out_read_overlap_puls_lock_.release_lock();
-			return ;
-		}
-		if (0 == __read_less_size)
-		{
-			//add the sequence of the data to read
-			::InterlockedIncrement(&__client_context->cur_read_sequence_);
-			release_overlapped_puls(__overlapped_puls_read);
-			__overlapped_puls_read = get_next_read_overlap_puls(__client_context,NULL);
-		}
-		//read not completed,read the other part from next buffer
-		else
-		{
-			//make sure the sequence is increment one, if not, the data will not read correctly.
-			::InterlockedIncrement(&__client_context->cur_read_sequence_);
-			Overlapped_Puls* __temp_next_overlap_puls_read = get_next_read_overlap_puls(__client_context,NULL);
-			if (!__temp_next_overlap_puls_read)
-			{
-				//	if the next buffer is not exist, add current buffer to the out order buffer,and clear the used data,
-				//	then waiting next read completion.	--add by Lee 2011-05-28
-				::InterlockedDecrement(&__client_context->cur_read_sequence_);
-				::InterlockedDecrement(&__client_context->cur_read_sequence_);
-				get_next_read_overlap_puls(__client_context,__overlapped_puls_read);
-				::InterlockedIncrement(&__client_context->cur_read_sequence_);
-				break;
-			}
-			else
-			{
-				//flush buffer,remove nReadLeftSize from pTempOverLapPulsRead and add to current pOverLapPulsRead
-				if(__overlapped_puls_read->flush_buffer(__temp_next_overlap_puls_read,__read_less_size))
-				{
-					::InterlockedDecrement(&__client_context->cur_read_sequence_);
-					//add the __temp_next_overlap_puls_read to out order buffer
-					get_next_read_overlap_puls(__client_context,__temp_next_overlap_puls_read);
-				}
-				else
-				{
-					__overlapped_puls_read = __overlapped_puls_read->next_;
-				}
-			}
-		}
-	}
-	out_read_overlap_puls_lock_.release_lock();
-}
-
 void Reactor_Impl_Iocp::process_packet2(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls)
 {
 	//	actually, it proves that error happened at process packet!
@@ -1224,7 +1143,7 @@ void Reactor_Impl_Iocp::process_packet2(Client_Context* __client_context,Overlap
 	out_read_overlap_puls_lock_.release_lock();
 }
 
-void Reactor_Impl_Iocp::process_packet3(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls)
+void Reactor_Impl_Iocp::process_packet(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls)
 {
 	out_read_overlap_puls_lock_.acquire_lock();
 	if(NULL != __overlapped_puls)
@@ -1283,8 +1202,8 @@ BOOL Reactor_Impl_Iocp::post_send( Client_Context* __client_context,Overlapped_P
 		{
 			printf("WSASend failed: %d\n", WSAGetLastError());
 			::LeaveCriticalSection(&__client_context->lock_);
-			//close the socket and release client context,maybe we should close socket safety,how to do this,use HasOverlappedIoCompleted?
-			//PostRecv not use this way
+			//	close the socket and release client context,maybe we should close socket safety,how to do this,use HasOverlappedIoCompleted?
+			//	PostRecv not use this way
 			close_connection(__client_context);
 			release_client_context(__client_context);
 			return FALSE;
@@ -1351,7 +1270,7 @@ void Reactor_Impl_Iocp::set_sock_opt()
 		return ;
 	}
 
-	//get the size of send buffer,default size is 8192(windows 7)
+	//	get the size of send buffer,default size is 8192(windows 7)
 	int __send_buf_size = 0;
 	__ret = getsockopt(fd_,SOL_SOCKET,SO_SNDBUF,(char*)&__send_buf_size,&__size);
 	if(__ret == SOCKET_ERROR)
@@ -1376,12 +1295,13 @@ void Reactor_Impl_Iocp::set_sock_opt()
 		printf("setsockopt SO_SNDBUF failed with error: %d\n", WSAGetLastError());
 		return ;
 	}
-
-	//Don't disable receive buffering. This will cause poor network
-	//performance since if no receive is posted and no receive buffers,
-	//the TCP stack will set the window size to zero and the peer will
-	//no longer be allowed to send data.
-	//get the size of recv buffer,default size is 8192(windows 7)
+	/*
+		Don't disable receive buffering. This will cause poor network
+		performance since if no receive is posted and no receive buffers,
+		the TCP stack will set the window size to zero and the peer will
+		no longer be allowed to send data.
+		get the size of recv buffer,default size is 8192(windows 7)
+	*/
 	int __recv_buf_size = 0;
 	__ret = getsockopt(fd_,SOL_SOCKET,SO_RCVBUF,(char*)&__recv_buf_size,&__size);
 	if(__ret == SOCKET_ERROR)
@@ -1389,38 +1309,40 @@ void Reactor_Impl_Iocp::set_sock_opt()
 		printf("getsockopt SO_RCVBUF failed with error: %d\n", WSAGetLastError());
 		return ;
 	}
-	//set the size of recv buffer
+	//	set the size of recv buffer
 	__ret = setsockopt(fd_,SOL_SOCKET,SO_RCVBUF,(char*)&__recv_buf_size,sizeof(int));
 	if(__ret == SOCKET_ERROR)
 	{
 		printf("setsockopt SO_RCVBUF failed with error: %d\n", WSAGetLastError());
 		return ;
 	}
-
-	//!!!!!!
-	//Do not set a linger value...especially don't set it to an abortive
-	//close. If you set abortive close and there happens to be a bit of
-	//data remaining to be transfered (or data that has not been 
-	//acknowledged by the peer), the connection will be forcefully reset
-	//and will lead to a loss of data (i.e. the peer won't get the last
-	//bit of data). This is BAD. If you are worried about malicious
-	//clients connecting and then not sending or receiving, the server
-	//should maintain a timer on each connection. If after some point,
-	//the server deems a connection is "stale" it can then set linger
-	//to be abortive and close the connection.
-	//
 	/*
-	struct linger ling;
-	ling.l_onoff = 1;
-	ling.l_linger = 0;
-	//if ling.l_linger is 0,close socket at once,else waiting all data is recv/send or timeout.
-	__ret = setsockopt( fd_, SOL_SOCKET, SO_LINGER, (char *)&ling, sizeof(ling));
-	if(__ret == SOCKET_ERROR)
-	{
-		printf("setsockopt SO_LINGER failed with error: %d\n", WSAGetLastError());
-		return ;
-	}
+	//!!!!!!
+		Do not set a linger value...especially don't set it to an abortive
+		close. If you set abortive close and there happens to be a bit of
+		data remaining to be transfered (or data that has not been 
+		acknowledged by the peer), the connection will be forcefully reset
+		and will lead to a loss of data (i.e. the peer won't get the last
+		bit of data). This is BAD. If you are worried about malicious
+		clients connecting and then not sending or receiving, the server
+		should maintain a timer on each connection. If after some point,
+		the server deems a connection is "stale" it can then set linger
+		to be abortive and close the connection.
 	*/
+
+	if(0)
+	{
+		struct linger ling;
+		ling.l_onoff = 1;
+		ling.l_linger = 0;
+		//if ling.l_linger is 0,close socket at once,else waiting all data is recv/send or timeout.
+		__ret = setsockopt( fd_, SOL_SOCKET, SO_LINGER, (char *)&ling, sizeof(ling));
+		if(__ret == SOCKET_ERROR)
+		{
+			printf("setsockopt SO_LINGER failed with error: %d\n", WSAGetLastError());
+			return ;
+		}
+	}
 
 	int __keep_alive = 1;
 	__ret = setsockopt( fd_, SOL_SOCKET, SO_KEEPALIVE, (char*)&__keep_alive, sizeof(int));
@@ -1431,23 +1353,24 @@ void Reactor_Impl_Iocp::set_sock_opt()
 	}
 
 	//The Nagle algorithm is disabled if the TCP_NODELAY option is enabled 
-	/*
-	int _no_delay = TRUE;
-	__ret = setsockopt( fd_, IPPROTO_TCP, TCP_NODELAY, (char*)&_no_delay, sizeof(int));
-	if(__ret == SOCKET_ERROR)
+	if(0)
 	{
-		printf("setsockopt IPPROTO_TCP failed with error: %d\n", WSAGetLastError());
-		return ;
+		int _no_delay = TRUE;
+		__ret = setsockopt( fd_, IPPROTO_TCP, TCP_NODELAY, (char*)&_no_delay, sizeof(int));
+		if(__ret == SOCKET_ERROR)
+		{
+			printf("setsockopt IPPROTO_TCP failed with error: %d\n", WSAGetLastError());
+			return ;
+		}
 	}
-	*/
 }
 
 void Reactor_Impl_Iocp::destoryt_net()
 {
-	//close all client connection
+	//	close all client connection
 	close_all_connection();
 	_close_socket(fd_);
-	//all thread exit
+	//	all thread exit
 	for(int i = 0; i < work_thread_cur_; ++i)
 	{
 		::PostQueuedCompletionStatus(completeion_port_, 0, -1, NULL);
@@ -1483,8 +1406,8 @@ void Reactor_Impl_Iocp::close_all_connection()
 void Reactor_Impl_Iocp::free_all_client_context()
 {
 	client_context_lock_.acquire_lock();
-	//add 2011-04-14
-	//first release all active client context if the list is not empty
+	//	add 2011-04-14
+	//	first release all active client context if the list is not empty
 	Client_Context* __active_client_context = active_cleint_context_;
 	Client_Context* __next_active_client_context = NULL;
 	while(NULL != __active_client_context)
@@ -1496,12 +1419,12 @@ void Reactor_Impl_Iocp::free_all_client_context()
 	}
 	__active_client_context = NULL;
 	cur_connection_ = 0;
-	//and the free all free client context;
+	//	and the free all free client context;
 	Client_Context* __free_client_context = free_client_context_;
 	Client_Context* __next_free_client_context = NULL;
 	while(NULL != __next_free_client_context)
 	{
-		//update 2011-04-14
+		//	update 2011-04-14
 		__next_free_client_context = __next_free_client_context->next_;
 		HeapFree(GetProcessHeap(),0,__next_free_client_context);
 		__next_free_client_context = __next_free_client_context;
@@ -1566,13 +1489,13 @@ void Reactor_Impl_Iocp::insert_pending_send( Client_Context* __client_context,Ov
 			__pre_overlap_plus = __temp_overlap_plus;
 			__temp_overlap_plus = __temp_overlap_plus->next_;
 		}
-		//insert the head of list
+		//	insert the head of list
 		if(NULL == __pre_overlap_plus)
 		{
 			__overlapped_puls->next_ = __client_context->waiting_send_;
 			__client_context->waiting_send_ = __overlapped_puls;
 		}
-		//insert the mid of list
+		//	insert the mid of list
 		else
 		{
 			__overlapped_puls->next_ = __pre_overlap_plus->next_;
@@ -1631,7 +1554,7 @@ Overlapped_Puls* Reactor_Impl_Iocp::get_next_read_overlap_puls( Client_Context* 
 	return NULL;
 }
 
-int Reactor_Impl_Iocp::read_packet2( Client_Context* __client_context,Overlapped_Puls* __overlapped_puls )
+int Reactor_Impl_Iocp::read_packet( Client_Context* __client_context,Overlapped_Puls* __overlapped_puls )
 {
 	const int __head_size = 12;
 	unsigned char __packet_head[__head_size] = {};
@@ -1653,7 +1576,7 @@ int Reactor_Impl_Iocp::read_packet2( Client_Context* __client_context,Overlapped
 		__enough = __overlapped_puls->is_enough(__packet_length + __head_size);
 		if (__enough)
 		{
-			send_2_all_client(__overlapped_puls->buffer_ + __overlapped_puls->used_size_,__packet_length + __head_size);
+			send_2_all_client(__client_context,__overlapped_puls->buffer_ + __overlapped_puls->used_size_,__packet_length + __head_size);
 			__overlapped_puls->setp_used_size( __packet_length + __head_size );
 		}
 		else
@@ -1672,122 +1595,33 @@ int Reactor_Impl_Iocp::read_packet2( Client_Context* __client_context,Overlapped
 	}
 }
 
-int Reactor_Impl_Iocp::read_packet( Client_Context* __client_context,Overlapped_Puls* __overlapped_puls )
-{
-	const int __head_size = 12;
-	unsigned char __packet_head[__head_size] = {};
-	int __head = 0;
-	int __packet_length = 0;
-	int __log_level = 0;
-	int __frame_number = 0;
-	unsigned int __guid = 0;
-	BOOL __enough = __overlapped_puls->is_enough(__head_size);
-	if(__enough)
-	{
-		__overlapped_puls->read_data((char*)__packet_head,__head_size);
-		memcpy(&__packet_length,__packet_head,4);
-		memcpy(&__head,__packet_head + 4,4);
-		memcpy(&__guid,__packet_head + 8,4);
-	}
-	else
-	{
-		int __left_size = __overlapped_puls->left_size();
-		if(0 == __left_size)
-		{
-			//read completed
-			return 0;
-		}
-		return __head_size - __left_size;
-	}
-	if (0 == __packet_length)
-	{
-		//read completed
-		return 0;
-	}
-	if ( 0 > __packet_length || DEFAULT_RECV_BUF_SIZE < __packet_length )
-	{
-		//usually, the packet is not completed
-		//when one thread process a buffer,but the buffer is not complete,so waiting the next buffer coming,
-		//but the next buffer have been processing by another thread, this condition lead the problem.
-		return ERROR_READ_BUFFER_ERROR;
-	}
-	__enough = __overlapped_puls->is_enough(__packet_length + __head_size);
-	while (__enough)
-	{
-		if(0)
-		{
-			BOOL __res = send_2_client(__client_context,__overlapped_puls->buffer_ + __overlapped_puls->used_size_,__packet_length + __head_size);
-			if( FALSE == __res )
-			{
-				//add by Lee 2011-06-08
-				//socket close or other error happen
-				return ERROR_CONNECION_CLOSE;
-			}
-		}
-		else
-		{
-			send_2_all_client(__overlapped_puls->buffer_ + __overlapped_puls->used_size_,__packet_length + __head_size);
-		}
-		__overlapped_puls->setp_used_size( __packet_length + __head_size );
-
-		memset(__packet_head,0,__head_size);
-		__head = 0;
-		__packet_length = 0;
-		__log_level = 0;
-		__frame_number = 0;
-		__enough = __overlapped_puls->is_enough(__head_size);
-		if(__enough)
-		{
-			__overlapped_puls->read_data((char*)__packet_head,__head_size);
-			memcpy(&__packet_length,__packet_head,4);
-			memcpy(&__head,__packet_head + 4,4);
-			memcpy(&__guid,__packet_head + 8,4);
-		}
-		else
-		{
-			int __left_size = __overlapped_puls->left_size();
-			if(0 == __left_size)
-			{
-				//read completed
-				return 0;
-			}
-			return __head_size - __left_size;
-		}
-		if (0 == __packet_length)
-		{
-			//read completed
-			return 0;
-		}
-		else if ( 0 > __packet_length || DEFAULT_RECV_BUF_SIZE < __packet_length )
-		{
-			return ERROR_READ_BUFFER_ERROR;
-		}
-		__enough = __overlapped_puls->is_enough(__packet_length + __head_size);
-	}
-	return __packet_length - __overlapped_puls->buffer_length_ + __overlapped_puls->used_size_ + __head_size;
-}
-
-void Reactor_Impl_Iocp::send_2_all_client( const char* __data, int __length )
+void Reactor_Impl_Iocp::send_2_all_client( Client_Context* __client_context,const char* __data, int __length )
 {
 	active_clienk_context_lock_.acquire_lock();
 	Client_Context* __first_client_context = active_cleint_context_;
 	while(__first_client_context)
 	{
-		send_2_client(__first_client_context,__data,__length);
+		if (__client_context != __first_client_context)
+		{
+			send_2_client(__first_client_context,__data,__length);
+		}
 		__first_client_context = __first_client_context->next_;
 	}
 	active_clienk_context_lock_.release_lock();
 }
 
-void Reactor_Impl_Iocp::send_2_all_client( Overlapped_Puls* __overlapped_puls )
+void Reactor_Impl_Iocp::send_2_all_client(Client_Context* __client_context, Overlapped_Puls* __overlapped_puls )
 {
 	if(NULL != __overlapped_puls)
 	{
 		active_clienk_context_lock_.acquire_lock();
 		Client_Context* __first_client_context = active_cleint_context_;
-		while(NULL != __first_client_context)
+		while(__first_client_context)
 		{
-			send_2_client(__first_client_context,__overlapped_puls);
+			if (__client_context != __first_client_context)
+			{
+				send_2_client(__first_client_context,__overlapped_puls);
+			}
 			__first_client_context = __first_client_context->next_;
 		}
 		active_clienk_context_lock_.release_lock();
@@ -1804,7 +1638,7 @@ BOOL Reactor_Impl_Iocp::send_2_client( Client_Context* __client_context,const ch
 		memcpy(__overlapped_puls->buffer_,__data,__length);
 		if ( __client_context->cur_pending_send_ )
 		{
-			//check the pending send if complete or not
+			//	check the pending send if complete or not
 			if( !HasOverlappedIoCompleted( &__client_context->cur_pending_send_->overLapped_ ))
 			{
 				insert_pending_send(__client_context,__overlapped_puls);
@@ -1813,9 +1647,9 @@ BOOL Reactor_Impl_Iocp::send_2_client( Client_Context* __client_context,const ch
 		}
 		if(__client_context)
 		{
-			//add by Lee 2011-06-20
-			//if the overlapped have not finished, add the pending send to list
-			//if the client send packet one packer per time, it is not need to check sequence!
+			//	add by Lee 2011-06-20
+			//	if the overlapped have not finished, add the pending send to list
+			//	if the client send packet one packer per time, it is not need to check sequence!
 			if ( __client_context->cur_write_sequence_ == __overlapped_puls->sequence_num_ )
 			{
 				return post_send(__client_context, __overlapped_puls);
@@ -1837,10 +1671,10 @@ BOOL Reactor_Impl_Iocp::send_2_client( Client_Context* __client_context,Overlapp
 	{
 		if ( __client_context->cur_pending_send_ )
 		{
-			//check the pending send if complete or not
+			//	check the pending send if complete or not
 			if( !HasOverlappedIoCompleted( &__client_context->cur_pending_send_->overLapped_ ))
 			{
-				//usually, the buffer is get from the list of waiting send,so return false but not add to list again
+				//	usually, the buffer is get from the list of waiting send,so return false but not add to list again
 				return FALSE;
 			}
 		}
@@ -1869,7 +1703,7 @@ BOOL Reactor_Impl_Iocp::remove_pending_send( Client_Context* __client_context,Ov
 {
 	BOOL __res = FALSE;
 	Overlapped_Puls* __temp_overlap_plus = __client_context->waiting_send_;
-	//if the next overlappplus just we want to find
+	//	if the next overlapp plus just we want to find
 	if(__overlapped_puls == __temp_overlap_plus)
 	{
 		__client_context->waiting_send_ = __overlapped_puls->next_;
@@ -1877,12 +1711,12 @@ BOOL Reactor_Impl_Iocp::remove_pending_send( Client_Context* __client_context,Ov
 	}
 	else
 	{
-		//travel all element until find the des
+		//	travel all element until find the des
 		while(NULL != __temp_overlap_plus && __overlapped_puls != __temp_overlap_plus->next_)
 		{
 			__temp_overlap_plus = __temp_overlap_plus->next_;
 		}
-		//find it
+		//	find it
 		if(NULL != __temp_overlap_plus)
 		{
 			__temp_overlap_plus->next_ = __overlapped_puls->next_;
