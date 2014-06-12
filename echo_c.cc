@@ -95,7 +95,7 @@ void test_4_transform_monitor(int sock)
 			std::cout << recv_bytes << " bytes data recv: " << recv_data << std::endl;
 		}
 		*/
-		usleep(1000*100);
+		usleep(1000*1);
 	}
 }
 int main(int __arg_num, char** __args)

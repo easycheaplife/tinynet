@@ -730,7 +730,7 @@ void Reactor_Impl_Iocp::release_client_context( Client_Context* __client_context
 			__client_context->next_ = NULL;
 			free_client_context_ = __client_context;
 			InterlockedDecrement(&cur_connection_);
-			InterlockedIncrement(&free_overlap_puls_count_);
+			InterlockedIncrement(&free_cleint_context_count_);
 		}
 		else
 		{
@@ -1028,7 +1028,20 @@ void Reactor_Impl_Iocp::on_write_completed( Client_Context* __client_context,Ove
 	}
 	else
 	{
-		__overlapped_puls->buffer_length_ = __bytes_transferred;
+		/************************************************************************
+		reference from msdn:
+		For non-overlapped sockets, the last two parameters (lpOverlapped, lpCompletionRoutine) are ignored and WSASend adopts 
+		the same blocking semantics as send. Data is copied from the buffer(s) into the transport's buffer. If the socket is 
+		non-blocking and stream-oriented, and there is not sufficient space in the transport's buffer, WSASend will return with 
+		only part of the application's buffers having been consumed. Given the same buffer situation and a blocking socket, 
+		WSASend will block until all of the application buffer contents have been consumed.
+		/************************************************************************/
+		if(__overlapped_puls->buffer_length_ != __bytes_transferred)
+		{
+			//	not write complete, usual it happened when not sufficient space in the transport 's buffer
+			printf("on_write_completed, not complete,__overlapped_puls->buffer_length_ = %d, \
+				__bytes_transferred = %d \n",__overlapped_puls->buffer_length_,__bytes_transferred);
+		}
 		if ( __client_context->cur_pending_send_ == __overlapped_puls )
 		{
 			__client_context->cur_pending_send_ = NULL;
