@@ -1622,7 +1622,7 @@ void Reactor_Impl_Iocp::send_2_all_client( Client_Context* __client_context,cons
 	Client_Context* __first_client_context = active_cleint_context_;
 	while(__first_client_context)
 	{
-		if (__client_context != __first_client_context)
+		if (TRUE/*__client_context != __first_client_context*/)
 		{
 			send_2_client(__first_client_context,__data,__length);
 		}
@@ -1639,7 +1639,7 @@ void Reactor_Impl_Iocp::send_2_all_client(Client_Context* __client_context, Over
 		Client_Context* __first_client_context = active_cleint_context_;
 		while(__first_client_context)
 		{
-			if (__client_context != __first_client_context)
+			if (TRUE/*__client_context != __first_client_context*/)
 			{
 				send_2_client(__first_client_context,__overlapped_puls);
 			}
