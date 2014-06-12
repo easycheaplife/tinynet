@@ -258,68 +258,73 @@ int Reactor_Impl_Iocp::handle_event(unsigned long __millisecond)
 
 int Reactor_Impl_Iocp::event_loop(unsigned long __millisecond)
 {
+	//	do not do this, a mast of time will running at lock & unlock
 	while(true)
 	{
-		active_clienk_context_lock_.acquire_lock();
-		Client_Context* __first_client_context = active_cleint_context_;
-		while(__first_client_context)
+		if(0)
 		{
-			out_read_overlap_puls_lock_.acquire_lock();
-			BOOL __to_be_release = FALSE;
-			while(NULL != __first_client_context->out_order_reads_)
+			active_clienk_context_lock_.acquire_lock();
+			Client_Context* __first_client_context = active_cleint_context_;
+			while(__first_client_context)
 			{
-				__to_be_release = FALSE;
-				Overlapped_Puls* __temp_overlap_plus = __first_client_context->out_order_reads_;
-				if(__first_client_context->cur_read_sequence_ == __temp_overlap_plus->sequence_num_)
+				out_read_overlap_puls_lock_.acquire_lock();
+				BOOL __to_be_release = FALSE;
+				while(NULL != __first_client_context->out_order_reads_)
 				{
-					int __read_less_size = read_packet(__first_client_context,__temp_overlap_plus);
-					if (0 == __read_less_size)
+					__to_be_release = FALSE;
+					Overlapped_Puls* __temp_overlap_plus = __first_client_context->out_order_reads_;
+					if(__first_client_context->cur_read_sequence_ == __temp_overlap_plus->sequence_num_)
 					{
-						//add the sequence of the data to read
-						::InterlockedIncrement(&__first_client_context->cur_read_sequence_);
-						__first_client_context->out_order_reads_ = __first_client_context->out_order_reads_->next_;	
-						release_overlapped_puls(__temp_overlap_plus);
-						continue;
-					}
-					else
-					{
-						Overlapped_Puls* __temp_next_overlap_puls_read = __temp_overlap_plus->next_;
-						if (__temp_next_overlap_puls_read 
-							&& __temp_next_overlap_puls_read->sequence_num_ == (__first_client_context->cur_read_sequence_ + 1))
+						int __read_less_size = read_packet(__first_client_context,__temp_overlap_plus);
+						if (0 == __read_less_size)
 						{
-							//	flush buffer,remove __read_less_size from __temp_next_overlap_puls_read and add to current __temp_overlap_plus
-							if(__temp_overlap_plus->flush_buffer(__temp_next_overlap_puls_read,__read_less_size))
-							{
-								continue;
-							}
-							else
-							{
-								//	fix the bug #3
-								//	__temp_overlap_plus is no useless, you need recyle the object.
-								__to_be_release = TRUE;
-								::InterlockedIncrement(&__first_client_context->cur_read_sequence_);
-							}
+							//add the sequence of the data to read
+							::InterlockedIncrement(&__first_client_context->cur_read_sequence_);
+							__first_client_context->out_order_reads_ = __first_client_context->out_order_reads_->next_;	
+							release_overlapped_puls(__temp_overlap_plus);
+							continue;
 						}
 						else
 						{
-							break;
+							Overlapped_Puls* __temp_next_overlap_puls_read = __temp_overlap_plus->next_;
+							if (__temp_next_overlap_puls_read 
+								&& __temp_next_overlap_puls_read->sequence_num_ == (__first_client_context->cur_read_sequence_ + 1))
+							{
+								//	flush buffer,remove __read_less_size from __temp_next_overlap_puls_read and add to current __temp_overlap_plus
+								if(__temp_overlap_plus->flush_buffer(__temp_next_overlap_puls_read,__read_less_size))
+								{
+									continue;
+								}
+								else
+								{
+									//	fix the bug #3
+									//	__temp_overlap_plus is no useless, you need recyle the object.
+									__to_be_release = TRUE;
+									::InterlockedIncrement(&__first_client_context->cur_read_sequence_);
+								}
+							}
+							else
+							{
+								break;
+							}
+						}
+						__first_client_context->out_order_reads_ = __first_client_context->out_order_reads_->next_;	
+						if(__to_be_release)
+						{
+							release_overlapped_puls(__temp_overlap_plus);
 						}
 					}
-					__first_client_context->out_order_reads_ = __first_client_context->out_order_reads_->next_;	
-					if(__to_be_release)
+					else
 					{
-						release_overlapped_puls(__temp_overlap_plus);
+						break;
 					}
 				}
-				else
-				{
-					break;
-				}
+				out_read_overlap_puls_lock_.release_lock();
+				__first_client_context = __first_client_context->next_;
 			}
-			out_read_overlap_puls_lock_.release_lock();
-			__first_client_context = __first_client_context->next_;
+			active_clienk_context_lock_.release_lock();
 		}
-		active_clienk_context_lock_.release_lock();
+		::Sleep(1);
 	}
 	return -1;
 }
@@ -1194,6 +1199,58 @@ void Reactor_Impl_Iocp::process_packet(Client_Context* __client_context,Overlapp
 		{
 			__overlapped_puls->next_ = __pre_overlap_plus->next_;
 			__pre_overlap_plus->next_ = __overlapped_puls;
+		}
+	}
+	//	process packet really
+	BOOL __to_be_release = FALSE;
+	while(NULL != __client_context->out_order_reads_)
+	{
+		__to_be_release = FALSE;
+		Overlapped_Puls* __temp_overlap_plus = __client_context->out_order_reads_;
+		if(__client_context->cur_read_sequence_ == __temp_overlap_plus->sequence_num_)
+		{
+			int __read_less_size = read_packet(__client_context,__temp_overlap_plus);
+			if (0 == __read_less_size)
+			{
+				//add the sequence of the data to read
+				::InterlockedIncrement(&__client_context->cur_read_sequence_);
+				__client_context->out_order_reads_ = __client_context->out_order_reads_->next_;	
+				release_overlapped_puls(__temp_overlap_plus);
+				continue;
+			}
+			else
+			{
+				Overlapped_Puls* __temp_next_overlap_puls_read = __temp_overlap_plus->next_;
+				if (__temp_next_overlap_puls_read 
+					&& __temp_next_overlap_puls_read->sequence_num_ == (__client_context->cur_read_sequence_ + 1))
+				{
+					//	flush buffer,remove __read_less_size from __temp_next_overlap_puls_read and add to current __temp_overlap_plus
+					if(__temp_overlap_plus->flush_buffer(__temp_next_overlap_puls_read,__read_less_size))
+					{
+						continue;
+					}
+					else
+					{
+						//	fix the bug #3
+						//	__temp_overlap_plus is no useless, you need recyle the object.
+						__to_be_release = TRUE;
+						::InterlockedIncrement(&__client_context->cur_read_sequence_);
+					}
+				}
+				else
+				{
+					break;
+				}
+			}
+			__client_context->out_order_reads_ = __client_context->out_order_reads_->next_;	
+			if(__to_be_release)
+			{
+				release_overlapped_puls(__temp_overlap_plus);
+			}
+		}
+		else
+		{
+			break;
 		}
 	}
 	out_read_overlap_puls_lock_.release_lock();

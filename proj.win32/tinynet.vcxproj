@@ -51,7 +51,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;__HAVE_IOCP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -81,11 +81,13 @@
     <ClInclude Include="..\event_handle_srv.h" />
     <ClInclude Include="..\reactor.h" />
     <ClInclude Include="..\reactor_impl.h" />
+    <ClInclude Include="..\reactor_impl_iocp.h" />
     <ClInclude Include="..\reactor_impl_select.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\event_handle_srv.cc" />
     <ClCompile Include="..\reactor.cc" />
+    <ClCompile Include="..\reactor_impl_iocp.cc" />
     <ClCompile Include="..\reactor_impl_select.cc" />
     <ClCompile Include="..\test.cc" />
   </ItemGroup>
