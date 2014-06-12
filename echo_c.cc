@@ -87,15 +87,37 @@ void test_4_transform_monitor(int sock)
 		{
 			std::cout << send_bytes << " bytes data send: " << __random_string[__random_index].c_str() << std::endl;
 		}
-		/*
+		
+		__length = 0;
+		__head = 0;
+		__guid = 0;
+
 		int recv_data = 0;
-		int recv_bytes = recv(sock,(void*)&recv_data,sizeof(int),0);
+		int recv_bytes = recv(sock,(void*)&__length,sizeof(int),0);
+		if(4 != recv_bytes)
+		{
+			std::cout << " length error! "<< std::endl;
+		}
+		recv_bytes = recv(sock,(void*)&__head,sizeof(int),0);
+		if(4 != recv_bytes)
+		{
+			std::cout << " __head error! "<< std::endl;
+		}
+		recv_bytes = recv(sock,(void*)&__guid,sizeof(int),0);
+		if(4 != recv_bytes)
+		{
+			std::cout << " __guid error! "<< std::endl;
+		}
+		unsigned char* __recv_buf = new unsigned char[__length + 1];
+		memset(__recv_buf,0,__length);
+		__recv_buf[__length] = '\0';
+		recv_bytes = recv(sock,(void*)__recv_buf,__length,0);
 		if(-1 != recv_bytes)
 		{
-			std::cout << recv_bytes << " bytes data recv: " << recv_data << std::endl;
+			std::cout << recv_bytes << " bytes data recv: " << __recv_buf << std::endl;
 		}
-		*/
-		usleep(1000*1);
+		delete [] __recv_buf;
+		usleep(1000*10);
 	}
 }
 int main(int __arg_num, char** __args)
