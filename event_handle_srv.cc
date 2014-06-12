@@ -124,7 +124,7 @@ void Event_Handle_Srv::_init()
 	struct hostent* __host_entry = gethostbyname(__name);
 	if(__host_entry)
 	{
-		printf("hostname: %s \n address list: \n", __host_entry->h_name);
+		printf("hostname: %s \naddress list: \n", __host_entry->h_name);
 		for(int __i = 0; __host_entry->h_addr_list[__i]; __i++) 
 		{
 		  	printf("%s\n", inet_ntoa(*(struct in_addr*)(__host_entry->h_addr_list[__i])));
