@@ -1,5 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/socket.h>
+#include <errno.h>
+#include <unistd.h>
 #include <string.h>
 #include "reactor_impl_epoll.h"
 #include "event_handle.h"
@@ -123,4 +126,34 @@ int Reactor_Impl_Epoll::handle_close( int __fd )
 void Reactor_Impl_Epoll::broadcast(int __fd,const char* __data,unsigned int __length)
 {
 	//	do nothing,broadcast should be done at layer of logic.
+	write(__fd,__data,__length);
+}
+
+void Reactor_Impl_Epoll::write( int __fd,const char* __data, int __length )
+{
+	int __send_bytes = send(__fd,__data,__length,0);
+	if(-1 == __send_bytes)
+	{
+#ifndef __LINUX
+		DWORD __last_error = ::GetLastError();
+		if(WSAEWOULDBLOCK  == __last_error || WSAECONNRESET == __last_error)
+		{
+			//	close peer socket
+			//	closesocket(__fd);	//	don't do this, it will make server shutdown for select error 10038(WSAENOTSOCK)
+			handle_close(__fd);
+			return;
+		}
+#else
+		//error happend but EAGAIN and EWOULDBLOCK meams that peer socket have been close
+		//EWOULDBLOCK means messages are available at the socket and O_NONBLOCK  is set on the socket's file descriptor
+		// ECONNRESET means an existing connection was forcibly closed by the remote host
+		if((EAGAIN == errno && EWOULDBLOCK == errno) || ECONNRESET == errno)
+		{
+			//	close peer socket
+			handle_close(__fd);
+			return;
+		}
+#endif // __LINUX
+		perror("error at send");  
+	}
 }
