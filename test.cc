@@ -11,18 +11,82 @@ public:
 
 	void on_connected(int __fd) { printf("on_connected __fd = %d \n",__fd);}
 
-	void on_read(int __fd) { printf("on_read __fd = %d\n",__fd);}
+	void on_read(int __fd) 
+	{
+		static const int __recv_buf_size = 64*1024;
+		if (1)
+		{
+			//	just transform data
+			char __buf[__recv_buf_size] = {0};
+			int __recv_size = Event_Handle_Srv::read(__fd,__buf,__recv_buf_size);
+			if (0)
+			{
+				printf("on_read data is %s,length is %d\n",__buf,__recv_size);
+			}
+			if(-1 != __recv_size)
+			{
+				broadcast(__fd,__buf,__recv_size);
+			}
+		}
+		else
+		{
+			//	read head first.and then read the other msg.just a test code
+			unsigned long __usable_size = 0;
+			int __packet_length = 0;
+			int __log_level = 0;
+			int __frame_number = 0;
+			int __head = 0;
+			unsigned char __packet_head[8] = {};
+			int __recv_size = 0;
+			while (true)
+			{
+				_get_usable(__fd,__usable_size);
+				if(__usable_size >= 8)
+				{
+					__recv_size = Event_Handle_Srv::read(__fd,(char*)&__packet_head,8);
+					if(8 != __recv_size)
+					{
+						printf("error: __recv_size = %d",__recv_size);  
+						return ;
+					}
+					memcpy(&__packet_length,__packet_head,4);
+					memcpy(&__head,__packet_head + 4,4);
+					__log_level = (__head) & 0x000000ff;
+					__frame_number = (__head >> 8);
+				}
+				_get_usable(__fd,__usable_size);
+
+				if(__usable_size >= __packet_length)
+				{
+					char __buf[__recv_buf_size] = {0};
+					int __recv_size = Event_Handle_Srv::read(__fd,__buf,__packet_length);
+					broadcast(__fd,__buf,__recv_size);
+				}
+				else
+				{
+					return;
+				}
+			}
+		}
+	}
 };
 
-int main()
+int main(int __arg_num,char** args)
 {
 	/*	
 	g++ -g -D__LINUX -D__HAVE_SELECT -o test reactor.h reactor.cc event_handle.h event_handle_srv.h event_handle_srv.cc reactor_impl.h reactor_impl_select.h reactor_impl_select.cc test.cc
 	g++ -g -D__LINUX -D__HAVE_EPOLL -o test reactor.h reactor.cc event_handle.h event_handle_srv.h event_handle_srv.cc reactor_impl.h reactor_impl_epoll.h reactor_impl_epoll.cc test.cc
 	g++ -g -D__LINUX -D__HAVE_POLL -o test reactor.h reactor.cc event_handle.h event_handle_srv.h event_handle_srv.cc reactor_impl.h reactor_impl_poll.h reactor_impl_poll.cc test.cc
 	*/
+	if(3 != __arg_num)
+	{
+		printf("param error,please input correct param! for example: nohup ./transform 192.168.22.63 9876 & \n");
+		exit(1);
+	}
+	char* __host = args[1];
+	unsigned int __port = atoi(args[2]);
 	Reactor* __reactor = Reactor::instance();
-	Server_Impl __event_handle_srv(__reactor);
+	Server_Impl __event_handle_srv(__reactor,__host,__port);
 	__reactor->event_loop(5000*1000);
 	return 0;
 }

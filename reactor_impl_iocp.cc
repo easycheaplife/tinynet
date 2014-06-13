@@ -324,7 +324,7 @@ int Reactor_Impl_Iocp::event_loop(unsigned long __millisecond)
 			}
 			active_clienk_context_lock_.release_lock();
 		}
-		::Sleep(1);
+		::Sleep(100);
 	}
 	return -1;
 }
