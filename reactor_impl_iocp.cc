@@ -4,7 +4,8 @@
 #include "event_handle.h"
 
 #define TIME_OVERTIME					60*1000
-#define PRE_POST_RECV_NUM				50
+//	fix #4							
+#define PRE_POST_RECV_NUM				100
 #define PRE_POST_ACCEPT_NUM				50
 #define MAX_FREE_OVERLAPPED_PLUS_NUM	5000
 #define MAX_FREE_CLIENT_CONTEXT_NUM		5000
@@ -297,7 +298,7 @@ int Reactor_Impl_Iocp::event_loop(unsigned long __millisecond)
 								}
 								else
 								{
-									//	fix the bug #3
+									//	fix #3
 									//	__temp_overlap_plus is no useless, you need recyle the object.
 									__to_be_release = TRUE;
 									::InterlockedIncrement(&__first_client_context->cur_read_sequence_);
@@ -456,11 +457,12 @@ unsigned int __stdcall Reactor_Impl_Iocp::work_thread_function( void* __pv )
 	Overlapped_Puls* __overlapped_puls = NULL;
 	while (true)
 	{
-		BOOL __res = GetQueuedCompletionStatus(__this->completeion_port_, &__bytes_transferred,(LPDWORD)&__per_handle,(LPOVERLAPPED*)&__overlapped, INFINITE);
+		BOOL __res = GetQueuedCompletionStatus(__this->completeion_port_, &__bytes_transferred,(LPDWORD)&__per_handle,(LPOVERLAPPED*)&__overlapped, TIME_OVERTIME/*INFINITE*/);
 		DWORD __io_error = ::WSAGetLastError();
 		if(!__res && __io_error == WAIT_TIMEOUT)
 		{
 			//	there is not much for server to do,and this thread can die even if it still outstanding I/O request
+			//	to be continue ...
 		}
 		//	thread exit,thought call post PostQueuedCompletionStatus and set dwCompletionKey = -1
 		if(-1 == __per_handle)
@@ -675,7 +677,7 @@ Client_Context* Reactor_Impl_Iocp::allocate_client_context(SOCKET __sock)
 	if(NULL != __client_context)
 	{
 		__client_context->socket_ = __sock;
-		//	fix the bug #1
+		//	fix #1
 		__client_context->read_sequence_ = 1;
 	}
 	client_context_lock_.release_lock();
@@ -761,7 +763,6 @@ void Reactor_Impl_Iocp::_process_io( DWORD __per_handle,Overlapped_Puls* __overl
 			//	no use, it will lead to client not release corrrctly.i do not known the reason! 2011-06-16
 			//	return ;
 		}
-		::EnterCriticalSection(&__client_context->lock_);
 		if(OP_READ == __overlapped_puls->op_type_)
 		{
 			//	client socket overlapped recv count sub by one
@@ -772,7 +773,6 @@ void Reactor_Impl_Iocp::_process_io( DWORD __per_handle,Overlapped_Puls* __overl
 			//	client socket overlapped send count sub by one
 			InterlockedDecrement(&__client_context->num_post_send_);
 		}
-		::LeaveCriticalSection(&__client_context->lock_);
 		//check the client close or not
 		if( TRUE == __client_context->close_ )
 		{
@@ -960,7 +960,7 @@ void Reactor_Impl_Iocp::on_accept_completed( Overlapped_Puls* __overlapped_puls,
 	{
 		_close_socket(__overlapped_puls->sock_client_);
 	}
-	//	fix the bug #1
+	//	fix #1
 	process_packet(__client_context,__overlapped_puls);
 }
 
@@ -1171,6 +1171,10 @@ void Reactor_Impl_Iocp::process_packet2(Client_Context* __client_context,Overlap
 
 void Reactor_Impl_Iocp::process_packet(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls)
 {
+	if(!__client_context)
+	{
+		return;
+	}
 	out_read_overlap_puls_lock_.acquire_lock();
 	if(NULL != __overlapped_puls)
 	{
@@ -1231,7 +1235,7 @@ void Reactor_Impl_Iocp::process_packet(Client_Context* __client_context,Overlapp
 					}
 					else
 					{
-						//	fix the bug #3
+						//	fix #3
 						//	__temp_overlap_plus is no useless, you need recyle the object.
 						__to_be_release = TRUE;
 						::InterlockedIncrement(&__client_context->cur_read_sequence_);

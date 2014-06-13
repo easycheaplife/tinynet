@@ -8,6 +8,8 @@
 #include <string.h>
 #include <string>
 #include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
 
 static std::string __random_string[] = 
 {
@@ -35,6 +37,22 @@ static std::string __random_string[] =
 	"The bird wishes it were a cloud.The cloud wishes it were a bird."
 };
 static int __random_string_size = 22;
+
+void 	_set_noblock(int __fd)
+{
+	int __opts = fcntl(__fd,F_GETFL);  
+	if(0 > __opts)  
+    {  
+      	perror("error at fcntl(sock,F_GETFL)");  
+       	exit(1);  
+    }  
+	 __opts = __opts | O_NONBLOCK;  
+	if( 0 > fcntl(__fd,F_SETFL,__opts) )  
+	{  
+       	perror("error at fcntl(sock,F_SETFL)");  
+       	exit(1);  
+   	}  
+}
 
 void test_4_transform_monitor(int sock)
 {
@@ -72,7 +90,7 @@ void test_4_transform_monitor(int sock)
 		memset(__send_buf,0,256);
 		strcpy(__send_buf,__random_string[__random_index].c_str());
 		//	use packet head
-		if(1)
+		if(0)
 		{
 			send(sock,(void*)&__length,4,0);
 			send(sock,(void*)&__head,4,0);
@@ -80,7 +98,12 @@ void test_4_transform_monitor(int sock)
 		}
 		else
 		{
-			send(sock,(void*)&__length,4,0);
+			static const int __packet_head_size = 12;
+			unsigned char __packet_head[__packet_head_size] = {};
+			memcpy(__packet_head,(void*)&__length,4);
+			memcpy(__packet_head + 4,(void*)&__head,4);
+			memcpy(__packet_head + 8,(void*)&__guid,4);
+			send(sock,(void*)&__packet_head,12,0);
 		}
 		int send_bytes = send(sock,(void*)__send_buf,__length,0);
 		if(-1 != send_bytes)
@@ -117,7 +140,7 @@ void test_4_transform_monitor(int sock)
 			std::cout << recv_bytes << " bytes data recv: " << __recv_buf << std::endl;
 		}
 		delete [] __recv_buf;
-		usleep(1000*10);
+		usleep(1000*1);
 	}
 }
 int main(int __arg_num, char** __args)

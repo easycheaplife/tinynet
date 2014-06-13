@@ -11,6 +11,9 @@
  *  a complete packet.it will be a error.
  *  #3	2014-6-11 
  *  memory leaks when process packet.
+ *  #4	2014-6-13
+ *  client send data frequently, about thousand packets per second, more than two client,GetQueuedCompletionStatus will return timeout.
+ *  up-regulation the value of PRE_POST_RECV_NUM will remission the problem. concurrent ability will be improved.
  */
 /************************************************************************/
 #include <winsock2.h>
