@@ -1,7 +1,8 @@
 #include "reactor.h"
 #include "event_handle_srv.h"
+#include <stdlib.h>
 #include <stdio.h>
-
+#include <string.h>
 class Server_Impl : public Event_Handle_Srv
 {
 public:
