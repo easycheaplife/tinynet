@@ -1,6 +1,10 @@
 #!/bin/bash
 echo "start test"
-echo "$1"
-echo "$2"
-../echo_c $1 $2
+if  test $# -ne 3; then
+    echo "param error,please input correct param! for example: ./echo_c 192.168.22.61 9876 1000 \n"
+    exit 0
+fi
+for((i = 0; i < $3; i=i+1))
+    do nohup ./echo_c $1 $2 &
+done
 echo "end test"
