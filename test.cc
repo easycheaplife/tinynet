@@ -13,8 +13,8 @@ public:
 
 	void on_read(int __fd) 
 	{
-		static const int __recv_buf_size = 64*1024;
-		if (1)
+		static const int __recv_buf_size = 1024;
+		if (0)
 		{
 			//	just transform data
 			char __buf[__recv_buf_size] = {0};
@@ -31,28 +31,36 @@ public:
 		else
 		{
 			//	read head first.and then read the other msg.just a test code
+			static const int __head_size = 12;
 			unsigned long __usable_size = 0;
 			int __packet_length = 0;
 			int __log_level = 0;
 			int __frame_number = 0;
 			int __head = 0;
-			unsigned char __packet_head[8] = {};
+			unsigned int __guid = 0;
+			unsigned char __packet_head[__head_size] = {};
 			int __recv_size = 0;
 			while (true)
 			{
 				_get_usable(__fd,__usable_size);
-				if(__usable_size >= 8)
+				if(__usable_size >= __head_size)
 				{
-					__recv_size = Event_Handle_Srv::read(__fd,(char*)&__packet_head,8);
-					if(8 != __recv_size)
+					__recv_size = Event_Handle_Srv::read(__fd,(char*)&__packet_head,__head_size);
+					if(__head_size != __recv_size)
 					{
 						printf("error: __recv_size = %d",__recv_size);  
 						return ;
 					}
 					memcpy(&__packet_length,__packet_head,4);
 					memcpy(&__head,__packet_head + 4,4);
+					memcpy(&__guid,__packet_head + 8,4);
 					__log_level = (__head) & 0x000000ff;
 					__frame_number = (__head >> 8);
+					broadcast(__fd,(char*)__packet_head,__recv_size);
+				}
+				else
+				{
+					return;
 				}
 				_get_usable(__fd,__usable_size);
 
