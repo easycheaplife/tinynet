@@ -66,7 +66,7 @@ int main(int __arg_num, char** __args)
 {
 	if(3 != __arg_num)
 	{
-		std::cout << "param error,please input correct param,for example : ./echo_c 192.168.122.63" <<std::endl;
+		std::cout << "param error,please input correct param,for example : ./echo_c 192.168.22.61 9876" <<std::endl;
 		exit(1);
 	}
 	const char* __host = __args[1];
