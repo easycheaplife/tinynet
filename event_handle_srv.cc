@@ -124,7 +124,7 @@ void Event_Handle_Srv::_init()
 	struct hostent* __host_entry = gethostbyname(__name);
 	if(__host_entry)
 	{
-		printf("hostname: %s \n address list: \n", __host_entry->h_name);
+		printf("hostname: %s \naddress list: \n", __host_entry->h_name);
 		for(int __i = 0; __host_entry->h_addr_list[__i]; __i++) 
 		{
 		  	printf("%s\n", inet_ntoa(*(struct in_addr*)(__host_entry->h_addr_list[__i])));
@@ -133,14 +133,14 @@ void Event_Handle_Srv::_init()
 #endif
 	__serveraddr.sin_addr.s_addr = inet_addr(host_.c_str());
 	int __ret = bind(fd_,(sockaddr*)&__serveraddr,sizeof(sockaddr_in));  
-	if ( -1 == fd_ )
+	if ( -1 == __ret )
 	{
 		perror("error at bind");
 		exit(1);
 	}
 	//	A backlog argument of 0 may allow the socket to accept connections, in which case the length of the listen queue may be set to an implementation-defined minimum value.
 	__ret = listen(fd_,0);
-	if ( -1 == fd_ )
+	if ( -1 == __ret )
 	{
 		perror("error at bind");
 		exit(1);

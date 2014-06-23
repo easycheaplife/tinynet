@@ -151,9 +151,16 @@ void Reactor_Impl_Select::broadcast(int __fd,const char* __data,unsigned int __l
 	{
 		if(*__it)
 		{
-			if(__fd == (*__it)->fd_)
+			if (0)
 			{
-				continue;
+				if(__fd == (*__it)->fd_)
+				{
+					continue;
+				}
+				else
+				{
+					write((*__it)->fd_,__data,__length);
+				}
 			}
 			else
 			{
