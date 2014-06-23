@@ -205,7 +205,7 @@ void Event_Handle_Srv::_get_usable( int __fd, unsigned long& __usable_size)
 		printf("ioctlsocket failed with error %d\n", WSAGetLastError());
 	}
 #else
-	if(ioctl(__fd,FIONREAD,__usable_size))
+	if(ioctl(__fd,FIONREAD,&__usable_size))
 	{
 		perror("ioctl FIONREAD");
 	}
