@@ -2,7 +2,7 @@
 #include <unistd.h>
 #include "reactor_impl.h"
 
-#define MAX_EVENTS 10
+#define MAX_EVENTS 1024
 
 class Reactor_Impl_Epoll : public Reactor_Impl
 {
@@ -23,6 +23,9 @@ public:
 
 	//	__fd is the broadcaster
 	void broadcast(int __fd,const char* __data,unsigned int __length);
+
+	void write(int __fd,const char* __data, int __length);
+
 private:
 	void _init();
 	
