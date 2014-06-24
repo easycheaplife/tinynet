@@ -95,6 +95,8 @@ void test_4_transform_monitor(int sock)
 	
 	char __send_buf[256];
 	char __recv_buf[256];
+	static const int __packet_head_size = 12;
+	unsigned char __packet_head[__packet_head_size] = {};
 	for(int __i = 0; ; ++__i)
 	{
 		//	the first time must send the DeviceName
@@ -107,47 +109,31 @@ void test_4_transform_monitor(int sock)
 		memset(__send_buf,0,256);
 		strcpy(__send_buf,__random_string[__random_index].c_str());
 		//	use packet head
-		if(0)
-		{
-			send(sock,(void*)&__length,4,0);
-			send(sock,(void*)&__head,4,0);
-			send(sock,(void*)&__guid,4,0);
-		}
-		else
-		{
-			static const int __packet_head_size = 12;
-			unsigned char __packet_head[__packet_head_size] = {};
-			memcpy(__packet_head,(void*)&__length,4);
-			memcpy(__packet_head + 4,(void*)&__head,4);
-			memcpy(__packet_head + 8,(void*)&__guid,4);
-			send(sock,(void*)&__packet_head,12,0);
-		}
+		memset(__packet_head,0,__packet_head_size);
+		memcpy(__packet_head,(void*)&__length,4);
+		memcpy(__packet_head + 4,(void*)&__head,4);
+		memcpy(__packet_head + 8,(void*)&__guid,4);
+		send(sock,(void*)&__packet_head,12,0);
+
 		int send_bytes = send(sock,(void*)__send_buf,__length,0);
 		if(-1 != send_bytes)
 		{
 			output("%d byte send: %s",send_bytes,__random_string[__random_index].c_str());
 		}
-		
+		//	receive data
 		__length = 0;
 		__head = 0;
 		__guid = 0;
-
-		int recv_data = 0;
-		int recv_bytes = recv(sock,(void*)&__length,sizeof(int),0);
-		if(4 != recv_bytes)
+		memset(__packet_head,0,__packet_head_size);
+		int recv_bytes = recv(sock,(void*)&__packet_head,__packet_head_size,0);
+		if(12 != recv_bytes)
 		{
-			std::cout << " length error! "<< std::endl;
+			std::cout << " __packet_head error! "<< std::endl;
 		}
-		recv_bytes = recv(sock,(void*)&__head,sizeof(int),0);
-		if(4 != recv_bytes)
-		{
-			std::cout << " __head error! "<< std::endl;
-		}
-		recv_bytes = recv(sock,(void*)&__guid,sizeof(int),0);
-		if(4 != recv_bytes)
-		{
-			std::cout << " __guid error! "<< std::endl;
-		}
+		memcpy(&__length,(void*)__packet_head,4);
+		memcpy(&__head,(void*)(__packet_head + 4),4);
+		memcpy(&__guid,(void*)(__packet_head + 8),4);
+		
 		memset(__recv_buf,0,256);
 		recv_bytes = recv(sock,(void*)__recv_buf,__length,0);
 		if(-1 != recv_bytes)
