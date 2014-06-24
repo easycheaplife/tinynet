@@ -90,7 +90,7 @@ int Event_Handle_Srv::handle_timeout(int __fd)
 
 void Event_Handle_Srv::_init()
 {
-#ifndef __LINUX
+#ifdef __HAVE_IOCP
 	WORD __version_requested = MAKEWORD(2,2);
 	WSADATA __data;
 	if (0 != WSAStartup( __version_requested, &__data))
@@ -105,7 +105,7 @@ void Event_Handle_Srv::_init()
 		WSACleanup();
 		return;
 	}
-#endif //__LINUX
+#endif //__HAVE_IOCP
 	fd_ = socket(AF_INET,SOCK_STREAM,0); 
 	if ( -1 == fd_ )
 	{
