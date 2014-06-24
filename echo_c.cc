@@ -3,7 +3,6 @@
 #include <strings.h>		//	bzero
 #include <arpa/inet.h>		//	inet_addr
 #include <sys/socket.h>
-#include <iostream>
 #include <unistd.h>
 #include <string.h>
 #include <string>
@@ -121,24 +120,28 @@ void test_4_transform_monitor(int sock)
 			output("%d byte send: %s",send_bytes,__random_string[__random_index].c_str());
 		}
 		//	receive data
-		__length = 0;
-		__head = 0;
-		__guid = 0;
+		int __length2 = 0;
+		int __head2 = 0;
+		int __guid2 = 0;
 		memset(__packet_head,0,__packet_head_size);
 		int recv_bytes = recv(sock,(void*)&__packet_head,__packet_head_size,0);
-		if(12 != recv_bytes)
+		if(__packet_head_size != recv_bytes)
 		{
-			std::cout << " __packet_head error! "<< std::endl;
+			printf(" __packet_head error! %d bytes recv\n", recv_bytes);
 		}
-		memcpy(&__length,(void*)__packet_head,4);
-		memcpy(&__head,(void*)(__packet_head + 4),4);
-		memcpy(&__guid,(void*)(__packet_head + 8),4);
+		memcpy(&__length2,(void*)__packet_head,4);
+		memcpy(&__head2,(void*)(__packet_head + 4),4);
+		memcpy(&__guid2,(void*)(__packet_head + 8),4);
+		if(__length2 != __length)
+		{
+			printf(" __length2 error! __length2 = %d\n", __length2);
+		}
 		
 		memset(__recv_buf,0,256);
-		recv_bytes = recv(sock,(void*)__recv_buf,__length,0);
+		recv_bytes = recv(sock,(void*)__recv_buf,__length2,0);
 		if(-1 != recv_bytes)
 		{
-			output("%d bytes data recv: %s",recv_bytes,__recv_buf);
+			output("%d bytes recv: %s",recv_bytes,__recv_buf);
 		}
 		usleep(1000*100);
 	}
@@ -147,7 +150,7 @@ int main(int __arg_num, char** __args)
 {
 	if(3 != __arg_num)
 	{
-		std::cout << "param error,please input correct param,for example : ./echo_c 192.168.22.61 9876" <<std::endl;
+		printf("param error,please input correct param,for example : ./echo_c 192.168.22.61 9876\n");
 		exit(1);
 	}
 	const char* __host = __args[1];
@@ -155,7 +158,7 @@ int main(int __arg_num, char** __args)
 	int sock = socket(AF_INET,SOCK_STREAM,0);
 	if(-1 == sock)
 	{
-		std::cout << "error at socket"<<std::endl;
+		printf("error at socket,errno = %d\n",errno);
 		exit(1);
 	}
 	struct sockaddr_in clientaddr;
@@ -165,7 +168,7 @@ int main(int __arg_num, char** __args)
 	int res = connect(sock,(sockaddr*)&clientaddr,sizeof(sockaddr_in));
 	if(-1 == res)
 	{
-		std::cout << "error at connect,errno = "<< errno <<std::endl;
+		printf("error at connect,errno = %d\n", errno);
 		exit(1);
 	}
 	test_4_transform_monitor(sock);
