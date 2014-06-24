@@ -16,6 +16,10 @@ public:
 	virtual int handle_close(int __fd){ return -1; }
 	
 	virtual int handle_timeout(int __fd){ return -1; }
+
+	virtual int	read(int __fd,char* __buf, int __length) { return -1;}
+
+	virtual int write(int __fd,const char* __data, int __length) { return -1; }
 	
 	Reactor* reactor() const { return reactor_; }
 	

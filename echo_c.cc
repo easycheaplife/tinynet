@@ -117,7 +117,7 @@ void test_4_transform_monitor(int sock)
 		int send_bytes = send(sock,(void*)__send_buf,__length,0);
 		if(-1 != send_bytes)
 		{
-			output("%d byte send: %s",send_bytes,__random_string[__random_index].c_str());
+			output("%d bytes send: %s",send_bytes,__random_string[__random_index].c_str());
 		}
 		//	receive data
 		int __length2 = 0;

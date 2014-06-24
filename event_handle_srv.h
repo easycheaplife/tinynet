@@ -27,6 +27,9 @@ public:
 	//	read data from network cache
 	int	read(int __fd,char* __buf, int __length); 
 
+	//	write data to peer 
+	int write(int __fd,const char* __data, int __length);
+
 public:
 	//	pure virtual function, subclass must define it.
 	virtual void on_connected(int __fd) = 0;

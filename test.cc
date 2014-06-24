@@ -26,7 +26,7 @@ public:
 			}
 			if(-1 != __recv_size)
 			{
-				broadcast(__fd,__buf,__recv_size);
+				write(__fd,__buf,__recv_size);
 			}
 		}
 		else
@@ -57,7 +57,7 @@ public:
 					memcpy(&__guid,__packet_head + 8,4);
 					__log_level = (__head) & 0x000000ff;
 					__frame_number = (__head >> 8);
-					broadcast(__fd,(char*)__packet_head,__recv_size);
+					write(__fd,(char*)__packet_head,__recv_size);
 				}
 				else
 				{
@@ -69,7 +69,7 @@ public:
 				{
 					char __buf[__recv_buf_size] = {0};
 					int __recv_size = Event_Handle_Srv::read(__fd,__buf,__packet_length);
-					broadcast(__fd,__buf,__recv_size);
+					write(__fd,__buf,__recv_size);
 				}
 				else
 				{
