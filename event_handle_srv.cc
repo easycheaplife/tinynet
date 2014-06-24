@@ -54,7 +54,9 @@ int Event_Handle_Srv::handle_input(int __fd)
 
 int Event_Handle_Srv::handle_output(int __fd)
 {
+#ifdef __DEBUG
 	printf("handle_outputd\n");
+#endif //__DEBUG
 	//	test data, if open it, it will cause something wrong
 #if 0
 	static int __data = 0;
@@ -90,7 +92,7 @@ int Event_Handle_Srv::handle_timeout(int __fd)
 
 void Event_Handle_Srv::_init()
 {
-#ifdef __HAVE_IOCP
+#ifndef __LINUX
 	WORD __version_requested = MAKEWORD(2,2);
 	WSADATA __data;
 	if (0 != WSAStartup( __version_requested, &__data))
@@ -105,7 +107,8 @@ void Event_Handle_Srv::_init()
 		WSACleanup();
 		return;
 	}
-#endif //__HAVE_IOCP
+#endif //__LINUX
+	//	the socket that is created will have the overlapped attribute as a default
 	fd_ = socket(AF_INET,SOCK_STREAM,0); 
 	if ( -1 == fd_ )
 	{
