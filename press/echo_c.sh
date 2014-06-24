@@ -6,5 +6,6 @@ if  test $# -ne 3; then
 fi
 for((i = 0; i < $3; i=i+1))
     do nohup ./echo_c $1 $2 &
+    sleep 0.5
 done
 echo "end test"

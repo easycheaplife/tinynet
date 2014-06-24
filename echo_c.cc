@@ -92,6 +92,9 @@ void test_4_transform_monitor(int sock)
 	__res_log_level = (__head) & 0x000000ff;
 
 	int __random_index = 0;
+	
+	char __send_buf[256];
+	char __recv_buf[256];
 	for(int __i = 0; ; ++__i)
 	{
 		//	the first time must send the DeviceName
@@ -100,7 +103,7 @@ void test_4_transform_monitor(int sock)
 			__random_index = rand()%__random_string_size;
 		}
 		int __length = __random_string[__random_index].size();
-		char __send_buf[256];
+		
 		memset(__send_buf,0,256);
 		strcpy(__send_buf,__random_string[__random_index].c_str());
 		//	use packet head
@@ -122,7 +125,6 @@ void test_4_transform_monitor(int sock)
 		int send_bytes = send(sock,(void*)__send_buf,__length,0);
 		if(-1 != send_bytes)
 		{
-			//std::cout << send_bytes << " bytes data send: " << __random_string[__random_index].c_str() << std::endl;
 			output("%d byte send: %s",send_bytes,__random_string[__random_index].c_str());
 		}
 		
@@ -146,16 +148,12 @@ void test_4_transform_monitor(int sock)
 		{
 			std::cout << " __guid error! "<< std::endl;
 		}
-		unsigned char* __recv_buf = new unsigned char[__length + 1];
-		memset(__recv_buf,0,__length);
-		__recv_buf[__length] = '\0';
+		memset(__recv_buf,0,256);
 		recv_bytes = recv(sock,(void*)__recv_buf,__length,0);
 		if(-1 != recv_bytes)
 		{
-			//std::cout << recv_bytes << " bytes data recv: " << __recv_buf << std::endl;
 			output("%d bytes data recv: %s",recv_bytes,__recv_buf);
 		}
-		delete [] __recv_buf;
 		usleep(1000*100);
 	}
 }

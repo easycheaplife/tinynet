@@ -81,6 +81,7 @@ int Reactor_Impl_Select::event_loop(unsigned long __millisecond)
 #else
 					closesocket((*__it)->fd_);
 #endif //__LINUX
+					printf("socket close %d\n",(*__it)->fd_);
 					
 					delete (*__it);
 					(*__it) = NULL;
