@@ -10,7 +10,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
-
+#include <stdarg.h>
 static std::string __random_string[] = 
 {
 	"[0x000085e4][T]AdvertisingIndentitifer: '', IdentifierForVendor: '', DeviceName: 'PC', ModelName: 'x86', SystemName: '', SystemVersion: '', HardwareID: '74d435046509'",
@@ -36,6 +36,7 @@ static std::string __random_string[] =
 	"I cannot tell why this heart languishes in silence.It is for small needs it never asks, or knows or remembers.",
 	"The bird wishes it were a cloud.The cloud wishes it were a bird."
 };
+
 static int __random_string_size = 22;
 
 void 	_set_noblock(int __fd)
@@ -52,6 +53,19 @@ void 	_set_noblock(int __fd)
        	perror("error at fcntl(sock,F_SETFL)");  
        	exit(1);  
    	}  
+}
+
+void output(const char* __fmt,...)
+{
+#ifdef __DEBUG
+    static const int __output_size = 1024;
+    char __buf[__output_size] = {};
+    va_list __args;
+    va_start(__args,__fmt);
+    vsnprintf(__buf, __output_size, __fmt, __args);
+    va_end(__args);
+    printf("%s\n",__buf);
+#endif //__DEBUG
 }
 
 void test_4_transform_monitor(int sock)
@@ -108,7 +122,8 @@ void test_4_transform_monitor(int sock)
 		int send_bytes = send(sock,(void*)__send_buf,__length,0);
 		if(-1 != send_bytes)
 		{
-			std::cout << send_bytes << " bytes data send: " << __random_string[__random_index].c_str() << std::endl;
+			//std::cout << send_bytes << " bytes data send: " << __random_string[__random_index].c_str() << std::endl;
+			output("%d byte send: %s",send_bytes,__random_string[__random_index].c_str());
 		}
 		
 		__length = 0;
@@ -137,7 +152,8 @@ void test_4_transform_monitor(int sock)
 		recv_bytes = recv(sock,(void*)__recv_buf,__length,0);
 		if(-1 != recv_bytes)
 		{
-			std::cout << recv_bytes << " bytes data recv: " << __recv_buf << std::endl;
+			//std::cout << recv_bytes << " bytes data recv: " << __recv_buf << std::endl;
+			output("%d bytes data recv: %s",recv_bytes,__recv_buf);
 		}
 		delete [] __recv_buf;
 		usleep(1000*100);
