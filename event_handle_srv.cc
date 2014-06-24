@@ -248,6 +248,36 @@ int Event_Handle_Srv::read( int __fd,char* __buf, int __length )
 	return __recv_size;
 }
 
+int Event_Handle_Srv::write( int __fd,const char* __data, int __length )
+{
+	int __send_bytes = send(__fd,__data,__length,0);
+	if(-1 == __send_bytes)
+	{
+#ifndef __LINUX
+		DWORD __last_error = ::GetLastError();
+		if(WSAEWOULDBLOCK  == __last_error || WSAECONNRESET == __last_error)
+		{
+			//	close peer socket
+			//	closesocket(__fd);	//	don't do this, it will make server shutdown for select error 10038(WSAENOTSOCK)
+			handle_close(__fd);
+			printf("send error at %d\n",__last_error);
+		}
+#else
+		//error happend but EAGAIN and EWOULDBLOCK meams that peer socket have been close
+		//EWOULDBLOCK means messages are available at the socket and O_NONBLOCK  is set on the socket's file descriptor
+		// ECONNRESET means an existing connection was forcibly closed by the remote host
+		if((EAGAIN == errno && EWOULDBLOCK == errno) || ECONNRESET == errno)
+		{
+			//	close peer socket
+			handle_close(__fd);
+			perror("error at send");  
+		}
+#endif // __LINUX
+	}
+	return __send_bytes;
+}
+
+
 
 
 
