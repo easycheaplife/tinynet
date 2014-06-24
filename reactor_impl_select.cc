@@ -183,7 +183,7 @@ void Reactor_Impl_Select::write( int __fd,const char* __data, int __length )
 			//	close peer socket
 			//	closesocket(__fd);	//	don't do this, it will make server shutdown for select error 10038(WSAENOTSOCK)
 			handle_close(__fd);
-			return;
+			printf("send error at %d\n",__last_error);
 		}
 #else
 		//error happend but EAGAIN and EWOULDBLOCK meams that peer socket have been close
@@ -193,10 +193,10 @@ void Reactor_Impl_Select::write( int __fd,const char* __data, int __length )
 		{
 			//	close peer socket
 			handle_close(__fd);
-			return;
+			perror("error at send");  
 		}
 #endif // __LINUX
-		perror("error at send");  
+		
 	}
 }
 
@@ -209,6 +209,7 @@ int Reactor_Impl_Select::handle_close( int __fd )
 			if(__fd == (*__it)->fd_)
 			{
 				(*__it)->invalid_fd_ = 0;
+				break;
 			}
 		}
 	}
