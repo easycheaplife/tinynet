@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <sys/time.h>
 static std::string __random_string[] = 
 {
 	"[0x000085e4][T]AdvertisingIndentitifer: '', IdentifierForVendor: '', DeviceName: 'PC', ModelName: 'x86', SystemName: '', SystemVersion: '', HardwareID: '74d435046509'",
@@ -67,7 +68,14 @@ void output(const char* __fmt,...)
 #endif //__DEBUG
 }
 
-void test_4_transform_monitor(int sock)
+long get_time()
+{
+	struct timeval __timeval;
+	gettimeofday(&__timeval, NULL);
+	return __timeval.tv_usec;
+}
+
+void test_4_time_round_trip(int sock)
 {
 	/*
 	xx | xx | xx  | xx
@@ -76,7 +84,6 @@ void test_4_transform_monitor(int sock)
 	log level | 	frame number(index)
 	*/
 	srand( (unsigned)time(NULL)); 
-		{cket_head_size
 	int __log_level = 1;
 	int __frame_number = 7;
 	int __guid = 15;
@@ -120,6 +127,10 @@ void test_4_transform_monitor(int sock)
 		{
 			output("%d bytes send: %s",send_bytes,__random_string[__random_index].c_str());
 		}
+		struct timeval __start_timeval;
+		gettimeofday(&__start_timeval, NULL);
+		long __start_time = __start_timeval.tv_usec;
+		
 		//	receive data
 		int __length2 = 0;
 		int __head2 = 0;
@@ -135,7 +146,7 @@ void test_4_transform_monitor(int sock)
 		memcpy(&__guid2,(void*)(__packet_head + 8),4);
 		if(__length2 != __length)
 		{
-			printf(" __length2 error! __length = %d,__length2 = %d\n", __length,__length2);
+			printf(" __length2 error! __length2 = %d\n", __length2);
 		}
 		
 		memset(__recv_buf,0,256);
@@ -144,11 +155,18 @@ void test_4_transform_monitor(int sock)
 		{
 			output("%d bytes recv: %s",recv_bytes,__recv_buf);
 		}
-		usleep(1000*100);
+		struct timeval __end_timeval;
+		gettimeofday(&__end_timeval, NULL);
+		long __end_time = __end_timeval.tv_usec;
+		
+		long __time_round_trip = __end_time - __start_time;
+		printf("start time = %ld, end time = %ld,time round trip = %ld\n",__start_time,__end_time,__time_round_trip);
+		usleep(1000*1000);
 	}
 }
 int main(int __arg_num, char** __args)
 {
+	printf("current time = %ld\n",get_time());
 	if(3 != __arg_num)
 	{
 		printf("param error,please input correct param,for example : ./echo_c 192.168.22.61 9876\n");
@@ -172,5 +190,5 @@ int main(int __arg_num, char** __args)
 		printf("error at connect,errno = %d\n", errno);
 		exit(1);
 	}
-	test_4_transform_monitor(sock);
+	test_4_time_round_trip(sock);
 }
