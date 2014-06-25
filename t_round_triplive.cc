@@ -38,6 +38,7 @@ static std::string __random_string[] =
 };
 
 static int __random_string_size = 22;
+static int __buf_size = 256;
 
 void 	_set_noblock(int __fd)
 {
@@ -100,8 +101,8 @@ void test_4_time_round_trip(int sock)
 
 	int __random_index = 0;
 	
-	char __send_buf[256];
-	char __recv_buf[256];
+	char __send_buf[__buf_size];
+	char __recv_buf[__buf_size];
 	static const int __packet_head_size = 12;
 	unsigned char __packet_head[__packet_head_size] = {};
 	for(int __i = 0; ; ++__i)
@@ -112,17 +113,12 @@ void test_4_time_round_trip(int sock)
 			__random_index = rand()%__random_string_size;
 		}
 		int __length = __random_string[__random_index].size();
-		
-		memset(__send_buf,0,256);
-		strcpy(__send_buf,__random_string[__random_index].c_str());
-		//	use packet head
-		memset(__packet_head,0,__packet_head_size);
-		memcpy(__packet_head,(void*)&__length,4);
-		memcpy(__packet_head + 4,(void*)&__head,4);
-		memcpy(__packet_head + 8,(void*)&__guid,4);
-		send(sock,(void*)&__packet_head,__packet_head_size,0);
-
-		int send_bytes = send(sock,(void*)__send_buf,__length,0);
+		memset(__send_buf,0,__buf_size);
+		memcpy(__send_buf,(void*)&__length,4);
+		memcpy(__send_buf + 4,(void*)&__head,4);
+		memcpy(__send_buf + 8,(void*)&__guid,4);
+		strcpy(__send_buf + __packet_head_size,__random_string[__random_index].c_str());
+		int send_bytes = send(sock,(void*)__send_buf,__packet_head_size + __length,0);
 		if(-1 != send_bytes)
 		{
 			output("%d bytes send: %s",send_bytes,__random_string[__random_index].c_str());
@@ -146,14 +142,14 @@ void test_4_time_round_trip(int sock)
 		memcpy(&__guid2,(void*)(__packet_head + 8),4);
 		if(__length2 != __length)
 		{
-			printf(" __length2 error! __length2 = %d\n", __length2);
+			printf(" __length2 error! __length = %d,__length2 = %d\n", __length,__length2);
 		}
 		
-		memset(__recv_buf,0,256);
+		memset(__recv_buf,0,__buf_size);
 		recv_bytes = recv(sock,(void*)__recv_buf,__length2,0);
 		if(-1 != recv_bytes)
 		{
-			output("%d bytes recv: %s",recv_bytes,__recv_buf);
+			output("%d bytes recv: %s",recv_bytes + __packet_head_size,__recv_buf);
 		}
 		struct timeval __end_timeval;
 		gettimeofday(&__end_timeval, NULL);
