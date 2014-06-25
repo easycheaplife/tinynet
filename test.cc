@@ -15,7 +15,7 @@ public:
 	void on_read(int __fd) 
 	{
 		static const int __recv_buf_size = 1024;
-		if (1)
+		if (0)
 		{
 			//	just transform data
 			char __buf[__recv_buf_size] = {0};
