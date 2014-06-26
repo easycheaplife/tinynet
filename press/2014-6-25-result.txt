@@ -13,20 +13,27 @@ memory:32G
 model name      : Intel(R) Core(TM) i5-3470 CPU @ 3.20GHz
 2.6.32-358.el6.x86_64 #1 SMP Fri Feb 22 00:31:26 UTC 2013 x86_64 x86_64 x86_64 GNU/Linux
 memory:3G
+
+63
+model name      : Intel(R) Core(TM) i5-3470 CPU @ 3.20GHz
+windows 7 64
+memory:8G
 /////////////////////////////////////////////////////////////////////////////////////////
 
 /////////////////////////////////////////////////////////////////////////////////////////
-patten	connection	round trip time(microsecond)	packet per/sec	 	server	client	monitor		process packet	cpu(%)	connection per/sec
-select	1			500~1000							10				72		71		61			n								5
-select 	1000		1000~1500							10				72		71		61			n								5
-select	1			1000~2000							10				72		71		61			y								5
-select 	1000		1000~3000							10				72		71		61			y								5
-epoll 	1000		500~1000							10				72		71		61			n								5
-epoll 	3000		500~1000							10				72		71		61			n								5
-epoll 	5000		800~1300							10				72		71		61			n								5
-epoll 	10000		10000~100000						10				72		71		61			n								5
+patten	connection	round trip time(microsecond)	packet per/sec	 	server	client	monitor		process packet	cpu(%)	connection per/sec	packet size(bytes)	network(Kbytes)
+select	1			500~1000							10				72		71		61			n								5				~100
+select 	1000		1000~1500							10				72		71		61			n								5				~100
+select	1			1000~2000							10				72		71		61			y								5				~100
+select 	1000		1000~3000							10				72		71		61			y								5				~100
+epoll 	1000		500~1000							10				72		71		61			n								5				~100
+epoll 	3000		500~1000							10				72		71		61			n								5				~100
+epoll 	5000		800~1300							10				72		71		61			n								5				~100
+epoll 	10000		10000~100000						10				72		71		61			n								5				~100
+epoll 	1000		40000~50000?						10				72		71		61			y				23				5				~100
+epoll 	3000		1000~3000							10				72		71		61			y				72				5				~100
+epoll 	5000		10000~20000							10				72		71		61			y				99				5				~100
+epoll 	10000		~160000								10				72		71		61			y				100				5				~100
 
-epoll 	1000		40000~50000?						10				72		71		61			y				23				5
-epoll 	3000		1000~3000							10				72		71		61			y				72				5
-epoll 	5000		10000~20000							10				72		71		61			y				99				5
-epoll 	10000		140000~150000						10				72		71		61			y				100				5
+iocp 	1000		<10									10				63		71		61			y				7				5				~100
+iocp 	2000		<10									10				63		71		61			y				17				5				~100				11000
