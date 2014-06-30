@@ -24,6 +24,7 @@
 *.sdf
 *.opensdf
 Debug/
+Release/
 
 # for cmake
 CMakeCache.txt
