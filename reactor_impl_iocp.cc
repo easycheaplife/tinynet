@@ -5,13 +5,13 @@
 
 #define TIME_OVERTIME					60*1000
 //	fix #4							
-#define PRE_POST_RECV_NUM				100
+#define PRE_POST_RECV_NUM				50
 #define PRE_POST_ACCEPT_NUM				50
 #define MAX_FREE_OVERLAPPED_PLUS_NUM	5000
 #define MAX_FREE_CLIENT_CONTEXT_NUM		5000
 #define MAX_CONNECT_NUM					5000
-#define DEFAULT_SEND_BUF_SIZE			8192
-#define DEFAULT_RECV_BUF_SIZE			8192
+#define DEFAULT_SEND_BUF_SIZE			256
+#define DEFAULT_RECV_BUF_SIZE			256
 
 enum emErrorCode
 {
@@ -1658,7 +1658,14 @@ int Reactor_Impl_Iocp::read_packet( Client_Context* __client_context,Overlapped_
 		__enough = __overlapped_puls->is_enough(__packet_length + __head_size);
 		if (__enough)
 		{
-			send_2_all_client(__client_context,__overlapped_puls->buffer_ + __overlapped_puls->used_size_,__packet_length + __head_size);
+			if(0)
+			{
+				send_2_all_client(__client_context,__overlapped_puls->buffer_ + __overlapped_puls->used_size_,__packet_length + __head_size);
+			}
+			else
+			{
+				send_2_client(__client_context,__overlapped_puls->buffer_ + __overlapped_puls->used_size_,__packet_length + __head_size);
+			}
 			__overlapped_puls->setp_used_size( __packet_length + __head_size );
 		}
 		else
