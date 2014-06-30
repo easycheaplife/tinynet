@@ -5,7 +5,7 @@
 
 #define TIME_OVERTIME					60*1000
 //	fix #4							
-#define PRE_POST_RECV_NUM				100
+#define PRE_POST_RECV_NUM				50
 #define PRE_POST_ACCEPT_NUM				50
 #define MAX_FREE_OVERLAPPED_PLUS_NUM	5000
 #define MAX_FREE_CLIENT_CONTEXT_NUM		5000
