@@ -36,6 +36,8 @@ public:
 
 	virtual void on_read(int __fd) = 0;
 
+	virtual void on_disconnect(int __fd) = 0;
+
 protected:
 	void 	_init();
 	
