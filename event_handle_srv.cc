@@ -80,7 +80,8 @@ int Event_Handle_Srv::handle_exception(int __fd)
 
 int Event_Handle_Srv::handle_close(int __fd)
 {
-	printf("handle_close\n");
+	printf("socket close %d\n",__fd);
+	on_disconnect(__fd);
 	return -1;
 }
 
