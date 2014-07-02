@@ -3,4 +3,5 @@ SET(SRC_LIST reactor.h reactor.cc event_handle.h event_handle_srv.h event_handle
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 ADD_DEFINITIONS(-D__HAVE_SELECT -D__LINUX)
 SET(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb")
+SET(CMAKE_CXX_FLAGS "-Wl,--no-as-needed -std=c++11 -pthread") 
 ADD_EXECUTABLE(test ${SRC_LIST})
