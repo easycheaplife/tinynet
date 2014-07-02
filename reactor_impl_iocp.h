@@ -20,11 +20,6 @@
 #include <WinBase.h>
 #include <mswsock.h>
 #include "reactor_impl.h"
-
-#ifndef __USE_CRITICAL_SECTION
-#define __USE_CRITICAL_SECTION
-#endif // __USE_CRITICAL_SECTION
-
 #include "easy_allocator.h"
 
 

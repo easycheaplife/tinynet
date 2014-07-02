@@ -10,8 +10,10 @@ const unsigned int Server_Impl::max_buffer_size_ = 1024;
 Server_Impl::Server_Impl( Reactor* __reactor,const char* __host /*= "0.0.0.0"*/,unsigned int __port /*= 9876*/ )
 	: Event_Handle_Srv(__reactor,__host,__port) 
 {
+#ifndef __HAVE_IOCP
 	auto __thread = std::thread(CC_CALLBACK_0(Server_Impl::_work_thread,this));
 	__thread.detach();
+#endif // !__HAVE_IOCP
 }
 
 void Server_Impl::on_connected( int __fd )
@@ -102,6 +104,10 @@ void Server_Impl::_read( int __fd )
 {
 	//	the follow code is ring_buf's append function actually.
 	unsigned long __usable_size = 0;
+	if(!connects_[__fd])
+	{
+		return;
+	}
 	_get_usable(__fd,__usable_size);
 	int __ring_buf_tail_left = connects_[__fd]->size() - connects_[__fd]->wpos();
 	if(__usable_size <= __ring_buf_tail_left)
@@ -137,6 +143,7 @@ void Server_Impl::_work_thread()
 	static const int __head_size = 12;
 	while (true)
 	{
+		lock_.acquire_lock();
 		for (std::map<int,ring_buffer*>::iterator __it = connects_.begin(); __it != connects_.end(); ++__it)
 		{
 			if(__it->second)
@@ -176,11 +183,13 @@ void Server_Impl::_work_thread()
 				}
 			}
 		}
+		lock_.release_lock();
 	}
 }
 
 void Server_Impl::on_disconnect( int __fd )
 {
+	lock_.acquire_lock();
 	for (std::map<int,ring_buffer*>::iterator __it = connects_.begin(); __it != connects_.end(); ++__it)
 	{
 		if (__it->second)
@@ -188,9 +197,11 @@ void Server_Impl::on_disconnect( int __fd )
 			delete __it->second;
 			__it->second = NULL;
 			connects_.erase(__it);
+			lock_.release_lock();
 			return;
 		}
 	}
+	lock_.release_lock();
 }
 
 
