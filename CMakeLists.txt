@@ -3,7 +3,7 @@ SET(SRC_LIST reactor.cc event_handle_srv.cc reactor_impl_select.cc reactor_impl_
 AUX_SOURCE_DIRECTORY( ./ SOURCE_DIRECTORY)	
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 INCLUDE_DIRECTORIES( ../easy/src/base )
-ADD_DEFINITIONS(-D__HAVE_SELECT -D__LINUX)
+ADD_DEFINITIONS(-D__HAVE_EPOLL -D__LINUX)
 SET(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb")
 SET(CMAKE_CXX_FLAGS "-Wl,--no-as-needed -std=c++11 -pthread") 
 ADD_EXECUTABLE(test ${SRC_LIST})
