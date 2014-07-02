@@ -3,13 +3,6 @@
 #include <map>
 #include "event_handle_srv.h"
 #include "easy_ring_buffer.h"
-
-#ifdef WIN32
-	#ifndef __USE_CRITICAL_SECTION
-	#define __USE_CRITICAL_SECTION
-	#endif // __USE_CRITICAL_SECTION
-#endif // WIN32
-
 #include "easy_allocator.h"
 
 class Reactor;
@@ -39,6 +32,8 @@ private:
 	std::map<int,ring_buffer*>		connects_;
 
 	static const unsigned int		max_buffer_size_;
+
+	easy::mutex_lock				lock_;
 };
 
 #endif // server_impl_h__
