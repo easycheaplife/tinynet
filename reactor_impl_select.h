@@ -1,4 +1,7 @@
 #ifndef __LINUX
+#ifndef FD_SETSIZE
+#define FD_SETSIZE      1024
+#endif /* FD_SETSIZE */
 #include <WinSock.h>
 #else
 #include <sys/select.h>
