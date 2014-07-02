@@ -5,7 +5,7 @@
 
 #define CC_CALLBACK_0(__selector__,__target__, ...) std::bind(&__selector__,__target__, ##__VA_ARGS__)
 
-const unsigned int Server_Impl::max_buffer_size_ = 1024;
+const unsigned int Server_Impl::max_buffer_size_ = 1024*8;
 
 Server_Impl::Server_Impl( Reactor* __reactor,const char* __host /*= "0.0.0.0"*/,unsigned int __port /*= 9876*/ )
 	: Event_Handle_Srv(__reactor,__host,__port) 

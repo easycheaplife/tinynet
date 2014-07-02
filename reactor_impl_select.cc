@@ -92,6 +92,7 @@ int Reactor_Impl_Select::event_loop(unsigned long __millisecond)
 
 		//	you must set max_fd_ is max use fd under unix/linux system, if not,part of fd will not be detected.
 		//	if write_set_ is not null, that means the write status will be watched to see. 
+		//	FD_SETSIZE = 64 at windows,so the max number of fd is FD_SETSIZE.if you want change it value, define before winsock.h.
 		int __ret = select(max_fd_ + 1,&read_set_,/*&write_set_*/NULL,&excepion_set_,&__tv);
 		if ( -1 == __ret )
 		{

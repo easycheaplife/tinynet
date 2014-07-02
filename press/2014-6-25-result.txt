@@ -21,7 +21,7 @@ memory:8G
 /////////////////////////////////////////////////////////////////////////////////////////
 
 /////////////////////////////////////////////////////////////////////////////////////////
-patten	connection	round trip time(microsecond)	packet per/sec	 	server	client	monitor		process packet	cpu(%)	connection per/sec	packet size(bytes)	network(Kbytes)
+patten	connection	round trip time(microsecond)	packet per/sec	 	server	client	monitor		process packet	cpu(%)	connection per/sec	packet size(bytes)	network(Kbytes)	nmon file
 select	1			500~1000							10				72		71		61			n								5				~100
 select 	1000		1000~1500							10				72		71		61			n								5				~100
 select	1			1000~2000							10				72		71		61			y								5				~100
@@ -38,3 +38,9 @@ epoll 	10000		~160000								10				72		71		61			y				100				5				~100				11000
 iocp 	1000		<10									10				63		71		61			y				7				5				~100
 iocp 	2000		<10									10				63		71		61			y				17				5				~100				
 iocp 	4000		<10									10				63		71		61			y				17				5				~100
+
+/////////////////////////////////////////////////////////////////////////////////////////
+use ring buffer recv data
+/////////////////////////////////////////////////////////////////////////////////////////
+select 	1000		1000~1500							10				72		71		61			y								5				~100				2289
+epoll 	10000		~160000								10				72		71		61			y				100				5				~100				11000
