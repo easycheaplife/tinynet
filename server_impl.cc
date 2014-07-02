@@ -11,8 +11,8 @@ Server_Impl::Server_Impl( Reactor* __reactor,const char* __host /*= "0.0.0.0"*/,
 	: Event_Handle_Srv(__reactor,__host,__port) 
 {
 #ifndef __HAVE_IOCP
-	auto __thread = std::thread(CC_CALLBACK_0(Server_Impl::_work_thread,this));
-	__thread.detach();
+	auto __thread_ = std::thread(CC_CALLBACK_0(Server_Impl::_work_thread,this));
+	__thread_.detach();
 #endif // !__HAVE_IOCP
 }
 
