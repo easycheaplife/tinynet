@@ -16,6 +16,7 @@
 #include <arpa/inet.h>
 #include <unistd.h> 		//	gethostname
 #include <netdb.h>			//	gethostbyname
+#include <sys/ioctl.h>
 #endif //__LINUX_
 
 #include "event_handle_cli.h"
@@ -167,6 +168,7 @@ void Event_Handle_Cli::_set_reuse_addr( int __fd )
 
 void Event_Handle_Cli::_set_no_delay( int __fd )
 {
+#ifndef __LINUX
 	//	The Nagle algorithm is disabled if the TCP_NODELAY option is enabled 
 	int __no_delay = TRUE;
 	if(SOCKET_ERROR == setsockopt( __fd, IPPROTO_TCP, TCP_NODELAY, (char*)&__no_delay, sizeof(int)))
@@ -174,6 +176,7 @@ void Event_Handle_Cli::_set_no_delay( int __fd )
 		perror("setsockopt TCP_NODELAY");  
 		exit(1);  
 	}
+#endif // __LINUX
 }
 
 void Event_Handle_Cli::_get_usable( int __fd, unsigned long& __usable_size)
@@ -221,8 +224,8 @@ int Event_Handle_Cli::read( int __fd,char* __buf, int __length )
 void Event_Handle_Cli::star_work_thread()
 {
 	//	start work thread
-	auto __thread = std::thread(CC_CALLBACK_0(Event_Handle_Cli::_work_thread,this));
-	__thread.detach();
+	auto __thread_ = std::thread(CC_CALLBACK_0(Event_Handle_Cli::_work_thread,this));
+	__thread_.detach();
 }
 
 
