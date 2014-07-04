@@ -1,3 +1,4 @@
+#ifdef WIN32
 #include <process.h>
 #include <stdio.h>
 #include "reactor_impl_iocp.h"
@@ -1814,3 +1815,5 @@ BOOL Reactor_Impl_Iocp::remove_pending_send( Client_Context* __client_context,Ov
 	}
 	return __res;
 }
+
+#endif //WIN32

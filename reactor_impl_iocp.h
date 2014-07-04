@@ -16,6 +16,8 @@
  *  up-regulation the value of PRE_POST_RECV_NUM will remission the problem. concurrent ability will be improved.
  */
 /************************************************************************/
+#ifdef WIN32
+
 #include <winsock2.h>
 #include <WinBase.h>
 #include <mswsock.h>
@@ -215,5 +217,7 @@ private:
 
 	int								work_thread_cur_;
 };
+
+#endif //WIN32
 
 #endif // reactor_impl_iocp_h__
