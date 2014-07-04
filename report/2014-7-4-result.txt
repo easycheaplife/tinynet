@@ -1,0 +1,49 @@
+hardware information:
+71
+model name      : Intel(R) Xeon(R) CPU E5-2609 0 @ 2.40GHz
+2.6.32-279.el6.x86_64 #1 SMP Fri Jun 22 12:19:21 UTC 2012 x86_64 x86_64 x86_64 GNU/Linux	
+memory:32G
+
+72
+model name Intel(R) Xeon(R) CPU E5-2609 0 @ 2.40GHz
+2.6.32-279.el6.x86_64 #1 SMP Fri Jun 22 12:19:21 UTC 2012 x86_64 x86_64 x86_64 GNU/Linux
+memory:32G
+
+61
+model name      : Intel(R) Core(TM) i5-3470 CPU @ 3.20GHz
+2.6.32-358.el6.x86_64 #1 SMP Fri Feb 22 00:31:26 UTC 2013 x86_64 x86_64 x86_64 GNU/Linux
+memory:3G
+
+63
+model name      : Intel(R) Core(TM) i5-3470 CPU @ 3.20GHz
+windows 7 64
+memory:8G
+/////////////////////////////////////////////////////////////////////////////////////////
+test data : 2014-6-25
+/////////////////////////////////////////////////////////////////////////////////////////
+patten	connection	round trip time(microsecond)	packet per/sec	 	server	client	monitor		process packet	cpu(%)	connection per/sec	packet size(bytes)	network(Kbytes)	nmon file	kernel switch 	desc
+select	1			500~1000							10				72		71		61			n								5				~100
+select 	1000		1000~1500							10				72		71		61			n								5				~100
+select	1			1000~2000							10				72		71		61			y								5				~100
+select 	1000		1000~3000							10				72		71		61			y								5				~100
+epoll 	1000		500~1000							10				72		71		61			n								5				~100
+epoll 	3000		500~1000							10				72		71		61			n								5				~100
+epoll 	5000		800~1300							10				72		71		61			n								5				~100
+epoll 	10000		10000~100000						10				72		71		61			n								5				~100
+epoll 	1000		40000~50000?						10				72		71		61			y				23				5				~100
+epoll 	3000		1000~3000							10				72		71		61			y				72				5				~100
+epoll 	5000		10000~20000							10				72		71		61			y				99				5				~100
+epoll 	10000		~160000								10				72		71		61			y				100				5				~100				11000
+
+iocp 	1000		<10									10				63		71		61			y				7				5				~100
+iocp 	2000		<10									10				63		71		61			y				17				5				~100				
+iocp 	4000		<10									10				63		71		61			y				17				5				~100
+
+/////////////////////////////////////////////////////////////////////////////////////////
+use ring buffer recv data
+test data : 2014-7-2
+/////////////////////////////////////////////////////////////////////////////////////////
+select 	1000		1000~1500							10				72		71		61			y								5				~100				2289
+epoll 	10000		80000~100000						10				72		71		61			y								5				~100				13000~19000
+epoll 	15000		150000~170000						10				72		71		61			y								5				~100				12000~13000						2200~2400		add 5000 client at 13:40,total 15000
+epoll 	20000		240000~150000						10				72		71		61			y								10				~100				~12500							2000~2300
