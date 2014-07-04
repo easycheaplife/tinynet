@@ -5,7 +5,11 @@
 #include "easy_ring_buffer.h"
 #include "easy_allocator.h"
 
+#define VERSION	1.0.1
+
+//	class forward declaration
 class Reactor;
+struct Buffer; 
 
 class Server_Impl : public Event_Handle_Srv
 {
@@ -25,11 +29,12 @@ private:
 
 	void _read(int __fd);
 
-	void _work_thread();
+	void _read_thread();
+
+	void _write_thread();
 
 private:
-	typedef easy::EasyRingbuffer<unsigned char,easy::alloc>	ring_buffer;
-	std::map<int,ring_buffer*>		connects_;
+	std::map<int,Buffer*>		connects_;
 
 	static const unsigned int		max_buffer_size_;
 
