@@ -129,9 +129,12 @@ void test_4_transform_monitor(int sock)
 		memcpy(&__length2,(void*)__packet_head,4);
 		memcpy(&__head2,(void*)(__packet_head + 4),4);
 		memcpy(&__guid2,(void*)(__packet_head + 8),4);
-		if(__length2 != __length)
+		if(0)
 		{
-			printf(" __length2 error! __length = %d,__length2 = %d\n", __length + __packet_head_size,__length2);
+			if(__length2 != __length)
+			{
+				printf(" __length2 error! __length = %d,__length2 = %d\n", __length + __packet_head_size,__length2);
+			}
 		}
 		memset(__recv_buf,0,__buf_size);
 		recv_bytes = recv(sock,(void*)__recv_buf,__length2,0);
