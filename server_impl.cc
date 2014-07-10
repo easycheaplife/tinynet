@@ -1,12 +1,19 @@
-#include "server_impl.h"
 #include <stdio.h>
 #include <string.h>
 #include <thread>
+#ifdef __LINUX
 #include <unistd.h>
+#endif // __LINUX
+#include "server_impl.h"
+
+#ifndef __USE_WRITE_THREAD
+#define __USE_WRITE_THREAD
+#endif //__USE_WRITE_THREAD
 
 #define CC_CALLBACK_0(__selector__,__target__, ...) std::bind(&__selector__,__target__, ##__VA_ARGS__)
 
 const unsigned int Server_Impl::max_buffer_size_ = 1024*8;
+const unsigned int Server_Impl::max_sleep_time_ = 1000*500;
 
 struct Buffer
 {
@@ -14,10 +21,12 @@ struct Buffer
 
 	ring_buffer*	input_;
 	ring_buffer*	output_;
-	Buffer(unsigned int __max_buffer_size)
+	int				fd_;
+	Buffer(int __fd,unsigned int __max_buffer_size)
 	{
 		input_ = new easy::EasyRingbuffer<unsigned char,easy::alloc>(__max_buffer_size);
 		output_ = new easy::EasyRingbuffer<unsigned char,easy::alloc>(__max_buffer_size);
+		fd_ = __fd;
 	}
 };
 
@@ -28,16 +37,23 @@ Server_Impl::Server_Impl( Reactor* __reactor,const char* __host /*= "0.0.0.0"*/,
 #ifndef __HAVE_IOCP
 	auto __thread_read = std::thread(CC_CALLBACK_0(Server_Impl::_read_thread,this));
 	__thread_read.detach();
-
+#ifdef __USE_WRITE_THREAD
 	auto __thread_write = std::thread(CC_CALLBACK_0(Server_Impl::_write_thread,this));
 	__thread_write.detach();
+#endif //__USE_WRITE_THREAD
+
 #endif // !__HAVE_IOCP
 }
 
 void Server_Impl::on_connected( int __fd )
 {
 	printf("on_connected __fd = %d \n",__fd);
-	connects_[__fd] = new Buffer(max_buffer_size_);
+	lock_.acquire_lock();
+	connects_[__fd] = new Buffer(__fd,max_buffer_size_);
+#ifdef __USE_CONNECTS_COPY
+	connects_copy.push_back(connects_[__fd]);
+#endif //__USE_CONNECTS_COPY
+	lock_.release_lock();
 }
 
 void Server_Impl::on_read( int __fd )
@@ -168,12 +184,21 @@ void Server_Impl::_read_thread()
 	while (true)
 	{
 		lock_.acquire_lock();
+#ifdef __USE_CONNECTS_COPY
+		for (std::vector<Buffer*>::iterator __it = connects_copy.begin(); __it != connects_copy.end(); ++__it)
+		{
+			if(*__it)
+			{
+				Buffer::ring_buffer* __input = (*__it)->input_;
+				Buffer::ring_buffer* __output = (*__it)->output_;
+#else
 		for (std::map<int,Buffer*>::iterator __it = connects_.begin(); __it != connects_.end(); ++__it)
 		{
 			if(__it->second)
 			{
 				Buffer::ring_buffer* __input = __it->second->input_;
 				Buffer::ring_buffer* __output = __it->second->output_;
+#endif //__USE_CONNECTS_COPY
 				if (!__input || !__output)
 				{
 					continue;
@@ -204,14 +229,11 @@ void Server_Impl::_read_thread()
 					char __read_buf[max_buffer_size_] = {};
 					if(__input->read((unsigned char*)__read_buf,__packet_length + __head_size))
 					{
-						if(0)
-						{
-							write(__it->first,__read_buf,__packet_length + __head_size);
-						}
-						else
-						{
-							__output->append((unsigned char*)__read_buf,__packet_length + __head_size);
-						}
+#ifdef __USE_WRITE_THREAD
+						__output->append((unsigned char*)__read_buf,__packet_length + __head_size);
+#else
+						write(__it->first,__read_buf,__packet_length + __head_size);
+#endif //__USE_WRITE_THREAD
 					}
 					else
 					{
@@ -221,46 +243,72 @@ void Server_Impl::_read_thread()
 			}
 		}
 		lock_.release_lock();
-		usleep(1000*500);
+#ifdef __LINUX
+		usleep(max_sleep_time_);
+#endif // __LINUX
 	}
 }
 
 void Server_Impl::_write_thread()
 {
+	int __fd = -1;;
 	while (true)
 	{
 		lock_.acquire_lock();
+#ifdef __USE_CONNECTS_COPY
+		for (std::vector<Buffer*>::iterator __it = connects_copy.begin(); __it != connects_copy.end(); ++__it)
+		{
+			if(*__it)
+			{
+				Buffer::ring_buffer* __output = (*__it)->output_;
+				__fd = (*__it)->fd_;
+#else
 		for (std::map<int,Buffer*>::iterator __it = connects_.begin(); __it != connects_.end(); ++__it)
 		{
 			if(__it->second)
 			{
 				Buffer::ring_buffer* __output = __it->second->output_;
+				__fd = __it->first;
+#endif //#ifdef __USE_CONNECTS_COPY
+
 				if (!__output)
 				{
 					continue;
 				}
 				if(__output->wpos() > __output->rpos())
 				{
-					write(__it->first,(const char*)__output->buffer() + __output->rpos(),__output->wpos() - __output->rpos());
+					write(__fd,(const char*)__output->buffer() + __output->rpos(),__output->wpos() - __output->rpos());
 				}
 				else if(__output->wpos() < __output->rpos())
 				{
-					write(__it->first,(const char*)__output->buffer() + __output->rpos(),__output->size() - __output->rpos());
-					write(__it->first,(const char*)__output->buffer(),__output->wpos());
+					write(__fd,(const char*)__output->buffer() + __output->rpos(),__output->size() - __output->rpos());
+					write(__fd,(const char*)__output->buffer(),__output->wpos());
 				}
 				__output->set_rpos(__output->wpos());
 			}
 		}
 		lock_.release_lock();
-		usleep(1000*500);
+#ifdef __LINUX
+		usleep(max_sleep_time_);
+#endif // __LINUX
 	}
 }
-
 
 void Server_Impl::on_disconnect( int __fd )
 {
 	lock_.acquire_lock();
-	for (std::map<int,Buffer*>::iterator __it = connects_.begin(); __it != connects_.end(); ++__it)
+#ifdef __USE_CONNECTS_COPY
+	for (std::vector<Buffer*>::iterator __it = connects_copy.begin(); __it != connects_copy.end(); ++__it)
+	{
+		if ((*__it)->fd_ == __fd)
+		{
+			connects_copy.erase(__it);
+			break;
+		}
+	}
+#endif //__USE_CONNECTS_COPY
+	std::map<int,Buffer*>::iterator __it = connects_.find(__fd);
+	if (__it != connects_.end())
 	{
 		if (__it->second)
 		{
@@ -271,8 +319,6 @@ void Server_Impl::on_disconnect( int __fd )
 			delete __it->second;
 			__it->second = NULL;
 			connects_.erase(__it);
-			lock_.release_lock();
-			return;
 		}
 	}
 	lock_.release_lock();
