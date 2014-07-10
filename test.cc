@@ -19,6 +19,7 @@ int main(int __arg_num,char** args)
 	unsigned int __port = atoi(args[2]);
 	Reactor* __reactor = Reactor::instance();
 	Server_Impl __event_handle_srv(__reactor,__host,__port);
-	__reactor->event_loop(5000*1000);
+	static const int __max_time_out = 5000*1000;
+	__reactor->event_loop(__max_time_out);
 	return 0;
 }
