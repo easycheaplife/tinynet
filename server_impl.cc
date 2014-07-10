@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <thread>
+#include <unistd.h>
 
 #define CC_CALLBACK_0(__selector__,__target__, ...) std::bind(&__selector__,__target__, ##__VA_ARGS__)
 
@@ -220,6 +221,7 @@ void Server_Impl::_read_thread()
 			}
 		}
 		lock_.release_lock();
+		usleep(1000*500);
 	}
 }
 
@@ -250,6 +252,7 @@ void Server_Impl::_write_thread()
 			}
 		}
 		lock_.release_lock();
+		usleep(1000*500);
 	}
 }
 
