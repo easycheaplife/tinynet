@@ -2,6 +2,9 @@
 #include "reactor.h"
 #include <stdlib.h>
 #include <stdio.h>
+#ifdef __LINUX
+#include "easy_dump.h"
+#endif // __LINUX
 
 int main(int __arg_num,char** args)
 {
@@ -15,6 +18,10 @@ int main(int __arg_num,char** args)
 		printf("param error,please input correct param! for example: nohup ./transform 192.168.22.63 9876 & \n");
 		exit(1);
 	}
+#ifdef __LINUX
+	signal(SIGINT,dump_for_gdb);
+	signal(SIGSEGV,dump);
+#endif // __LINUX
 	char* __host = args[1];
 	unsigned int __port = atoi(args[2]);
 	Reactor* __reactor = Reactor::instance();

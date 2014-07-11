@@ -172,9 +172,16 @@ void Server_Impl::_read( int __fd )
 		}
 		else
 		{
+			//	maybe some problem here when data not recv completed for epoll ET.you can realloc the input buffer or use while(recv) until return EAGAIN.
 			Event_Handle_Srv::read(__fd,(char*)__input->buffer(),__ring_buf_head_left);
 			__input->set_wpos(__ring_buf_head_left);
+			printf("%d read not completed\n",__read_left - __ring_buf_head_left);
 		}
+	}
+	_get_usable(__fd,__usable_size);
+	if (__usable_size)
+	{
+		printf("there is %ld bytes data can recv,please do something for epoll ET\n",__usable_size);
 	}
 }
 
