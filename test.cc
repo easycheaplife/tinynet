@@ -19,7 +19,6 @@ int main(int __arg_num,char** args)
 		exit(1);
 	}
 #ifdef __LINUX
-	signal(SIGINT,dump_for_gdb);
 	signal(SIGSEGV,dump);
 #endif // __LINUX
 	char* __host = args[1];

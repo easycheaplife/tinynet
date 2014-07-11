@@ -61,7 +61,14 @@ int Reactor_Impl_Epoll::event_loop(unsigned long __millisecond)
 		int __nfds = epoll_wait(fd_epoll_, events_, MAX_EVENTS, -1);
 		if( -1 == __nfds )
 		{
+			  //	for gdb
+			  if(EINTR == errno)
+			  {
+					 perror("signal EINTR received,ignore it!");
+					continue;
+			  }
 		      perror("epoll_wait error");
+			  printf("errno=%d\n",errno);
 		      exit(EXIT_FAILURE);
 		}
 		for(int __i = 0; __i < __nfds; ++__i)
