@@ -260,7 +260,8 @@ int Event_Handle_Srv::write( int __fd,const char* __data, int __length )
 		{
 			//	close peer socket
 			//	closesocket(__fd);	//	don't do this, it will make server shutdown for select error 10038(WSAENOTSOCK)
-			handle_close(__fd);
+			//	handle_close(__fd);
+			reactor()->reactor_impl()->handle_close(__fd);
 			printf("send error at %d\n",__last_error);
 		}
 #else
@@ -270,7 +271,8 @@ int Event_Handle_Srv::write( int __fd,const char* __data, int __length )
 		if((EAGAIN == errno && EWOULDBLOCK == errno) || ECONNRESET == errno)
 		{
 			//	close peer socket
-			handle_close(__fd);
+			//	handle_close(__fd);
+			reactor()->reactor_impl()->handle_close(__fd);
 			perror("error at send");  
 		}
 #endif // __LINUX

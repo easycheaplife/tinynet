@@ -42,6 +42,9 @@
 	
 	round trip time 为客户端服务器数据包往返时间，约为150ms,网络流量在12Mbytes左右，对于千兆(1000Mbits = 125Mbytes)来说，应该还有很大的空间,详细数据见nmon文档（report/epoll15000/kakao2_140703_1122.xlsx），
 	测试数据仅是个人主观的数据，不一定非常准确，仅供参考 ^_^
+	
+	
+	编译时，确保easy文件夹与tinynet在同一目录下， easy代码地址：https://github.com/yuyunliuhen/easy。
     
     
 

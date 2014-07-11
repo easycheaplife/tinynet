@@ -15,21 +15,6 @@
 const unsigned int Server_Impl::max_buffer_size_ = 1024*8;
 const unsigned int Server_Impl::max_sleep_time_ = 1000*500;
 
-struct Buffer
-{
-	typedef easy::EasyRingbuffer<unsigned char,easy::alloc>	ring_buffer;
-
-	ring_buffer*	input_;
-	ring_buffer*	output_;
-	int				fd_;
-	Buffer(int __fd,unsigned int __max_buffer_size)
-	{
-		input_ = new easy::EasyRingbuffer<unsigned char,easy::alloc>(__max_buffer_size);
-		output_ = new easy::EasyRingbuffer<unsigned char,easy::alloc>(__max_buffer_size);
-		fd_ = __fd;
-	}
-};
-
 
 Server_Impl::Server_Impl( Reactor* __reactor,const char* __host /*= "0.0.0.0"*/,unsigned int __port /*= 9876*/ )
 	: Event_Handle_Srv(__reactor,__host,__port) 
@@ -49,7 +34,7 @@ void Server_Impl::on_connected( int __fd )
 {
 	printf("on_connected __fd = %d \n",__fd);
 	lock_.acquire_lock();
-	connects_[__fd] = new Buffer(__fd,max_buffer_size_);
+	connects_[__fd] = /*new Buffer(__fd,max_buffer_size_)*/buffer_queue_.allocate(__fd,max_buffer_size_);
 #ifdef __USE_CONNECTS_COPY
 	connects_copy.push_back(connects_[__fd]);
 #endif //__USE_CONNECTS_COPY
@@ -175,14 +160,18 @@ void Server_Impl::_read( int __fd )
 			//	maybe some problem here when data not recv completed for epoll ET.you can realloc the input buffer or use while(recv) until return EAGAIN.
 			Event_Handle_Srv::read(__fd,(char*)__input->buffer(),__ring_buf_head_left);
 			__input->set_wpos(__ring_buf_head_left);
+#ifdef __HAVE_EPOLL
 			printf("%d read not completed\n",__read_left - __ring_buf_head_left);
+#endif //__HAVE_EPOLL
 		}
 	}
+#ifdef __HAVE_EPOLL
 	_get_usable(__fd,__usable_size);
 	if (__usable_size)
 	{
 		printf("there is %ld bytes data can recv,please do something for epoll ET\n",__usable_size);
 	}
+#endif //__HAVE_EPOLL
 }
 
 void Server_Impl::_read_thread()
@@ -199,7 +188,7 @@ void Server_Impl::_read_thread()
 				Buffer::ring_buffer* __input = (*__it)->input_;
 				Buffer::ring_buffer* __output = (*__it)->output_;
 #else
-		for (std::map<int,Buffer*>::iterator __it = connects_.begin(); __it != connects_.end(); ++__it)
+		for (map_buffer::iterator __it = connects_.begin(); __it != connects_.end(); ++__it)
 		{
 			if(__it->second)
 			{
@@ -258,26 +247,39 @@ void Server_Impl::_read_thread()
 
 void Server_Impl::_write_thread()
 {
-	int __fd = -1;;
+	int __fd = -1;
+	int __invalid_fd = 1;
 	while (true)
 	{
 		lock_.acquire_lock();
 #ifdef __USE_CONNECTS_COPY
-		for (std::vector<Buffer*>::iterator __it = connects_copy.begin(); __it != connects_copy.end(); ++__it)
+		for (vector_buffer::iterator __it = connects_copy.begin(); __it != connects_copy.end(); )
 		{
 			if(*__it)
 			{
 				Buffer::ring_buffer* __output = (*__it)->output_;
 				__fd = (*__it)->fd_;
+				__invalid_fd = (*__it)->invalid_fd_;
 #else
-		for (std::map<int,Buffer*>::iterator __it = connects_.begin(); __it != connects_.end(); ++__it)
+		for (map_buffer::iterator __it = connects_.begin(); __it != connects_.end(); )
 		{
 			if(__it->second)
 			{
 				Buffer::ring_buffer* __output = __it->second->output_;
 				__fd = __it->first;
+				__invalid_fd = __it->second->invalid_fd_;
 #endif //#ifdef __USE_CONNECTS_COPY
-
+				if(!__invalid_fd)
+				{
+					//	have closed
+#ifdef __USE_CONNECTS_COPY
+					_disconnect(*__it);
+					__it = connects_copy.erase(__it);
+					continue;
+#else
+					_disconnect(__it->second);
+#endif //__USE_CONNECTS_COPY
+				}
 				if (!__output)
 				{
 					continue;
@@ -292,6 +294,7 @@ void Server_Impl::_write_thread()
 					write(__fd,(const char*)__output->buffer(),__output->wpos());
 				}
 				__output->set_rpos(__output->wpos());
+				++__it;
 			}
 		}
 		lock_.release_lock();
@@ -304,31 +307,51 @@ void Server_Impl::_write_thread()
 void Server_Impl::on_disconnect( int __fd )
 {
 	lock_.acquire_lock();
-#ifdef __USE_CONNECTS_COPY
-	for (std::vector<Buffer*>::iterator __it = connects_copy.begin(); __it != connects_copy.end(); ++__it)
+	if(0)
 	{
-		if ((*__it)->fd_ == __fd)
+#ifdef __USE_CONNECTS_COPY
+		for (vector_buffer::iterator __it = connects_copy.begin(); __it != connects_copy.end(); ++__it)
 		{
-			connects_copy.erase(__it);
-			break;
+			if ((*__it)->fd_ == __fd)
+			{
+				connects_copy.erase(__it);
+				break;
+			}
 		}
-	}
 #endif //__USE_CONNECTS_COPY
-	std::map<int,Buffer*>::iterator __it = connects_.find(__fd);
+	}
+	map_buffer::iterator __it = connects_.find(__fd);
 	if (__it != connects_.end())
 	{
 		if (__it->second)
 		{
-			delete __it->second->input_;
-			__it->second->input_ = NULL;
-			delete __it->second->output_;
-			__it->second->output_ = NULL;
-			delete __it->second;
-			__it->second = NULL;
-			connects_.erase(__it);
+			__it->second->invalid_fd_ = 0;
 		}
 	}
 	lock_.release_lock();
 }
+
+void Server_Impl::_disconnect( Buffer* __buffer)
+{
+	if (!__buffer)
+	{
+		return;
+	}
+	map_buffer::iterator __it = connects_.find(__buffer->fd_);
+	if (__it != connects_.end())
+	{
+		if (__it->second)
+		{
+			connects_.erase(__it);
+		}
+	}
+	buffer_queue_.deallcate(__buffer);
+}
+
+Server_Impl::~Server_Impl()
+{
+	buffer_queue_.clear();
+}
+
 
 
