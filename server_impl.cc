@@ -121,15 +121,18 @@ void Server_Impl::_read_directly( int __fd )
 
 void Server_Impl::_read( int __fd )
 {
+	//lock_.acquire_lock();
 	//	the follow code is ring_buf's append function actually.
 	unsigned long __usable_size = 0;
 	if(!connects_[__fd])
 	{
+		//lock_.release_lock();
 		return;
 	}
 	Buffer::ring_buffer* __input = connects_[__fd]->input_;
 	if(!__input)
 	{
+		//lock_.release_lock();
 		return;
 	}
 	
@@ -165,13 +168,14 @@ void Server_Impl::_read( int __fd )
 #endif //__HAVE_EPOLL
 		}
 	}
-#ifdef __HAVE_EPOLL
+#ifdef __HAVE_EPOLL_NO_USE
 	_get_usable(__fd,__usable_size);
 	if (__usable_size)
 	{
 		printf("there is %ld bytes data can recv,please do something for epoll ET\n",__usable_size);
 	}
 #endif //__HAVE_EPOLL
+	//lock_.release_lock();
 }
 
 void Server_Impl::_read_thread()
@@ -282,6 +286,7 @@ void Server_Impl::_write_thread()
 				}
 				if (!__output)
 				{
+					++__it;
 					continue;
 				}
 				if(__output->wpos() > __output->rpos())
@@ -306,7 +311,7 @@ void Server_Impl::_write_thread()
 
 void Server_Impl::on_disconnect( int __fd )
 {
-	lock_.acquire_lock();
+	//lock_.acquire_lock();
 	if(0)
 	{
 #ifdef __USE_CONNECTS_COPY
@@ -328,7 +333,7 @@ void Server_Impl::on_disconnect( int __fd )
 			__it->second->invalid_fd_ = 0;
 		}
 	}
-	lock_.release_lock();
+	//lock_.release_lock();
 }
 
 void Server_Impl::_disconnect( Buffer* __buffer)
