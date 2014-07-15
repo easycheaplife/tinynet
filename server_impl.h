@@ -11,10 +11,6 @@
 
 #define VERSION	1.0.1
 
-#ifndef __USE_CONNECTS_COPY
-#define __USE_CONNECTS_COPY
-#endif //__USE_CONNECTS_COPY
-
 //	class forward declaration
 class Reactor;
 struct Buffer; 
@@ -87,10 +83,8 @@ private:
 	typedef	std::map<int,Buffer*>	map_buffer;
 	std::map<int,Buffer*>			connects_;
 
-#ifdef __USE_CONNECTS_COPY
 	typedef	std::vector<Buffer*>	vector_buffer;
 	std::vector<Buffer*>			connects_copy;
-#endif //__USE_CONNECTS_COPY
 
 	static const unsigned int		max_buffer_size_;
 

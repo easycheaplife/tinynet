@@ -6,15 +6,10 @@
 #endif // __LINUX
 #include "server_impl.h"
 
-#ifndef __USE_WRITE_THREAD
-#define __USE_WRITE_THREAD
-#endif //__USE_WRITE_THREAD
-
 #define CC_CALLBACK_0(__selector__,__target__, ...) std::bind(&__selector__,__target__, ##__VA_ARGS__)
 
 const unsigned int Server_Impl::max_buffer_size_ = 1024*8;
 const unsigned int Server_Impl::max_sleep_time_ = 1000*500;
-
 
 Server_Impl::Server_Impl( Reactor* __reactor,const char* __host /*= "0.0.0.0"*/,unsigned int __port /*= 9876*/ )
 	: Event_Handle_Srv(__reactor,__host,__port) 
@@ -22,11 +17,8 @@ Server_Impl::Server_Impl( Reactor* __reactor,const char* __host /*= "0.0.0.0"*/,
 #ifndef __HAVE_IOCP
 	auto __thread_read = std::thread(CC_CALLBACK_0(Server_Impl::_read_thread,this));
 	__thread_read.detach();
-#ifdef __USE_WRITE_THREAD
 	auto __thread_write = std::thread(CC_CALLBACK_0(Server_Impl::_write_thread,this));
 	__thread_write.detach();
-#endif //__USE_WRITE_THREAD
-
 #endif // !__HAVE_IOCP
 }
 
@@ -34,105 +26,27 @@ void Server_Impl::on_connected( int __fd )
 {
 	printf("on_connected __fd = %d \n",__fd);
 	lock_.acquire_lock();
-	connects_[__fd] = /*new Buffer(__fd,max_buffer_size_)*/buffer_queue_.allocate(__fd,max_buffer_size_);
-#ifdef __USE_CONNECTS_COPY
+	connects_[__fd] = buffer_queue_.allocate(__fd,max_buffer_size_);
 	connects_copy.push_back(connects_[__fd]);
-#endif //__USE_CONNECTS_COPY
 	lock_.release_lock();
 }
 
 void Server_Impl::on_read( int __fd )
 {
-	if(0)
-	{
-		_read_directly(__fd);
-	}
-	else
-	{
-		_read(__fd);
-	}
-}
-
-void Server_Impl::_read_directly( int __fd )
-{
-	if (0)
-	{
-		//	just transform data
-		char __buf[max_buffer_size_] = {0};
-		int __recv_size = Event_Handle_Srv::read(__fd,__buf,max_buffer_size_);
-		if (0)
-		{
-			printf("on_read data is %s,length is %d\n",__buf,__recv_size);
-		}
-		if(-1 != __recv_size)
-		{
-			write(__fd,__buf,__recv_size);
-		}
-	}
-	else
-	{
-		//	read head first.and then read the other msg.just a test code
-		static const int __head_size = 12;
-		unsigned long __usable_size = 0;
-		int __packet_length = 0;
-		int __log_level = 0;
-		int __frame_number = 0;
-		int __head = 0;
-		unsigned int __guid = 0;
-		unsigned char __packet_head[__head_size] = {};
-		int __recv_size = 0;
-		while (true)
-		{
-			_get_usable(__fd,__usable_size);
-			if(__usable_size >= __head_size)
-			{
-				__recv_size = Event_Handle_Srv::read(__fd,(char*)&__packet_head,__head_size);
-				if(__head_size != __recv_size)
-				{
-					printf("error: __recv_size = %d\n",__recv_size);  
-					return ;
-				}
-				memcpy(&__packet_length,__packet_head,4);
-				memcpy(&__head,__packet_head + 4,4);
-				memcpy(&__guid,__packet_head + 8,4);
-				__log_level = (__head) & 0x000000ff;
-				__frame_number = (__head >> 8);
-				write(__fd,(char*)__packet_head,__recv_size);
-			}
-			else
-			{
-				return;
-			}
-			_get_usable(__fd,__usable_size);
-
-			if(__usable_size >= __packet_length)
-			{
-				char __buf[max_buffer_size_] = {0};
-				int __recv_size = Event_Handle_Srv::read(__fd,__buf,__packet_length);
-				write(__fd,__buf,__recv_size);
-			}
-			else
-			{
-				return;
-			}
-		}
-	}
+	_read(__fd);
 }
 
 void Server_Impl::_read( int __fd )
 {
-	//lock_.acquire_lock();
 	//	the follow code is ring_buf's append function actually.
 	unsigned long __usable_size = 0;
 	if(!connects_[__fd])
 	{
-		//lock_.release_lock();
 		return;
 	}
 	Buffer::ring_buffer* __input = connects_[__fd]->input_;
 	if(!__input)
 	{
-		//lock_.release_lock();
 		return;
 	}
 	
@@ -163,19 +77,8 @@ void Server_Impl::_read( int __fd )
 			//	maybe some problem here when data not recv completed for epoll ET.you can realloc the input buffer or use while(recv) until return EAGAIN.
 			Event_Handle_Srv::read(__fd,(char*)__input->buffer(),__ring_buf_head_left);
 			__input->set_wpos(__ring_buf_head_left);
-#ifdef __HAVE_EPOLL
-			printf("%d read not completed\n",__read_left - __ring_buf_head_left);
-#endif //__HAVE_EPOLL
 		}
 	}
-#ifdef __HAVE_EPOLL_NO_USE
-	_get_usable(__fd,__usable_size);
-	if (__usable_size)
-	{
-		printf("there is %ld bytes data can recv,please do something for epoll ET\n",__usable_size);
-	}
-#endif //__HAVE_EPOLL
-	//lock_.release_lock();
 }
 
 void Server_Impl::_read_thread()
@@ -184,21 +87,12 @@ void Server_Impl::_read_thread()
 	while (true)
 	{
 		lock_.acquire_lock();
-#ifdef __USE_CONNECTS_COPY
 		for (std::vector<Buffer*>::iterator __it = connects_copy.begin(); __it != connects_copy.end(); ++__it)
 		{
 			if(*__it)
 			{
 				Buffer::ring_buffer* __input = (*__it)->input_;
 				Buffer::ring_buffer* __output = (*__it)->output_;
-#else
-		for (map_buffer::iterator __it = connects_.begin(); __it != connects_.end(); ++__it)
-		{
-			if(__it->second)
-			{
-				Buffer::ring_buffer* __input = __it->second->input_;
-				Buffer::ring_buffer* __output = __it->second->output_;
-#endif //__USE_CONNECTS_COPY
 				if (!__input || !__output)
 				{
 					continue;
@@ -229,11 +123,7 @@ void Server_Impl::_read_thread()
 					char __read_buf[max_buffer_size_] = {};
 					if(__input->read((unsigned char*)__read_buf,__packet_length + __head_size))
 					{
-#ifdef __USE_WRITE_THREAD
 						__output->append((unsigned char*)__read_buf,__packet_length + __head_size);
-#else
-						write(__it->first,__read_buf,__packet_length + __head_size);
-#endif //__USE_WRITE_THREAD
 					}
 					else
 					{
@@ -256,7 +146,6 @@ void Server_Impl::_write_thread()
 	while (true)
 	{
 		lock_.acquire_lock();
-#ifdef __USE_CONNECTS_COPY
 		for (vector_buffer::iterator __it = connects_copy.begin(); __it != connects_copy.end(); )
 		{
 			if(*__it)
@@ -264,25 +153,12 @@ void Server_Impl::_write_thread()
 				Buffer::ring_buffer* __output = (*__it)->output_;
 				__fd = (*__it)->fd_;
 				__invalid_fd = (*__it)->invalid_fd_;
-#else
-		for (map_buffer::iterator __it = connects_.begin(); __it != connects_.end(); )
-		{
-			if(__it->second)
-			{
-				Buffer::ring_buffer* __output = __it->second->output_;
-				__fd = __it->first;
-				__invalid_fd = __it->second->invalid_fd_;
-#endif //#ifdef __USE_CONNECTS_COPY
 				if(!__invalid_fd)
 				{
 					//	have closed
-#ifdef __USE_CONNECTS_COPY
 					_disconnect(*__it);
 					__it = connects_copy.erase(__it);
 					continue;
-#else
-					_disconnect(__it->second);
-#endif //__USE_CONNECTS_COPY
 				}
 				if (!__output)
 				{
@@ -311,20 +187,6 @@ void Server_Impl::_write_thread()
 
 void Server_Impl::on_disconnect( int __fd )
 {
-	//lock_.acquire_lock();
-	if(0)
-	{
-#ifdef __USE_CONNECTS_COPY
-		for (vector_buffer::iterator __it = connects_copy.begin(); __it != connects_copy.end(); ++__it)
-		{
-			if ((*__it)->fd_ == __fd)
-			{
-				connects_copy.erase(__it);
-				break;
-			}
-		}
-#endif //__USE_CONNECTS_COPY
-	}
 	map_buffer::iterator __it = connects_.find(__fd);
 	if (__it != connects_.end())
 	{
@@ -333,7 +195,6 @@ void Server_Impl::on_disconnect( int __fd )
 			__it->second->invalid_fd_ = 0;
 		}
 	}
-	//lock_.release_lock();
 }
 
 void Server_Impl::_disconnect( Buffer* __buffer)
