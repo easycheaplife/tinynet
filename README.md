@@ -45,6 +45,14 @@
 	
 	
 	编译时，确保easy文件夹与tinynet在同一目录下， easy代码地址：https://github.com/yuyunliuhen/easy。
+	
+	更多详细测试报告：
+
+		 tinynet (V1.0.0) 一个轻量级的网络库（测试报告）
+		 http://blog.chinaunix.net/uid-8625039-id-4337909.html
+		 
+		 tinynet V1.0.1 一个轻量级的网络库（测试报告2）
+		 http://blog.chinaunix.net/uid-8625039-id-4351041.html
     
     
 
