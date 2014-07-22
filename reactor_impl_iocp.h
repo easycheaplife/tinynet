@@ -23,6 +23,7 @@
 #include <mswsock.h>
 #include "reactor_impl.h"
 #include "easy_allocator.h"
+#include "easy_lock.h"
 
 
 #define DATA_BUFSIZE					8192
