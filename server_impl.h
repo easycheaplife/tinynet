@@ -7,6 +7,7 @@
 //	the follows files can get from git@github.com:yuyunliuhen/easy.git,make the easy project at the same directory.
 #include "easy_ring_buffer.h"
 #include "easy_allocator.h"
+#include "easy_lock.h"
 #include "easy_locked_queue.h"
 
 #define VERSION	1.0.1
