@@ -1,15 +1,14 @@
-#include <tchar.h>
 #include <thread>
-#include <crtdefs.h>
 #include "client_impl.h"
 #include "easy_byte_buffer.h"
+#include "easy_util.h"
 
 Client_Impl::Client_Impl( Reactor* __reactor,const char* __host,unsigned int __port /*= 9876*/ ) : Event_Handle_Cli(__reactor,__host,__port)
 {
 	ring_buf_ = new easy::EasyRingbuffer<unsigned char,easy::alloc>(1024*64*100);
 	//	start read thread
-	auto __thread = std::thread(CC_CALLBACK_0(Client_Impl::_read_thread,this));
-	__thread.detach();
+	auto __thread_ = std::thread(CC_CALLBACK_0(Client_Impl::_read_thread,this));
+	__thread_.detach();
 
 	//	work thread can work now
 	star_work_thread();
@@ -99,5 +98,6 @@ void Client_Impl::_read_thread()
 		}
 		printf("data send %s\n",__read_buf + __head_size);
 		Event_Handle_Cli::write(__read_buf,__packet_length + __head_size);
+		easy::Util::sleep(1000*100);
 	}
 }

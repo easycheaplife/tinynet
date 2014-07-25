@@ -22,6 +22,7 @@
 #include "event_handle_cli.h"
 #include "reactor_impl_select.h"
 #include "reactor.h"
+#include "easy_util.h"
 
 Event_Handle_Cli::Event_Handle_Cli(Reactor* __reactor,const char* __host,unsigned int __port) : Event_Handle(__reactor),host_(__host),port_(__port)
 {
@@ -154,6 +155,7 @@ void Event_Handle_Cli::write( const char* __data,unsigned int __length )
 void Event_Handle_Cli::_work_thread()
 {
 	reactor()->event_loop(1);
+	easy::Util::sleep(100*10000);
 }
 
 void Event_Handle_Cli::_set_reuse_addr( int __fd )
@@ -187,7 +189,7 @@ void Event_Handle_Cli::_get_usable( int __fd, unsigned long& __usable_size)
 		printf("ioctlsocket failed with error %d\n", WSAGetLastError());
 	}
 #else
-	if(ioctl(__fd,FIONREAD,__usable_size))
+	if(ioctl(__fd,FIONREAD,&__usable_size))
 	{
 		perror("ioctl FIONREAD");
 	}
