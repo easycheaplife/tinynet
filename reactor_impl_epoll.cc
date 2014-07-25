@@ -128,7 +128,6 @@ int Reactor_Impl_Epoll::handle_close( int __fd )
 {
 	handle_->handle_close(__fd);
 	close(__fd);
-	printf("socket close %d\n",__fd);
 	return -1;
 }
 
