@@ -2,3 +2,7 @@
 V 1.0.1
 1 add write thread to send packet.
 2 use vector store connectors,it a data pointer copy of map.we can quickly travel all connectors.
+
+2014/7/25
+V 1.1.0
+1 add vs2012 win32 solution tinynet client code 

@@ -10,8 +10,6 @@
 #include "easy_lock.h"
 #include "easy_locked_queue.h"
 
-#define VERSION	1.0.1
-
 //	class forward declaration
 class Reactor;
 struct Buffer; 
