@@ -11,11 +11,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\client_impl.cpp" />
+    <ClCompile Include="..\client_impl.cc" />
+    <ClCompile Include="..\cli_test.cc" />
     <ClCompile Include="..\event_handle_cli.cc" />
     <ClCompile Include="..\reactor.cc" />
     <ClCompile Include="..\reactor_impl_select.cc" />
-    <ClCompile Include="..\tinynet_cli.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\client_impl.h" />

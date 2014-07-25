@@ -1,7 +1,6 @@
 #include <thread>
 #include "client_impl.h"
 #include "easy_byte_buffer.h"
-#include "easy_util.h"
 
 Client_Impl::Client_Impl( Reactor* __reactor,const char* __host,unsigned int __port /*= 9876*/ ) : Event_Handle_Cli(__reactor,__host,__port)
 {
@@ -98,6 +97,5 @@ void Client_Impl::_read_thread()
 		}
 		printf("data send %s\n",__read_buf + __head_size);
 		Event_Handle_Cli::write(__read_buf,__packet_length + __head_size);
-		easy::Util::sleep(1000*100);
 	}
 }
