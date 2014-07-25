@@ -153,7 +153,7 @@ void Event_Handle_Cli::write( const char* __data,unsigned int __length )
 
 void Event_Handle_Cli::_work_thread()
 {
-	reactor()->event_loop(500*1000);
+	reactor()->event_loop(5000*1000);
 }
 
 void Event_Handle_Cli::_set_reuse_addr( int __fd )
