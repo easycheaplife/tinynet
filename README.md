@@ -70,10 +70,10 @@
 	
 	
 	more information:
-		 tinynet (V1.0.0) 一个轻量级的网络库（测试报告）
+		 tinynet (V1.0.0) a light-weighted network library（test repoet）
 		 http://blog.chinaunix.net/uid-8625039-id-4337909.html
 		 
-		 tinynet V1.0.1 一个轻量级的网络库（测试报告2）
+		 tinynet V1.0.1 a light-weighted network library（test repoet 2）
 		 http://blog.chinaunix.net/uid-8625039-id-4351041.html
     
     
