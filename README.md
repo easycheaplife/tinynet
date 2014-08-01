@@ -16,11 +16,6 @@
 	for example:
 	int main(int __arg_num,char** args)
 	{
-		/*	
-		g++ -g -Wl,--no-as-needed -std=c++11 -pthread -D__LINUX -D__HAVE_SELECT -o test reactor.h reactor.cc event_handle.h event_handle_srv.h event_handle_srv.cc reactor_impl.h reactor_impl_select.h reactor_impl_select.cc server_impl.h server_impl.cc test.cc  -I../easy/src/base
-		g++ -g -Wl,--no-as-needed -std=c++11 -pthread -D__LINUX -D__HAVE_EPOLL -o test reactor.h reactor.cc event_handle.h event_handle_srv.h event_handle_srv.cc reactor_impl.h reactor_impl_epoll.h reactor_impl_epoll.cc server_impl.h server_impl.cc test.cc -I../easy/src/base
-		g++ -g -Wl,--no-as-needed -std=c++11 -pthread -D__LINUX -D__HAVE_POLL -o test reactor.h reactor.cc event_handle.h event_handle_srv.h event_handle_srv.cc reactor_impl.h reactor_impl_poll.h reactor_impl_poll.cc server_impl.h server_impl.cc test.cc -I../easy/src/base
-		*/
 		if(3 != __arg_num)
 		{
 			printf("param error,please input correct param! for example: nohup ./transform 192.168.22.63 9876 & \n");
@@ -70,10 +65,10 @@
 	
 	
 	more information:
-		 tinynet (V1.0.0) a light-weighted network library£¨test repoet£©
+		 tinynet (V1.0.0) a light-weighted network libraryÂ£Â¨test repoetÂ£Â©
 		 http://blog.chinaunix.net/uid-8625039-id-4337909.html
 		 
-		 tinynet V1.0.1 a light-weighted network library£¨test repoet 2£©
+		 tinynet V1.0.1 a light-weighted network libraryÂ£Â¨test repoet 2Â£Â©
 		 http://blog.chinaunix.net/uid-8625039-id-4351041.html
     
     
