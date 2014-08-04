@@ -54,7 +54,11 @@ void Server_Impl::on_connected( int __fd )
 
 void Server_Impl::on_read( int __fd )
 {
+#ifdef __HAVE_EPOLL
+	_read_completely(__fd);
+#else
 	_read(__fd);
+#endif //__HAVE_EPOLL
 }
 
 void Server_Impl::_read( int __fd )
@@ -98,6 +102,52 @@ void Server_Impl::_read( int __fd )
 			//	maybe some problem here when data not recv completed for epoll ET.you can realloc the input buffer or use while(recv) until return EAGAIN.
 			Event_Handle_Srv::read(__fd,(char*)__input->buffer(),__ring_buf_head_left);
 			__input->set_wpos(__ring_buf_head_left);
+		}
+	}
+}
+
+void Server_Impl::_read_completely(int __fd)
+{
+	//	the follow code is ring_buf's append function actually.
+	unsigned long __usable_size = 0;
+	if(!connects_[__fd])
+	{
+		return;
+	}
+	Buffer::ring_buffer* __input = connects_[__fd]->input_;
+	if(!__input)
+	{
+		return;
+	}
+	
+	_get_usable(__fd,__usable_size);
+	int __ring_buf_tail_left = __input->size() - __input->wpos();
+	if(__usable_size <= __ring_buf_tail_left)
+	{
+		Event_Handle_Srv::read(__fd,(char*)__input->buffer() + __input->wpos(),__usable_size);
+		__input->set_wpos(__input->wpos() + __usable_size);
+	}
+	else
+	{	
+		//	if not do this,the connection will be closed!
+		if(0 != __ring_buf_tail_left)
+		{
+			Event_Handle_Srv::read(__fd,(char*)__input->buffer() +  __input->wpos(),__ring_buf_tail_left);
+			__input->set_wpos(__input->size());
+		}
+		int __ring_buf_head_left = __input->rpos();
+		int __read_left = __usable_size - __ring_buf_tail_left;
+		if(__ring_buf_head_left >= __read_left)
+		{
+			Event_Handle_Srv::read(__fd,(char*)__input->buffer(),__read_left);
+			__input->set_wpos(__read_left);
+		}
+		else
+		{
+			//	make sure __read_left is less than __input.size() + __ring_buf_head_left,usually,It's no problem.
+			__input->reallocate(__input->size());
+			Event_Handle_Srv::read(__fd,(char*)__input->buffer() + __input->wpos(),__read_left);
+			printf("__input->reallocate called, __read_left = %d,buffer left size = %d\n",__read_left,__input->size() - __input->wpos());
 		}
 	}
 }

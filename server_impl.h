@@ -89,9 +89,9 @@ public:
 	void on_read(int __fd);
 
 private:
-	void _read_directly(int __fd);
-
 	void _read(int __fd);
+	
+	void _read_completely(int __fd);
 
 	void _read_thread();
 

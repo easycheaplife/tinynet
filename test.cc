@@ -41,6 +41,9 @@ int main(int __arg_num,char** args)
 	}
 #ifdef __LINUX
 	signal(SIGSEGV,dump);
+	//	when calls send() function twice if peer socket is closed, the SIG_PIPE signal will be trigger. and the SIG_PIPE 's default action is exit process.
+	//	just ignore it! if use gdb debug,add 'handle SIGPIPE nostop print' or 'handle SIGPIPE nostop noprint' before run.
+	signal(SIGPIPE,SIG_IGN);
 #endif // __LINUX
 	char* __host = args[1];
 	unsigned int __port = atoi(args[2]);
