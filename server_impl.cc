@@ -147,7 +147,12 @@ void Server_Impl::_read_completely(int __fd)
 			//	make sure __read_left is less than __input.size() + __ring_buf_head_left,usually,It's no problem.
 			__input->reallocate(__input->size());
 			Event_Handle_Srv::read(__fd,(char*)__input->buffer() + __input->wpos(),__read_left);
-			printf("__input->reallocate called, __read_left = %d,buffer left size = %d\n",__read_left,__input->size() - __input->wpos());
+#ifdef __DEBUG
+			//	test ok! set max_buffer_size_ = 256 will easy to test. 
+			printf("__input->reallocate called, __fd = %d,__read_left = %d,buffer left size = %d\n",__fd,__read_left,__input->size() - __input->wpos());
+			int __head_size = 12;
+			printf("after __input->reallocate called,buffer = %s\n",__input->buffer() + __input->rpos() + __head_size);
+#endif //__DEBUG
 		}
 	}
 }
