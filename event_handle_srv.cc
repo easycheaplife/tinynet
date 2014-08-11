@@ -35,6 +35,7 @@
 #include <unistd.h> 		//	gethostname
 #include <netdb.h>			//	gethostbyname
 #include <sys/ioctl.h>		//	ioctl
+#include <execinfo.h>
 #endif //__LINUX_
 
 #include "event_handle_srv.h"
@@ -101,6 +102,28 @@ int Event_Handle_Srv::handle_exception(int __fd)
 
 int Event_Handle_Srv::handle_close(int __fd)
 {
+#ifdef __DEBUG
+#ifdef __LINUX
+	const int __max_stack_flow = 20;
+	void* __array[__max_stack_flow];
+	char** __strings;
+	size_t __size = backtrace(__array,__max_stack_flow);
+	printf("backtrace() returned %d addresses\n", (int)__size);
+	__strings = backtrace_symbols(__array,__size);
+	if(NULL == __strings)
+	{
+		perror("backtrace_symbols");
+		exit(EXIT_FAILURE);
+	}
+	fprintf (stderr,"obtained %zd stack frames.nm", __size);
+	for (size_t __i = 0; __i < __size; ++__i)
+	{
+		printf("%s\n", __strings[__i]);
+	}
+	//	This __strings is malloc(3)ed by backtrace_symbols(), and must be freed here
+	free (__strings);;
+#endif // __LINUX
+#endif // __DEBUG
 	printf("socket close %d,errno %d\n",__fd,errno);
 	on_disconnect(__fd);
 	return -1;
@@ -256,16 +279,18 @@ int Event_Handle_Srv::read( int __fd,char* __buf, int __length )
 		DWORD __last_error = ::GetLastError();
 		if(WSAEWOULDBLOCK  == __last_error)
 		{
-			//	close peer socket
-			
+			printf("recv error at %d\n",__last_error);
 		}
 #else
 		if(EAGAIN == errno || EWOULDBLOCK == errno)
 		{
-
+			printf("recv errno %d\n",errno);
 		}
 #endif //__LINUX
-		reactor()->reactor_impl()->handle_close(__fd);
+		else
+		{
+			reactor()->reactor_impl()->handle_close(__fd);
+		}
 	}
 	return __recv_size;
 }
@@ -277,26 +302,24 @@ int Event_Handle_Srv::write( int __fd,const char* __data, int __length )
 	{
 #ifndef __LINUX
 		DWORD __last_error = ::GetLastError();
-		if(WSAEWOULDBLOCK  == __last_error || WSAECONNRESET == __last_error)
-		{
-			//	close peer socket
-			//	closesocket(__fd);	//	don't do this, it will make server shutdown for select error 10038(WSAENOTSOCK)
-			//	handle_close(__fd);
-			reactor()->reactor_impl()->handle_close(__fd);
+		if(WSAEWOULDBLOCK  == __last_error)
+		{	
 			printf("send error at %d\n",__last_error);
 		}
 #else
 		//error happend but EAGAIN and EWOULDBLOCK meams that peer socket have been close
 		//EWOULDBLOCK means messages are available at the socket and O_NONBLOCK  is set on the socket's file descriptor
 		// ECONNRESET means an existing connection was forcibly closed by the remote host
-		if((EAGAIN == errno && EWOULDBLOCK == errno) || ECONNRESET == errno)
+		if((EAGAIN == errno && EWOULDBLOCK == errno))
 		{
-			//	close peer socket
-			//	handle_close(__fd);
-			reactor()->reactor_impl()->handle_close(__fd);
-			perror("error at send");  
+			printf("send errno %d\n",errno);
 		}
 #endif // __LINUX
+		else
+		{
+		//	close peer socket
+			reactor()->reactor_impl()->handle_close(__fd);
+		}
 	}
 	return __send_bytes;
 }

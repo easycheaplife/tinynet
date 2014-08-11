@@ -77,31 +77,44 @@ void Server_Impl::_read( int __fd )
 	
 	_get_usable(__fd,__usable_size);
 	int __ring_buf_tail_left = __input->size() - __input->wpos();
+	int __read_bytes = 0;
 	if(__usable_size <= __ring_buf_tail_left)
 	{
-		Event_Handle_Srv::read(__fd,(char*)__input->buffer() + __input->wpos(),__usable_size);
-		__input->set_wpos(__input->wpos() + __usable_size);
+		__read_bytes = Event_Handle_Srv::read(__fd,(char*)__input->buffer() + __input->wpos(),__usable_size);
+		if(-1 != __read_bytes && 0 != __read_bytes)
+		{
+			__input->set_wpos(__input->wpos() + __usable_size);
+		}
 	}
 	else
 	{	
 		//	if not do this,the connection will be closed!
 		if(0 != __ring_buf_tail_left)
 		{
-			Event_Handle_Srv::read(__fd,(char*)__input->buffer() +  __input->wpos(),__ring_buf_tail_left);
-			__input->set_wpos(__input->size());
+			__read_bytes = Event_Handle_Srv::read(__fd,(char*)__input->buffer() +  __input->wpos(),__ring_buf_tail_left);
+			if(-1 != __read_bytes && 0 != __read_bytes)
+			{
+				__input->set_wpos(__input->size());
+			}
 		}
 		int __ring_buf_head_left = __input->rpos();
 		int __read_left = __usable_size - __ring_buf_tail_left;
 		if(__ring_buf_head_left >= __read_left)
 		{
-			Event_Handle_Srv::read(__fd,(char*)__input->buffer(),__read_left);
-			__input->set_wpos(__read_left);
+			__read_bytes = Event_Handle_Srv::read(__fd,(char*)__input->buffer(),__read_left);
+			if(-1 != __read_bytes && 0 != __read_bytes)
+			{
+				__input->set_wpos(__read_left);
+			}
 		}
 		else
 		{
 			//	maybe some problem here when data not recv completed for epoll ET.you can realloc the input buffer or use while(recv) until return EAGAIN.
-			Event_Handle_Srv::read(__fd,(char*)__input->buffer(),__ring_buf_head_left);
-			__input->set_wpos(__ring_buf_head_left);
+			__read_bytes = Event_Handle_Srv::read(__fd,(char*)__input->buffer(),__ring_buf_head_left);
+			if(-1 != __read_bytes && 0 != __read_bytes)
+			{
+				__input->set_wpos(__ring_buf_head_left);
+			}
 		}
 	}
 }
@@ -122,31 +135,45 @@ void Server_Impl::_read_completely(int __fd)
 	
 	_get_usable(__fd,__usable_size);
 	int __ring_buf_tail_left = __input->size() - __input->wpos();
+	int __read_bytes = 0;
 	if(__usable_size <= __ring_buf_tail_left)
 	{
-		Event_Handle_Srv::read(__fd,(char*)__input->buffer() + __input->wpos(),__usable_size);
-		__input->set_wpos(__input->wpos() + __usable_size);
+		__read_bytes = Event_Handle_Srv::read(__fd,(char*)__input->buffer() + __input->wpos(),__usable_size);
+		if(-1 != __read_bytes && 0 != __read_bytes)
+		{
+			__input->set_wpos(__input->wpos() + __usable_size);
+		}
 	}
 	else
 	{	
 		//	if not do this,the connection will be closed!
 		if(0 != __ring_buf_tail_left)
 		{
-			Event_Handle_Srv::read(__fd,(char*)__input->buffer() +  __input->wpos(),__ring_buf_tail_left);
-			__input->set_wpos(__input->size());
+			__read_bytes = Event_Handle_Srv::read(__fd,(char*)__input->buffer() +  __input->wpos(),__ring_buf_tail_left);
+			if(-1 != __read_bytes && 0 != __read_bytes)
+			{
+				__input->set_wpos(__input->size());
+			}
 		}
 		int __ring_buf_head_left = __input->rpos();
 		int __read_left = __usable_size - __ring_buf_tail_left;
 		if(__ring_buf_head_left >= __read_left)
 		{
-			Event_Handle_Srv::read(__fd,(char*)__input->buffer(),__read_left);
-			__input->set_wpos(__read_left);
+			__read_bytes = Event_Handle_Srv::read(__fd,(char*)__input->buffer(),__read_left);
+			if(-1 != __read_bytes && 0 != __read_bytes)
+			{
+				__input->set_wpos(__read_left);
+			}
 		}
 		else
 		{
 			//	make sure __read_left is less than __input.size() + __ring_buf_head_left,usually,It's no problem.
 			__input->reallocate(__input->size());
-			Event_Handle_Srv::read(__fd,(char*)__input->buffer() + __input->wpos(),__read_left);
+			__read_bytes = Event_Handle_Srv::read(__fd,(char*)__input->buffer() + __input->wpos(),__read_left);
+			if(-1 != __read_bytes && 0 != __read_bytes)
+			{
+				__input->set_wpos(__read_left);
+			}
 #ifdef __DEBUG
 			//	test ok! set max_buffer_size_ = 256 will easy to test. 
 			printf("__input->reallocate called, __fd = %d,__read_left = %d,buffer left size = %d\n",__fd,__read_left,__input->size() - __input->wpos());
