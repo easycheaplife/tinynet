@@ -7,10 +7,11 @@ V 1.0.1
 V 1.1.0
 1 add vs2012 win32 solution tinynet client code 
 
-2014/7/25
+2014/8/22
 V 1.1.1
 1 add MIT License
 2 ignore SIG_PIPE for calls send() function twice if peer socket is closed,it will cause process exit.
 3 add _read_completely function for epoll et model,read data completely when EPOLLIN event trigger.
 4 handle recv/send error EAGAIN, continue but not close connection.
+5 add a sample using google protobuf.
 
