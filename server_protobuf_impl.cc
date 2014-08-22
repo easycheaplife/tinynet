@@ -217,25 +217,33 @@ void Server_Impl::_read_thread()
 						break;
 					}
 					__packet_length = (int)*__packet_head;
-					printf("__packet_length = %d\n",__packet_length);
 					if(!__packet_length)
 					{
 						printf("__packet_length error\n");
 						break;
 					}
-					__packet_protobuf.Clear();
-					__string_packet.clear();
+#if 0
+					//	easy_bool read(easy_uint8* des,size_t len)
 					char __read_buf[max_buffer_size_] = {};
 					if(__input->read((unsigned char*)__read_buf,__packet_length + __head_size))
 					{
-						__string_packet = __read_buf + 4;
+						__string_packet = __read_buf + __head_size;
 						__packet_protobuf.ParseFromString(__string_packet);
+						__output->append((unsigned char*)__read_buf,__packet_length + __head_size);
+#else
+					//	easy_bool read(std::string& des,size_t len)
+					__packet_protobuf.Clear();
+					__string_packet.clear();
+					if(__input->read(__string_packet,__packet_length + __head_size))
+					{
+						__packet_protobuf.ParseFromString(__string_packet.c_str() + __head_size);
+						__output->append((unsigned char*)__string_packet.c_str(),__packet_length + __head_size);
+#endif
 #ifdef __DEBUG
 						printf("__packet_protobuf.head = %d\n",__packet_protobuf.head());
 						printf("__packet_protobuf.guid = %d\n",__packet_protobuf.guid());
 						printf("__packet_protobuf.content = %s\n",__packet_protobuf.content().c_str());
 #endif //__DEBUG
-						__output->append((unsigned char*)__read_buf,__packet_length + __head_size);
 					}
 					else
 					{
