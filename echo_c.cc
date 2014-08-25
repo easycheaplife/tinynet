@@ -148,8 +148,10 @@ void test_4_transform_monitor(int sock)
 			printf(" __packet_head error! %d bytes recv\n", recv_bytes);
 		}
 		memcpy(&__length2,(void*)__packet_head,4);
+#if 0
 		memcpy(&__head2,(void*)(__packet_head + 4),4);
 		memcpy(&__guid2,(void*)(__packet_head + 8),4);
+#endif
 		if(0)
 		{
 			if(__length2 != __length)
