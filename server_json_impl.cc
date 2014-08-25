@@ -23,6 +23,7 @@
 #include <string.h>
 #include <thread>
 #ifdef __LINUX
+#include <sys/time.h>
 #include <unistd.h>
 #endif // __LINUX
 #include "server_protobuf_impl.h"
@@ -191,6 +192,11 @@ void Server_Impl::_read_thread()
 	while (true)
 	{
 		lock_.acquire_lock();
+#ifdef __DEBUG
+		struct timeval __start_timeval;
+		gettimeofday(&__start_timeval, NULL);
+		long __start_time = __start_timeval.tv_usec;
+#endif //__DEBUG
 		for (std::vector<Buffer*>::iterator __it = connects_copy.begin(); __it != connects_copy.end(); ++__it)
 		{
 			if(*__it)
@@ -244,6 +250,13 @@ void Server_Impl::_read_thread()
 				}
 			}
 		}
+#ifdef __DEBUG
+		struct timeval __end_timeval;
+		gettimeofday(&__end_timeval, NULL);
+		long __end_time = __end_timeval.tv_usec;
+		long __time_read = __end_time - __start_time;
+		printf("start time = %ld, end time = %ld,server json impl time read = %ld\n",__start_time,__end_time,__time_read);
+#endif //__DEBUG
 		lock_.release_lock();
 #ifdef __LINUX
 		usleep(max_sleep_time_);
