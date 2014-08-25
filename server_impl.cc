@@ -187,6 +187,7 @@ void Server_Impl::_read_completely(int __fd)
 void Server_Impl::_read_thread()
 {
 	static const int __head_size = 12;
+	char __read_buf[max_buffer_size_] = {};
 	while (true)
 	{
 		lock_.acquire_lock();
@@ -214,16 +215,20 @@ void Server_Impl::_read_thread()
 						break;
 					}
 					memcpy(&__packet_length,__packet_head,4);
+#if 0
 					memcpy(&__head,__packet_head + 4,4);
 					memcpy(&__guid,__packet_head + 8,4);
+#endif
 					if(!__packet_length)
 					{
 						printf("__packet_length error\n");
 						break;
 					}
+#if 0
 					__log_level = (__head) & 0x000000ff;
 					__frame_number = (__head >> 8);
-					char __read_buf[max_buffer_size_] = {};
+#endif
+					memset(__read_buf,0,max_buffer_size_);
 					if(__input->read((unsigned char*)__read_buf,__packet_length + __head_size))
 					{
 						__output->append((unsigned char*)__read_buf,__packet_length + __head_size);
