@@ -14,4 +14,5 @@ V 1.1.1
 3 add _read_completely function for epoll et model,read data completely when EPOLLIN event trigger.
 4 handle recv/send error EAGAIN, continue but not close connection.
 5 add a sample using google protobuf.
+6 add a sample using json.
 

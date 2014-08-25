@@ -18,13 +18,11 @@
  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
-  protobuf version:V2.5.0
-  general:
-	$export LD_LIBRARY_PATH=../easy/dep/protobuf/src/.libs
-	$../easy/dep/protobuf/src/.libs/protoc -I./ --cpp_out=. transfer.proto
+  jansson version:V2.6
   compile:
-	$g++ -g -Wl,--no-as-needed -std=c++11 -pthread -D__LINUX -D__HAVE_EPOLL -o test reactor.h reactor.cc event_handle.h event_handle_srv.h event_handle_srv.cc reactor_impl.h reactor_impl_epoll.h reactor_impl_epoll.cc transfer.pb.h transfer.pb.cc server_protobuf_impl.h server_protobuf_impl.cc test.cc -I../easy/src/base -I../easy/dep/protobuf/src/ -L../easy/dep/protobuf/src/.libs -lprotobuf
+	$g++ -g -Wl,--no-as-needed -std=c++11 -pthread -D__LINUX -D__HAVE_EPOLL -o test reactor.h reactor.cc event_handle.h event_handle_srv.h event_handle_srv.cc reactor_impl.h reactor_impl_epoll.h reactor_impl_epoll.cc server_json_impl.h server_json_impl.cc test.cc -I../easy/src/base -I../easy/dep/jansson/src/ -L../easy/dep/jansson/src/.libs -ljansson
   run: 
+	$export LD_LIBRARY_PATH=../easy/dep/jansson/src/.libs
     $./test 192.168.22.61 9876
  ****************************************************************************/
 #ifndef server_protobuf_impl_h__
