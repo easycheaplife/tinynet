@@ -209,6 +209,12 @@ void Server_Impl::_read_thread()
 				{
 					continue;
 				}
+#ifdef __DEBUG
+				if(0 == (*__it)->fd_ % 1000)
+				{
+					printf("fd =%d,rpos = %d, wpos = %d\n",(*__it)->fd_,__input->rpos(),__input->wpos());
+				}
+#endif //__DEBUG
 				while (!__input->read_finish())
 				{
 					int __packet_length = 0;

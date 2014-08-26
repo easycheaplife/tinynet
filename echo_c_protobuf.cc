@@ -20,7 +20,7 @@
  THE SOFTWARE.
     protobuf version:V2.5.0
   general:
-	$export LD_LIBRARY_PATH=../easy/dep/protobuf/src/.libs
+	$export LD_LIBRARY_PATH=$LD_LIBRARY_PATH../easy/dep/protobuf/src/.libs
 	$../easy/dep/protobuf/src/.libs/protoc -I./ --cpp_out=. transfer.proto
   compile:
 	$g++ -g -o echo_c_protobuf transfer.pb.h transfer.pb.cc echo_c_protobuf.cc -I../easy/dep/protobuf/src/ -L../easy/dep/protobuf/src/.libs -lprotobuf
