@@ -22,7 +22,7 @@
   compile:
 	$g++ -g -o echo_c_json echo_c_json.cc -I../easy/dep/jansson/src/ -L../easy/dep/jansson/src/.libs -ljansson
   run: 
-	$export LD_LIBRARY_PATH=../easy/dep/jansson/src/.libs
+	$export LD_LIBRARY_PATH=$LD_LIBRARY_PATH../easy/dep/jansson/src/.libs
     $./test 192.168.22.63 9876
  ****************************************************************************/
 #include <stdlib.h>			//	exit

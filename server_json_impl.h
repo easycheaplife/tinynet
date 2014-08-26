@@ -22,7 +22,7 @@
   compile:
 	$g++ -g -Wl,--no-as-needed -std=c++11 -pthread -D__LINUX -D__HAVE_EPOLL -o test reactor.h reactor.cc event_handle.h event_handle_srv.h event_handle_srv.cc reactor_impl.h reactor_impl_epoll.h reactor_impl_epoll.cc server_json_impl.h server_json_impl.cc test.cc -I../easy/src/base -I../easy/dep/jansson/src/ -L../easy/dep/jansson/src/.libs -ljansson
   run: 
-	$export LD_LIBRARY_PATH=../easy/dep/jansson/src/.libs
+	$export LD_LIBRARY_PATH=$LD_LIBRARY_PATH../easy/dep/jansson/src/.libs
     $./test 192.168.22.61 9876
  ****************************************************************************/
 #ifndef server_protobuf_impl_h__
