@@ -479,7 +479,11 @@ unsigned int __stdcall Reactor_Impl_Iocp::work_thread_function( void* __pv )
 	Overlapped_Puls* __overlapped_puls = NULL;
 	while (true)
 	{
+#ifndef _WIN64
 		BOOL __res = GetQueuedCompletionStatus(__this->completeion_port_, &__bytes_transferred,(LPDWORD)&__per_handle,(LPOVERLAPPED*)&__overlapped, TIME_OVERTIME/*INFINITE*/);
+#else
+		BOOL __res = GetQueuedCompletionStatus(__this->completeion_port_, &__bytes_transferred,(PULONG_PTR)&__per_handle,(LPOVERLAPPED*)&__overlapped, TIME_OVERTIME/*INFINITE*/);
+#endif //_WIN64
 		DWORD __io_error = ::WSAGetLastError();
 		if(!__res && __io_error == WAIT_TIMEOUT)
 		{
