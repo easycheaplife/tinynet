@@ -15,12 +15,14 @@
     <ClCompile Include="..\cli_test.cc" />
     <ClCompile Include="..\event_handle_cli.cc" />
     <ClCompile Include="..\reactor.cc" />
+    <ClCompile Include="..\reactor_impl_iocp.cc" />
     <ClCompile Include="..\reactor_impl_select.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\client_impl.h" />
     <ClInclude Include="..\event_handle_cli.h" />
     <ClInclude Include="..\reactor.h" />
+    <ClInclude Include="..\reactor_impl_iocp.h" />
     <ClInclude Include="..\reactor_impl_select.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
