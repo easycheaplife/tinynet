@@ -19,65 +19,17 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
  ****************************************************************************/
-#ifndef event_handle_cli_h__
-#define event_handle_cli_h__
+#ifndef packet_handle_h__
+#define packet_handle_h__
 #include <string>
-#include "event_handle.h"
 
-#define CC_CALLBACK_0(__selector__,__target__, ...) std::bind(&__selector__,__target__, ##__VA_ARGS__)
-
-class Event_Handle_Cli : public  Event_Handle
+class Packet_Handle
 {
 public:
-	Event_Handle_Cli(Reactor* __reactor,const char* __host,unsigned int __port);
+	Packet_Handle(){}
 
-	virtual ~Event_Handle_Cli() {}
+	virtual ~Packet_Handle() { }
 
-	virtual int handle_input(int __fd);
-
-	virtual int handle_output(int __fd);
-
-	virtual int handle_exception(int __fd);
-
-	virtual int handle_close(int __fd);
-
-	virtual int handle_timeout(int __fd);
-
-	virtual int get_handle() const { return fd_;}
-
-	void write(const char* __data,unsigned int __length);
-
-	void write(std::string& __data);
-
-	//	read data from network cache
-	int	read(int __fd,char* __buf, int __length); 
-
-public:
-	//	pure virtual function, subclass must define it.
-	virtual void on_read(int __fd) = 0;
-
-protected:
-	void star_work_thread();
-
-	void 	_set_noblock(int __fd);
-
-	void	_set_reuse_addr(int __fd);
-
-	void	_set_no_delay(int __fd);
-
-	void	_get_usable(int __fd,unsigned long& __usable_size);
-
-	void	_work_thread();
-
-private:
-	void 	_init(unsigned int __port = 9876);
-
-private:
-	int  	fd_;
-
-	std::string		host_;
-
-	unsigned		port_;
+	virtual int handle_packet(int __packet_id,const std::string& __packet) = 0;
 };
-
-#endif // event_handle_cli_h__
+#endif // packet_handle_h__
