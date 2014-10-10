@@ -86,15 +86,17 @@ struct Buffer
 class Server_Impl : public Event_Handle_Srv
 {
 public:
-	Server_Impl(Reactor* __reactor,const char* __host = "0.0.0.0",unsigned int __port = 9876);
+	Server_Impl(Reactor* __reactor,const char* __host,unsigned int __port);
 
-	~Server_Impl();
+	virtual ~Server_Impl();
 
 	void on_connected(int __fd);
 
 	void on_disconnect(int __fd);
 
 	void on_read(int __fd);
+
+	virtual int handle_packet(unsigned int __packet_id,const std::string& __string_packet) = 0;
 
 private:
 	void _read(int __fd);

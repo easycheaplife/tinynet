@@ -21,6 +21,7 @@
  ****************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
+#include <string>
 //	for c++	11
 #include <thread>
 #include <functional>
@@ -169,6 +170,11 @@ void Event_Handle_Cli::write( const char* __data,unsigned int __length )
 #endif // __LINUX
 		perror("error at send");  
 	}
+}
+
+void Event_Handle_Cli::write( std::string& __data)
+{
+	write(__data.c_str(),__data.length());
 }
 
 void Event_Handle_Cli::_work_thread()

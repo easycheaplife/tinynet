@@ -28,13 +28,14 @@
 #endif // __LINUX
 #include "server_framework_impl.h"
 #include "transfer.pb.h"
+#include "packet_handle.h"
 
 #define CC_CALLBACK_0(__selector__,__target__, ...) std::bind(&__selector__,__target__, ##__VA_ARGS__)
 
 const unsigned int Server_Impl::max_buffer_size_ = 1024*8;
 const unsigned int Server_Impl::max_sleep_time_ = 1000*500;
 
-Server_Impl::Server_Impl( Reactor* __reactor,const char* __host /*= "0.0.0.0"*/,unsigned int __port /*= 9876*/ )
+Server_Impl::Server_Impl( Reactor* __reactor,const char* __host,unsigned int __port )
 	: Event_Handle_Srv(__reactor,__host,__port) 
 {
 #ifndef __HAVE_IOCP
@@ -188,17 +189,11 @@ void Server_Impl::_read_completely(int __fd)
 
 void Server_Impl::_read_thread()
 {
-	transfer::Packet __packet_protobuf;
 	std::string 	 __string_packet;
-	static const int __head_size = 4;
+	static const int __head_size = sizeof(unsigned int);
 	while (true)
 	{
 		lock_.acquire_lock();
-#ifdef __DEBUG
-		struct timeval __start_timeval;
-		gettimeofday(&__start_timeval, NULL);
-		long __start_time = __start_timeval.tv_usec;
-#endif //__DEBUG
 		for (std::vector<Buffer*>::iterator __it = connects_copy.begin(); __it != connects_copy.end(); ++__it)
 		{
 			if(*__it)
@@ -209,53 +204,28 @@ void Server_Impl::_read_thread()
 				{
 					continue;
 				}
-#ifdef __DEBUG
-				if(0 == (*__it)->fd_ % 1000)
-				{
-					printf("fd =%d,rpos = %d, wpos = %d\n",(*__it)->fd_,__input->rpos(),__input->wpos());
-				}
-#endif //__DEBUG
 				while (!__input->read_finish())
 				{
 					int __packet_length = 0;
-					int __log_level = 0;
-					int __frame_number = 0;
-					unsigned char __packet_head[__head_size] = {};
-					int __head = 0;
-					unsigned int __guid = 0;
-					if(!__input->pre_read(__packet_head,__head_size))
+					int __packet_id = 0;
+					unsigned int __packet_head = 0;
+					if(!__input->pre_read((unsigned char*)&__packet_head,__head_size))
 					{
 						//	not enough data for read
 						break;
 					}
-					__packet_length = (int)*__packet_head;
+					__packet_id = (__packet_head & 0xffff0000) >> 16;
+					__packet_length = __packet_head & 0x0000ffff;
 					if(!__packet_length)
 					{
 						printf("__packet_length error\n");
 						break;
 					}
-#if 0
-					//	easy_bool read(easy_uint8* des,size_t len)
-					char __read_buf[max_buffer_size_] = {};
-					if(__input->read((unsigned char*)__read_buf,__packet_length + __head_size))
-					{
-						__string_packet = __read_buf + __head_size;
-						__packet_protobuf.ParseFromString(__string_packet);
-						__output->append((unsigned char*)__read_buf,__packet_length + __head_size);
-#else
-					//	easy_bool read(std::string& des,size_t len)
-					__packet_protobuf.Clear();
+
 					__string_packet.clear();
 					if(__input->read(__string_packet,__packet_length + __head_size))
 					{
-						__packet_protobuf.ParseFromString(__string_packet.c_str() + __head_size);
-						__output->append((unsigned char*)__string_packet.c_str(),__packet_length + __head_size);
-#endif
-#ifdef __DEBUG
-						printf("__packet_protobuf.head = %d\n",__packet_protobuf.head());
-						printf("__packet_protobuf.guid = %d\n",__packet_protobuf.guid());
-						printf("__packet_protobuf.content = %s\n",__packet_protobuf.content().c_str());
-#endif //__DEBUG
+						handle_packet(__packet_id,__string_packet.c_str() + __head_size);
 					}
 					else
 					{
@@ -264,13 +234,6 @@ void Server_Impl::_read_thread()
 				}
 			}
 		}
-#ifdef __DEBUG
-		struct timeval __end_timeval;
-		gettimeofday(&__end_timeval, NULL);
-		long __end_time = __end_timeval.tv_usec;
-		long __time_read = __end_time - __start_time;
-		printf("start time = %ld, end time = %ld,server protobuf impl time read = %ld\n",__start_time,__end_time,__time_read);
-#endif //__DEBUG
 		lock_.release_lock();
 #ifdef __LINUX
 		usleep(max_sleep_time_);
