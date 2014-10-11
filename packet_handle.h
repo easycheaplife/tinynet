@@ -23,13 +23,17 @@
 #define packet_handle_h__
 #include <string>
 
+class Event_Handle;
 class Packet_Handle
 {
 public:
-	Packet_Handle(){}
+	Packet_Handle(Event_Handle* __event_handle){ event_handle_ = __event_handle;}
 
 	virtual ~Packet_Handle() { }
 
-	virtual int handle_packet(int __packet_id,const std::string& __packet) = 0;
+	virtual int handle_packet(int __fd,int __packet_id,const std::string& __packet) = 0;
+
+protected:
+	Event_Handle*	event_handle_;
 };
 #endif // packet_handle_h__

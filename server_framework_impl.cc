@@ -225,7 +225,7 @@ void Server_Impl::_read_thread()
 					__string_packet.clear();
 					if(__input->read(__string_packet,__packet_length + __head_size))
 					{
-						handle_packet(__packet_id,__string_packet.c_str() + __head_size);
+						handle_packet((*__it)->fd_,__packet_id,__string_packet.c_str() + __head_size);
 					}
 					else
 					{

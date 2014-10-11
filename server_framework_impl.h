@@ -96,7 +96,7 @@ public:
 
 	void on_read(int __fd);
 
-	virtual int handle_packet(unsigned int __packet_id,const std::string& __string_packet) = 0;
+	virtual int handle_packet(int __fd,unsigned int __packet_id,const std::string& __string_packet) = 0;
 
 private:
 	void _read(int __fd);

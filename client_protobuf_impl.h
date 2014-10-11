@@ -28,11 +28,13 @@
 class Client_Impl : public Event_Handle_Cli
 {
 public:
-	Client_Impl(Reactor* __reactor,const char* __host,unsigned int __port = 9876);
+	Client_Impl(Reactor* __reactor,const char* __host,unsigned int __port);
 
-	~Client_Impl();
+	virtual ~Client_Impl();
 
 	void on_read(int __fd);
+
+	virtual int handle_packet(int __fd,unsigned int __packet_id,const std::string& __string_packet) = 0;
 
 private:
 	void	_read_thread();

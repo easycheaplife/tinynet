@@ -87,36 +87,32 @@ void Client_Impl::on_read( int __fd )
 
 void Client_Impl::_read_thread()
 {
-	const int __head_size = 12;
-	const int __recv_buffer_size = 1024;
+	static const int __head_size = sizeof(unsigned int);
+	std::string 	 __string_packet;
 	while (true)
 	{
 		int __packet_length = 0;
-		int __log_level = 0;
-		int __frame_number = 0;
-		unsigned char __packet_head[__head_size] = {};
-		int __head = 0;
-		unsigned int __guid = 0;
-		std::string __device_name;
+		int __packet_id = 0;
+		unsigned int __packet_head = 0;
 		if(!ring_buf_->pre_read((unsigned char*)&__packet_head,__head_size))
 		{
 			continue;
 		}
-		memcpy(&__packet_length,__packet_head,4);
-		memcpy(&__head,__packet_head + 4,4);
-		memcpy(&__guid,__packet_head + 8,4);
+		__packet_id = (__packet_head & 0xffff0000) >> 16;
+		__packet_length = __packet_head & 0x0000ffff;
 		if(!__packet_length)
 		{
+			printf("__packet_length error\n");
 			continue;
 		}
-		__log_level = (__head) & 0x000000ff;
-		__frame_number = (__head >> 8);
-		char __read_buf[__recv_buffer_size] = {};
-		if(!ring_buf_->read((unsigned char*)__read_buf,__packet_length + __head_size))
+		__string_packet.clear();
+		if(ring_buf_->read(__string_packet,__packet_length + __head_size))
+		{
+			handle_packet(get_handle(),__packet_id,__string_packet.c_str() + __head_size);
+		}
+		else
 		{
 			continue;
 		}
-		printf("data send %s\n",__read_buf + __head_size);
-		Event_Handle_Cli::write(__read_buf,__packet_length + __head_size);
 	}
 }
