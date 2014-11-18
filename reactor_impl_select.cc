@@ -23,8 +23,9 @@
 #include <stdio.h>
 #include "reactor_impl_select.h"
 #include "event_handle.h"
+#include "easy_allocator.h"
 
-struct Event_Handle_Data
+struct Event_Handle_Data : public easy::my_alloc
 {
 	Event_Handle_Data(int __fd,Event_Handle* __event_handle):fd_(__fd),invalid_fd_(1),event_handle_(__event_handle) {}
 	int				invalid_fd_;

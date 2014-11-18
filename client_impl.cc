@@ -22,6 +22,7 @@
 #include <thread>
 #include "client_impl.h"
 #include "easy_byte_buffer.h"
+#include "easy_util.h"
 
 Client_Impl::Client_Impl( Reactor* __reactor,const char* __host,unsigned int __port /*= 9876*/ ) : Event_Handle_Cli(__reactor,__host,__port)
 {
@@ -56,30 +57,44 @@ void Client_Impl::on_read( int __fd )
 		unsigned long __usable_size = 0;
 		_get_usable(__fd,__usable_size);
 		int __ring_buf_tail_left = ring_buf_->size() - ring_buf_->wpos();
+		int __read_bytes = 0;
 		if(__usable_size <= __ring_buf_tail_left)
 		{
-			Event_Handle_Cli::read(__fd,(char*)ring_buf_->buffer() + ring_buf_->wpos(),__usable_size);
-			ring_buf_->set_wpos(ring_buf_->wpos() + __usable_size);
+			__read_bytes = Event_Handle_Cli::read(__fd,(char*)ring_buf_->buffer() + ring_buf_->wpos(),__usable_size);
+			if(-1 != __read_bytes && 0 != __read_bytes)
+			{
+				ring_buf_->set_wpos(ring_buf_->wpos() + __usable_size);
+			}
 		}
 		else
 		{
 			//	if not do this,the connection will be closed!
 			if(0 != __ring_buf_tail_left)
 			{
-				Event_Handle_Cli::read(__fd,(char*)ring_buf_->buffer() +  ring_buf_->wpos(),__ring_buf_tail_left);
-				ring_buf_->set_wpos(ring_buf_->size());
+				__read_bytes = Event_Handle_Cli::read(__fd,(char*)ring_buf_->buffer() +  ring_buf_->wpos(),__ring_buf_tail_left);
+				if(-1 != __read_bytes && 0 != __read_bytes)
+				{
+					ring_buf_->set_wpos(ring_buf_->size());
+				}
 			}
 			int __ring_buf_head_left = ring_buf_->rpos();
 			int __read_left = __usable_size - __ring_buf_tail_left;
 			if(__ring_buf_head_left >= __read_left)
 			{
-				Event_Handle_Cli::read(__fd,(char*)ring_buf_->buffer(),__read_left);
-				ring_buf_->set_wpos(__read_left);
+				__read_bytes = Event_Handle_Cli::read(__fd,(char*)ring_buf_->buffer(),__read_left);
+				if(-1 != __read_bytes && 0 != __read_bytes)
+				{
+					ring_buf_->set_wpos(__read_left);
+				}
 			}
 			else
 			{
-				Event_Handle_Cli::read(__fd,(char*)ring_buf_->buffer(),__ring_buf_head_left);
-				ring_buf_->set_wpos(__ring_buf_head_left);
+				//	maybe some problem here when data not recv completed for epoll ET.you can realloc the input buffer or use while(recv) until return EAGAIN.
+				__read_bytes = Event_Handle_Cli::read(__fd,(char*)ring_buf_->buffer(),__ring_buf_head_left);
+				if(-1 != __read_bytes && 0 != __read_bytes)
+				{
+					ring_buf_->set_wpos(__ring_buf_head_left);
+				}
 			}
 		}
 	}
@@ -88,35 +103,43 @@ void Client_Impl::on_read( int __fd )
 void Client_Impl::_read_thread()
 {
 	const int __head_size = 12;
-	const int __recv_buffer_size = 1024;
+	const int __recv_buffer_size = 1024*8;
+	char __read_buf[__recv_buffer_size] = {};
 	while (true)
 	{
-		int __packet_length = 0;
-		int __log_level = 0;
-		int __frame_number = 0;
-		unsigned char __packet_head[__head_size] = {};
-		int __head = 0;
-		unsigned int __guid = 0;
-		std::string __device_name;
-		if(!ring_buf_->pre_read((unsigned char*)&__packet_head,__head_size))
+		while (!ring_buf_->read_finish())
 		{
-			continue;
+			int __packet_length = 0;
+			int __log_level = 0;
+			int __frame_number = 0;
+			unsigned char __packet_head[__head_size] = {};
+			int __head = 0;
+			unsigned int __guid = 0;
+			if(!ring_buf_->pre_read((unsigned char*)&__packet_head,__head_size))
+			{
+				break;
+			}
+			memcpy(&__packet_length,__packet_head,4);
+			memcpy(&__head,__packet_head + 4,4);
+			memcpy(&__guid,__packet_head + 8,4);
+			if(!__packet_length)
+			{
+				break;
+			}
+			__log_level = (__head) & 0x000000ff;
+			__frame_number = (__head >> 8);
+			memset(__read_buf,0,__recv_buffer_size);
+			if(ring_buf_->read((unsigned char*)__read_buf,__packet_length + __head_size))
+			{
+				printf("data send %s\n",__read_buf + __head_size);
+				Event_Handle_Cli::write(__read_buf,__packet_length + __head_size);
+			}
+			else
+			{
+				break;
+			}
 		}
-		memcpy(&__packet_length,__packet_head,4);
-		memcpy(&__head,__packet_head + 4,4);
-		memcpy(&__guid,__packet_head + 8,4);
-		if(!__packet_length)
-		{
-			continue;
-		}
-		__log_level = (__head) & 0x000000ff;
-		__frame_number = (__head >> 8);
-		char __read_buf[__recv_buffer_size] = {};
-		if(!ring_buf_->read((unsigned char*)__read_buf,__packet_length + __head_size))
-		{
-			continue;
-		}
-		printf("data send %s\n",__read_buf + __head_size);
-		Event_Handle_Cli::write(__read_buf,__packet_length + __head_size);
+		static const int __sleep_time = 1*1000;
+		easy::Util::sleep(__sleep_time);
 	}
 }
