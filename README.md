@@ -123,9 +123,9 @@ press test:
 	
 more information:
 ---
-		 [tinynet (V1.0.0) a light-weighted network library¨test repoet](http://blog.chinaunix.net/uid-8625039-id-4337909.html)
+[tinynet (V1.0.0) a light-weighted network library¨test repoet](http://blog.chinaunix.net/uid-8625039-id-4337909.html)
 		 
-		 [tinynet V1.0.1 a light-weighted network library¨test repoet 2](http://blog.chinaunix.net/uid-8625039-id-4351041.html)
+[tinynet V1.0.1 a light-weighted network library¨test repoet 2](http://blog.chinaunix.net/uid-8625039-id-4351041.html)
     
     
 
