@@ -1,6 +1,6 @@
 tinynet
 ===
-    tinynet is light-weighted network library.it supports select/poll/epoll/iocp multiplexing model.  <br>
+    tinynet is light-weighted network library.it supports select/poll/epoll/iocp multiplexing model. 
   you can switch any one by define different macro.
 	
 compiler:
