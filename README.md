@@ -90,7 +90,7 @@ usage:
 		return 0;
 	}
 
-	press test
+####press test
 	(1)use echo c/s model,sends ten packets per/second,100 bytes per/packet,include 12 bytes head size and content;
 	(2)test under linux,about 5 connection per/second,20000 connections in all.
 	to test program' s stability and the number of connections,just include data sending and parsing,do nothing others.
