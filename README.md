@@ -63,8 +63,9 @@ usage:
 		//	set head
 		__head |= (__frame_number << 8);
 		__head |= (__log_level);
-
-		std::string __context = "[0x000085e4][T]AdvertisingIndentitifer: '', IdentifierForVendor: '', DeviceName: 'King-PC', ModelName: 'x86', SystemName: '', SystemVersion: '', HardwareID: '74d435046509'";
+		srand(easy::EasyTime::get_cur_sys_time());
+		int __random_index = rand()%__random_string_size;
+		std::string __context = __random_string[__random_index];
 		int __length = __context.size();
 	#if 0
 		static const int __data_length = 256;
@@ -89,13 +90,13 @@ usage:
 		}
 		return 0;
 	}
-press test:
----
+
+	press test
 	(1)use echo c/s model,sends ten packets per/second,100 bytes per/packet,include 12 bytes head size and content;
 	(2)test under linux,about 5 connection per/second,20000 connections in all.
 	to test program' s stability and the number of connections,just include data sending and parsing,do nothing others.
 	
-#####machine configuration:
+	machine configuration:
 	71
 	model name      : Intel(R) Xeon(R) CPU E5-2609 0 @ 2.40GHz
 	2.6.32-279.el6.x86_64 #1 SMP Fri Jun 22 12:19:21 UTC 2012 x86_64 x86_64 x86_64 GNU/Linux	
@@ -116,16 +117,17 @@ press test:
 	2.6.32-358.el6.x86_64 #1 SMP Fri Feb 22 00:31:26 UTC 2013 x86_64 x86_64 x86_64 GNU/Linux
 	memory:3G
 
-#####simple data:
+	simple data:
 	patten	connection	round trip time(microsecond)	packet per/sec	 	server	client	monitor		process packet	cpu(%)	connection per/sec	packet size(bytes)	network(MBytes)	nmon file		
 	epoll 	20000		10									10				73		71,72		61			y								5				~100		 8
 	
 	
-more information:
----
-[tinynet (V1.0.0) a light-weighted network library¨test repoet](http://blog.chinaunix.net/uid-8625039-id-4337909.html)
+	more information:
+		 tinynet (V1.0.0) a light-weighted network library£¨test repoet£©
+		 http://blog.chinaunix.net/uid-8625039-id-4337909.html
 		 
-[tinynet V1.0.1 a light-weighted network library¨test repoet 2](http://blog.chinaunix.net/uid-8625039-id-4351041.html)
+		 tinynet V1.0.1 a light-weighted network library£¨test repoet 2£©
+		 http://blog.chinaunix.net/uid-8625039-id-4351041.html
     
     
 
