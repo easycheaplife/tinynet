@@ -5,7 +5,7 @@ tinynet
 compiler:
 ---
 	make sure easy project at the same directory,easey git address:https://github.com/yuyunliuhen/easy
-	(1)	linux
+#####linux
 	use gcc,version 4.8.1 or later
 	for example:
 	g++ -g -Wl,--no-as-needed -std=c++11 -pthread -D__LINUX -D__HAVE_SELECT -o test reactor.h reactor.cc event_handle.h event_handle_srv.h event_handle_srv.cc reactor_impl.h reactor_impl_select.h reactor_impl_select.cc server_impl.h server_impl.cc test.cc  -I../easy/src/base
@@ -14,7 +14,7 @@ compiler:
 	
 	you alse can use camke,just execute
 	$cmake . & make 
-	(2) windows
+#####windows
 	use visual studio 2012, you can find project file at the directory proj.win32.
 	
 usage:
