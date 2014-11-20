@@ -1,7 +1,7 @@
 tinynet
 ===
     tinynet is light-weighted network library.it supports select/poll/epoll/iocp multiplexing model.you can switch any one by define different macro.
-compiler
+compiler:
 ---
 	make sure easy project at the same directory,easey git address:https://github.com/yuyunliuhen/easy
 	(1)	linux
@@ -16,10 +16,10 @@ compiler
 	(2) windows
 	use visual studio 2012, you can find project file at the directory proj.win32.
 	
-usage
+usage:
 ---
-	for example:
-	---server---
+####for example:
+#####server:
 	int main(int __arg_num,char** args)
 	{
 		if(3 != __arg_num)
@@ -38,7 +38,7 @@ usage
 		__reactor->event_loop(__max_time_out);
 		return 0;
 	}
-	---client---
+#####client:
 	int main(int argc, char* argv[])
 	{
 		/*
