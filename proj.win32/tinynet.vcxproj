@@ -159,7 +159,7 @@
     <ClCompile Include="..\reactor_impl_iocp.cc" />
     <ClCompile Include="..\reactor_impl_select.cc" />
     <ClCompile Include="..\server_impl.cc" />
-    <ClCompile Include="..\test.cc" />
+    <ClCompile Include="..\srv_test.cc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
