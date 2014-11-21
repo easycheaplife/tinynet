@@ -347,7 +347,17 @@ int Reactor_Impl_Iocp::event_loop(unsigned long __millisecond)
 			}
 			active_clienk_context_lock_.release_lock();
 		}
-		::Sleep(100);
+		//	fix #3
+		//	waiting_send_ is not null, but not write completed any more, these data will never be send!
+		active_clienk_context_lock_.acquire_lock();
+		Client_Context* __first_client_context = active_cleint_context_;
+		while(__first_client_context)
+		{
+			send_pending_send(__first_client_context);
+			__first_client_context = __first_client_context->next_;
+		}
+		active_clienk_context_lock_.release_lock();
+		::Sleep(1000);
 	}
 	return -1;
 }

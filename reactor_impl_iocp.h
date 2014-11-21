@@ -35,6 +35,8 @@
  *  #4	2014-6-13
  *  client send data frequently, about thousand packets per second, more than two client,GetQueuedCompletionStatus will return timeout.
  *  up-regulation the value of PRE_POST_RECV_NUM will remission the problem. concurrent ability will be improved.
+ *  #5	2014-11-21
+ *  client can not recv any message but there is some data not be sent.
  */
 /************************************************************************/
 #ifdef WIN32
