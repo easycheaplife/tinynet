@@ -103,6 +103,8 @@ public:
 
 	void send_pending_send(Client_Context* __client_context);
 
+	void send_all_pending_send();
+
 	int read_packet(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls);
 
 	void send_2_all_client(Client_Context* __client_context,const char* __data, int __length);
