@@ -26,7 +26,7 @@
 
 Client_Impl::Client_Impl( Reactor* __reactor,const char* __host,unsigned int __port /*= 9876*/ ) : Event_Handle_Cli(__reactor,__host,__port)
 {
-	ring_buf_ = new easy::EasyRingbuffer<unsigned char,easy::alloc>(1024*64*100);
+	ring_buf_ = new easy::EasyRingbuffer<unsigned char,easy::alloc>(1024*8);
 	//	start read thread
 	auto __thread_ = std::thread(CC_CALLBACK_0(Client_Impl::_read_thread,this));
 	__thread_.detach();
@@ -131,7 +131,7 @@ void Client_Impl::_read_thread()
 			memset(__read_buf,0,__recv_buffer_size);
 			if(ring_buf_->read((unsigned char*)__read_buf,__packet_length + __head_size))
 			{
-				printf("data send %s\n",__read_buf + __head_size);
+				printf("data send: %s\n",__read_buf + __head_size);
 				Event_Handle_Cli::write(__read_buf,__packet_length + __head_size);
 			}
 			else
