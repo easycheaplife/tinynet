@@ -42,7 +42,7 @@
 #include "reactor_impl_select.h"
 #include "reactor.h"
 
-Event_Handle_Srv::Event_Handle_Srv(Reactor* __reactor,const char* __host,unsigned int __port) : Event_Handle(__reactor),host_(__host),port_(__port)
+Event_Handle_Srv::Event_Handle_Srv(Reactor* __reactor,const easy_char* __host,easy_uint32 __port) : Event_Handle(__reactor),host_(__host),port_(__port)
 {
 	_init();
 	reactor()->reactor_impl()->register_handle(this,get_handle(),kMaskAccept);
@@ -54,7 +54,7 @@ Event_Handle_Srv::~Event_Handle_Srv()
 
 }
 
-int Event_Handle_Srv::handle_input(int __fd)
+int Event_Handle_Srv::handle_input(easy_int32 __fd)
 {
 	if(__fd == fd_)
 	{
@@ -74,7 +74,7 @@ int Event_Handle_Srv::handle_input(int __fd)
 	return 0;
 }
 
-int Event_Handle_Srv::handle_output(int __fd)
+int Event_Handle_Srv::handle_output(easy_int32 __fd)
 {
 #ifdef __DEBUG
 	printf("handle_outputd\n");
@@ -94,13 +94,13 @@ int Event_Handle_Srv::handle_output(int __fd)
 	return -1;
 }
 
-int Event_Handle_Srv::handle_exception(int __fd)
+int Event_Handle_Srv::handle_exception(easy_int32 __fd)
 {
 	printf("handle_exception\n");
 	return -1;
 }
 
-int Event_Handle_Srv::handle_close(int __fd)
+int Event_Handle_Srv::handle_close(easy_int32 __fd)
 {
 #ifdef __DEBUG
 #ifdef __LINUX
@@ -129,7 +129,7 @@ int Event_Handle_Srv::handle_close(int __fd)
 	return -1;
 }
 
-int Event_Handle_Srv::handle_timeout(int __fd)
+int Event_Handle_Srv::handle_timeout(easy_int32 __fd)
 {
 	printf("handle_timeout\n");
 	return -1;
@@ -197,7 +197,7 @@ void Event_Handle_Srv::_init()
 	_set_reuse_addr(fd_);
 }
 
-void Event_Handle_Srv::_set_noblock(int __fd)
+void Event_Handle_Srv::_set_noblock(easy_int32 __fd)
 {
 #ifndef __LINUX
 	unsigned long __non_block = 1;
@@ -222,7 +222,7 @@ void Event_Handle_Srv::_set_noblock(int __fd)
 }
 
 
-void Event_Handle_Srv::_set_reuse_addr(int __fd)
+void Event_Handle_Srv::_set_reuse_addr(easy_int32 __fd)
 {
 	int __option_name = 1;
 	if(setsockopt(__fd, SOL_SOCKET, SO_REUSEADDR, (char*)&__option_name, sizeof(int)) == -1)  
@@ -232,7 +232,7 @@ void Event_Handle_Srv::_set_reuse_addr(int __fd)
 	}  
 }
 
-void Event_Handle_Srv::_set_no_delay(int __fd)
+void Event_Handle_Srv::_set_no_delay(easy_int32 __fd)
 {
 #ifndef __LINUX
 	//	The Nagle algorithm is disabled if the TCP_NODELAY option is enabled 
@@ -245,7 +245,7 @@ void Event_Handle_Srv::_set_no_delay(int __fd)
 #endif //__LINUX
 }
 
-void Event_Handle_Srv::_get_usable( int __fd, unsigned long& __usable_size)
+void Event_Handle_Srv::_get_usable( easy_int32 __fd, easy_ulong& __usable_size)
 {
 #ifndef __LINUX
 	if(SOCKET_ERROR == ioctlsocket(__fd, FIONREAD, &__usable_size))
@@ -261,14 +261,14 @@ void Event_Handle_Srv::_get_usable( int __fd, unsigned long& __usable_size)
 }
 
 
-void Event_Handle_Srv::broadcast(int __fd,const char* __data,unsigned int __length)
+void Event_Handle_Srv::broadcast(easy_int32 __fd,const easy_char* __data,easy_uint32 __length)
 {
 	reactor()->reactor_impl()->broadcast(__fd,__data,__length);
 }
 
-int Event_Handle_Srv::read( int __fd,char* __buf, int __length )
+int Event_Handle_Srv::read( easy_int32 __fd,easy_char* __buf, easy_int32 __length )
 {
-	int __recv_size = recv(__fd,__buf,__length,0);
+	easy_int32 __recv_size = recv(__fd,__buf,__length,0);
 	if(0 == __recv_size)
 	{
 		reactor()->reactor_impl()->handle_close(__fd);
@@ -295,7 +295,7 @@ int Event_Handle_Srv::read( int __fd,char* __buf, int __length )
 	return __recv_size;
 }
 
-int Event_Handle_Srv::write( int __fd,const char* __data, int __length )
+int Event_Handle_Srv::write( easy_int32 __fd,const easy_char* __data, easy_int32 __length )
 {
 	int __send_bytes = send(__fd,__data,__length,0);
 	if(-1 == __send_bytes)

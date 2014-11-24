@@ -32,31 +32,31 @@ public:
 	
 	~Reactor_Impl_Epoll() {}
 	
-	int register_handle(Event_Handle* __handle,int __fd,int __mask,int __connect);
+	easy_int32 register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask,easy_int32 __connect);
 	
-	int remove_handle(Event_Handle* __handle,int __mask);
+	easy_int32 remove_handle(Event_Handle* __handle,easy_int32 __mask);
 	
-	int handle_event(unsigned long __millisecond);
+	easy_int32 handle_event(easy_ulong __millisecond);
 
-	int handle_close(int __fd);
+	easy_int32 handle_close(easy_int32 __fd);
 	
-	int event_loop(unsigned long __millisecond);
+	easy_int32 event_loop(easy_ulong __millisecond);
 
 	//	__fd is the broadcaster
-	void broadcast(int __fd,const char* __data,unsigned int __length);
+	void broadcast(easy_int32 __fd,const easy_char* __data,easy_uint32 __length);
 
-	void write(int __fd,const char* __data, int __length);
+	void write(easy_int32 __fd,const easy_char* __data, easy_int32 __length);
 
 private:
 	void _init();
 	
-	void _add_event(int __fd,uint32_t __event);
+	void _add_event(easy_int32 __fd,uint32_t __event);
 	
-	void _mod_event(int __fd,uint32_t __event);
+	void _mod_event(easy_int32 __fd,uint32_t __event);
 	
-	int						fd_;
+	easy_int32						fd_;
 
-	int						fd_epoll_;
+	easy_int32						fd_epoll_;
 	
 	struct epoll_event 				ev_;
 	

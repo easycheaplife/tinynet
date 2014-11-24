@@ -51,16 +51,16 @@ struct   Overlapped_Puls
 	WSABUF		wsa_buf_;
 
 	//	the buffer's start address
-	char*		buffer_;
+	easy_char*	buffer_;
 
 	//	the used buffer size
-	int			used_size_;
+	easy_int32	used_size_;
 
 	//	total size of buffer context
-	int			buffer_length_;
+	easy_int32	buffer_length_;
 
 	//	the sequence of buffer,include post send and post recv sequence.
-	LONG		sequence_num_;
+	easy_long	sequence_num_;
 
 	//	socket of client
 	SOCKET		sock_client_;
@@ -72,7 +72,7 @@ struct   Overlapped_Puls
 public:
 	//packet data interface
 	//add data to buffer
-	BOOL add_data(char* __data,int __length)
+	BOOL add_data(easy_char* __data,easy_int32 __length)
 	{
 		if (used_size_ + __length > DATA_BUFSIZE)
 		{
@@ -84,37 +84,37 @@ public:
 	}
 
 	//add a bool to buffer
-	BOOL add_data(bool __data)
+	BOOL add_data(easy_bool __data)
 	{
-		return add_data((char*)&__data,sizeof(bool));
+		return add_data((easy_char*)&__data,sizeof(easy_bool));
 	}
 
-	BOOL add_data( unsigned char __data )
+	BOOL add_data( easy_uint8 __data )
 	{
-		return add_data((char*)&__data,sizeof(unsigned char));
+		return add_data((easy_char*)&__data,sizeof(easy_uint8));
 	}
 
-	BOOL add_data( short __data )
+	BOOL add_data( easy_int16 __data )
 	{
-		return add_data((char*)&__data,sizeof(short));
+		return add_data((easy_char*)&__data,sizeof(easy_int16));
 	}
 
-	BOOL add_data( int __data )
+	BOOL add_data( easy_int32 __data )
 	{
-		return add_data((char*)&__data,sizeof(int));
+		return add_data((easy_char*)&__data,sizeof(easy_int32));
 	}
 
-	void read_data( char* __data,const int __bytes )
+	void read_data( easy_char* __data,const easy_int32 __bytes )
 	{
 		memcpy_s(__data,__bytes,buffer_ + used_size_,__bytes);
 	}
 
-	void read_int( int& __val )
+	void read_int( easy_int32& __val )
 	{
-		read_data((char*)&__val,sizeof(int));
+		read_data((easy_char*)&__val,sizeof(easy_int32));
 	}
 
-	BOOL flush_buffer( Overlapped_Puls* __next_overlap_puls,int __flush_size )
+	BOOL flush_buffer( Overlapped_Puls* __next_overlap_puls,easy_int32 __flush_size )
 	{
 		if (!__next_overlap_puls)
 		{
@@ -156,7 +156,7 @@ public:
 		return TRUE;
 	}
 
-	BOOL is_enough( const int __read_bytes )
+	BOOL is_enough( const easy_int32 __read_bytes )
 	{
 		int __not_read_bytes = buffer_length_ - used_size_;
 		if (__not_read_bytes < __read_bytes)
@@ -166,7 +166,7 @@ public:
 		return TRUE;
 	}
 
-	void setp_used_size( const int __step_bytes )
+	void setp_used_size( const easy_int32 __step_bytes )
 	{
 		if (used_size_ + __step_bytes <= buffer_length_)
 		{
@@ -174,7 +174,7 @@ public:
 		}
 	}
 
-	int	left_size()
+	easy_int32	left_size()
 	{
 		return buffer_length_ - used_size_;
 	}
@@ -193,23 +193,23 @@ struct Client_Context
 	BOOL						close_;
 
 	//	number of WSARecv posted
-	LONG						num_post_recv_;
+	easy_long					num_post_recv_;
 
 	//	number of WSASend posted
-	LONG						num_post_send_;
+	easy_long					num_post_send_;
 
 	//	the inc dequeue in the Client_Context,if a read or read overlapped operator occur in the client socket ,read_sequence_ increase by one,
 	//	that is the value is the total number of post recv.
-	LONG						read_sequence_;
+	easy_long					read_sequence_;
 
 	//	current sequence to read,if lReadSequence decrease by by one,get rid of a  Overlapped_Puls from pOutOrderReads
-	LONG						cur_read_sequence_;
+	easy_long					cur_read_sequence_;
 
 	//	the inc dequeue of waiting send buffer
-	LONG						write_sequence_;
+	easy_long					write_sequence_;
 
 	//	current sequence to write data
-	LONG						cur_write_sequence_;
+	easy_long					cur_write_sequence_;
 
 	//	lock to protect the struct
 	CRITICAL_SECTION			lock_;
@@ -218,7 +218,7 @@ struct Client_Context
 	Overlapped_Puls*			cur_pending_send_;
 
 	//	current waiting send number
-	LONG						waiting_send_count_;
+	easy_long					waiting_send_count_;
 
 	//	record the OVERLAPPED_PLUS which waiting send
 	Overlapped_Puls*			waiting_send_;
@@ -251,7 +251,7 @@ Reactor_Impl_Iocp::Reactor_Impl_Iocp()
 	work_thread_cur_ = 0;
 }
 
-int Reactor_Impl_Iocp::register_handle(Event_Handle* __handle,int __fd,int __mask,int __connect)
+int Reactor_Impl_Iocp::register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask,easy_int32 __connect)
 {
 	if(kMaskAccept ==__mask)
 	{
@@ -269,17 +269,17 @@ int Reactor_Impl_Iocp::register_handle(Event_Handle* __handle,int __fd,int __mas
 	return -1;
 }
 
-int Reactor_Impl_Iocp::remove_handle(Event_Handle* __handle,int __mask)
+int Reactor_Impl_Iocp::remove_handle(Event_Handle* __handle,easy_int32 __mask)
 {
 	return -1;
 }
 
-int Reactor_Impl_Iocp::handle_event(unsigned long __millisecond)
+int Reactor_Impl_Iocp::handle_event(easy_ulong __millisecond)
 {
 	return -1;
 }
 
-int Reactor_Impl_Iocp::event_loop(unsigned long __millisecond)
+easy_int32 Reactor_Impl_Iocp::event_loop(easy_ulong __millisecond)
 {
 	//	do not do this, a mast of time will running at lock & unlock
 	while(true)
@@ -382,9 +382,9 @@ void Reactor_Impl_Iocp::_ready()
 	//	The decision to create 2 worker threads per CPU in the system is a heuristic.  
 	//	Also,note that thread handles are closed right away, because we will not need them and the worker threads will continue to execute.
 
-	int __number_work_thread = _get_cpu_number();
+	easy_int32 __number_work_thread = _get_cpu_number();
 	work_thread_cur_ = __number_work_thread;
-	for(int __i = 0; __i < work_thread_cur_; ++__i)
+	for(easy_int32 __i = 0; __i < work_thread_cur_; ++__i)
 	{
 		_begin_thread(&work_thread_function,this);
 	}
@@ -400,10 +400,10 @@ void Reactor_Impl_Iocp::_ready()
 		printf("WSAEventSelect() failed with error %d\n", WSAGetLastError());
 		exit(1);
 	}
-	_associate_completeion_port(completeion_port_,(HANDLE)fd_,(DWORD)0);
+	_associate_completeion_port(completeion_port_,(HANDLE)fd_,(easy_ulong)0);
 
 	// Load the AcceptEx function into memory using WSAIoctl.
-	DWORD __bytes = 0;
+	easy_ulong __bytes = 0;
 	GUID __guid_accept_ex = WSAID_ACCEPTEX;
 	if(SOCKET_ERROR  == WSAIoctl(fd_, 
 		SIO_GET_EXTENSION_FUNCTION_POINTER, 
@@ -449,7 +449,7 @@ int Reactor_Impl_Iocp::_get_cpu_number()
 
 void Reactor_Impl_Iocp::_begin_thread(unsigned (__stdcall * __start_address) (void *),void* __pv)
 {
-	unsigned int __thread_id = 0;
+	easy_uint32 __thread_id = 0;
 	uintptr_t __res = _beginthreadex( NULL, 0, __start_address, __pv, 0, &__thread_id );
 	if (0 == __res)
 	{
@@ -471,11 +471,11 @@ void Reactor_Impl_Iocp::_begin_thread(unsigned (__stdcall * __start_address) (vo
 	}
 }
 
-unsigned int __stdcall Reactor_Impl_Iocp::work_thread_function( void* __pv )
+easy_uint32 __stdcall Reactor_Impl_Iocp::work_thread_function( void* __pv )
 {
 	Reactor_Impl_Iocp* __this = (Reactor_Impl_Iocp*)__pv;
-	DWORD __bytes_transferred = 0;
-	DWORD __per_handle = 0;
+	easy_ulong __bytes_transferred = 0;
+	easy_ulong __per_handle = 0;
 	LPOVERLAPPED __overlapped = NULL;
 	Overlapped_Puls* __overlapped_puls = NULL;
 	while (true)
@@ -485,7 +485,7 @@ unsigned int __stdcall Reactor_Impl_Iocp::work_thread_function( void* __pv )
 #else
 		BOOL __res = GetQueuedCompletionStatus(__this->completeion_port_, &__bytes_transferred,(PULONG_PTR)&__per_handle,(LPOVERLAPPED*)&__overlapped, TIME_OVERTIME/*INFINITE*/);
 #endif //_WIN64
-		DWORD __io_error = ::WSAGetLastError();
+		easy_ulong __io_error = ::WSAGetLastError();
 		if(!__res && __io_error == WAIT_TIMEOUT)
 		{
 			//	there is not much for server to do,and this thread can die even if it still outstanding I/O request
@@ -500,7 +500,7 @@ unsigned int __stdcall Reactor_Impl_Iocp::work_thread_function( void* __pv )
 		if(__overlapped_puls)
 		{
 			__io_error = NO_ERROR;
-			DWORD __flags = 0;
+			easy_ulong __flags = 0;
 			if (!__res)
 			{
 				//specify the socket for WSAGetOverlappedResult
@@ -517,7 +517,7 @@ unsigned int __stdcall Reactor_Impl_Iocp::work_thread_function( void* __pv )
 					}
 					__sock = ((Client_Context*)__per_handle)->socket_;
 				}
-				DWORD dwFlags = 0;
+				easy_ulong dwFlags = 0;
 				if(!::WSAGetOverlappedResult(__sock, &__overlapped_puls->overLapped_, &__bytes_transferred, FALSE, &dwFlags))
 				{
 					__io_error = WSAGetLastError();
@@ -529,19 +529,19 @@ unsigned int __stdcall Reactor_Impl_Iocp::work_thread_function( void* __pv )
 	return 0;
 }
 
-int Reactor_Impl_Iocp::handle_close( int __fd )
+easy_int32 Reactor_Impl_Iocp::handle_close( easy_int32 __fd )
 {
 	return -1;
 }
 
-unsigned int __stdcall Reactor_Impl_Iocp::listen_thread( void* __pv )
+easy_uint32 __stdcall Reactor_Impl_Iocp::listen_thread( void* __pv )
 {
 	Overlapped_Puls* __overlapped_puls = NULL;
-	int __error = 0;
+	easy_int32 __error = 0;
 	Reactor_Impl_Iocp* __this = (Reactor_Impl_Iocp*)__pv;
 	while(TRUE)
 	{
-		DWORD __events = 0;
+		easy_ulong __events = 0;
 		// Wait for one of the sockets to receive I/O notification and 
 		if (((__events = WSAWaitForMultipleEvents(__this->event_total_, __this->event_array_, FALSE,
 			/*WSA_INFINITE*/TIME_OVERTIME, FALSE)) == WSA_WAIT_FAILED))
@@ -557,8 +557,8 @@ unsigned int __stdcall Reactor_Impl_Iocp::listen_thread( void* __pv )
 			__overlapped_puls = __this->penging_accept_overlap_puls_;
 			while(NULL != __overlapped_puls)
 			{
-				int __seconds = 0;
-				int __bytes = sizeof(__seconds);
+				easy_int32 __seconds = 0;
+				easy_int32 __bytes = sizeof(__seconds);
 				//	check all AcceptEx is timeout
 				__error = getsockopt(__overlapped_puls->sock_client_, SOL_SOCKET, SO_CONNECT_TIME,(char*)&__seconds, (int*)&__bytes );
 				if ( NO_ERROR != (__error = WSAGetLastError())) 
@@ -589,7 +589,7 @@ unsigned int __stdcall Reactor_Impl_Iocp::listen_thread( void* __pv )
 					printf("FD_ACCEPT failed with error %d\n", __network_events.iErrorCode[FD_ACCEPT_BIT]);
 					break;
 				}
-				for(int i = 0; i < __this->pre_post_accept_num_; ++i)
+				for(easy_int32 i = 0; i < __this->pre_post_accept_num_; ++i)
 				{
 					__overlapped_puls = __this->allocate_overlapped_puls(DATA_BUFSIZE);
 					if(NULL != __overlapped_puls)
@@ -612,8 +612,8 @@ unsigned int __stdcall Reactor_Impl_Iocp::listen_thread( void* __pv )
 
 void Reactor_Impl_Iocp::post_accept(Overlapped_Puls* __overlapped_plus)
 {
-	int __error_code = 0;
-	DWORD __bytes = 0;
+	easy_int32 __error_code = 0;
+	easy_ulong __bytes = 0;
 	// Create per I/O socket information structure to associate with the WSARecv call below.
 	if(SOCKET_ERROR == (__overlapped_plus->sock_client_ = WSASocket(AF_INET,SOCK_STREAM,IPPROTO_TCP,NULL, 0,WSA_FLAG_OVERLAPPED)))
 	{
@@ -640,7 +640,7 @@ void Reactor_Impl_Iocp::post_accept(Overlapped_Puls* __overlapped_plus)
 	}
 }
 
-Overlapped_Puls* Reactor_Impl_Iocp::allocate_overlapped_puls( int __buffer_len )
+Overlapped_Puls* Reactor_Impl_Iocp::allocate_overlapped_puls( easy_int32 __buffer_len )
 {
 	if(__buffer_len > DATA_BUFSIZE)
 	{
@@ -779,7 +779,7 @@ void Reactor_Impl_Iocp::release_client_context( Client_Context* __client_context
 	//	to be continue ...
 }
 
-void Reactor_Impl_Iocp::_process_io( DWORD __per_handle,Overlapped_Puls* __overlapped_puls,DWORD __bytes_transferred,int __error )
+void Reactor_Impl_Iocp::_process_io( easy_ulong __per_handle,Overlapped_Puls* __overlapped_puls,easy_ulong __bytes_transferred,easy_int32 __error )
 {
 	//	check if __bytes_transferred is 0.if so, a new client connection is coming,sub a pening acceptex count first
 	Client_Context* __client_context = (Client_Context*)__per_handle;
@@ -928,7 +928,7 @@ void Reactor_Impl_Iocp::on_connection_error( Client_Context* __client_context,Ov
 
 }
 
-void Reactor_Impl_Iocp::on_accept_completed( Overlapped_Puls* __overlapped_puls,DWORD __bytes_transferred )
+void Reactor_Impl_Iocp::on_accept_completed( Overlapped_Puls* __overlapped_puls,easy_ulong __bytes_transferred )
 {
 	if(0 == __bytes_transferred)
 	{
@@ -937,8 +937,8 @@ void Reactor_Impl_Iocp::on_accept_completed( Overlapped_Puls* __overlapped_puls,
 			_close_socket(__overlapped_puls->sock_client_);
 		}
 	}
-	int __local_len = 0;
-	int __rmote_len = 0;
+	easy_int32 __local_len = 0;
+	easy_int32 __rmote_len = 0;
 	LPSOCKADDR __localaddr, __remoteaddr;
 	Client_Context* __client_context = allocate_client_context(__overlapped_puls->sock_client_);
 	if(NULL != __client_context)
@@ -957,13 +957,13 @@ void Reactor_Impl_Iocp::on_accept_completed( Overlapped_Puls* __overlapped_puls,
 			memcpy(&__client_context->sockaddr_client_, __localaddr, __local_len);
 			__client_context->close_ = FALSE;
 			// Associate the accept socket with the completion port
-			_associate_completeion_port(completeion_port_,(HANDLE)__client_context->socket_,(DWORD)__client_context);
+			_associate_completeion_port(completeion_port_,(HANDLE)__client_context->socket_,(easy_ulong)__client_context);
 			__overlapped_puls->buffer_length_ = __bytes_transferred;
 			//	call virtual function-----------------------------------------
 			on_connection_established(__client_context,__overlapped_puls);
 			//	call virtual function-----------------------------------------
 			//post a few WSARecv quest
-			for(int i = 0; i < PRE_POST_RECV_NUM; ++i)
+			for(easy_int32 i = 0; i < PRE_POST_RECV_NUM; ++i)
 			{
 				Overlapped_Puls* __temp_overLap_plus = allocate_overlapped_puls(DATA_BUFSIZE);
 				if(NULL != __temp_overLap_plus)
@@ -991,7 +991,7 @@ void Reactor_Impl_Iocp::on_accept_completed( Overlapped_Puls* __overlapped_puls,
 	process_packet(__client_context,__overlapped_puls);
 }
 
-void Reactor_Impl_Iocp::on_read_completed( Client_Context* __client_context,Overlapped_Puls* __overlapped_puls,DWORD __bytes_transferred )
+void Reactor_Impl_Iocp::on_read_completed( Client_Context* __client_context,Overlapped_Puls* __overlapped_puls,easy_ulong __bytes_transferred )
 {
 	//	check to see if an error has occured on the socket and if so then close the socket and cleanup the SOCKET_INFORMATION structure
 	//	associated with the socket.
@@ -1018,7 +1018,7 @@ void Reactor_Impl_Iocp::on_read_completed( Client_Context* __client_context,Over
 			return;
 		}
 		int __posr_recv_left = PRE_POST_RECV_NUM - __client_context->num_post_recv_;
-		for(int i = 0; i < __posr_recv_left; ++i)
+		for(easy_int32 i = 0; i < __posr_recv_left; ++i)
 		{
 			Overlapped_Puls* __temp_overLap_puls = allocate_overlapped_puls(DATA_BUFSIZE);
 			if(NULL != __temp_overLap_puls)
@@ -1039,12 +1039,12 @@ void Reactor_Impl_Iocp::on_read_completed( Client_Context* __client_context,Over
 	}
 }
 
-void Reactor_Impl_Iocp::on_zero_read_completed( Client_Context* __client_context,Overlapped_Puls* __overlapped_puls,DWORD __bytes_transferred )
+void Reactor_Impl_Iocp::on_zero_read_completed( Client_Context* __client_context,Overlapped_Puls* __overlapped_puls,easy_ulong __bytes_transferred )
 {
 
 }
 
-void Reactor_Impl_Iocp::on_write_completed( Client_Context* __client_context,Overlapped_Puls* __overlapped_puls,DWORD __bytes_transferred )
+void Reactor_Impl_Iocp::on_write_completed( Client_Context* __client_context,Overlapped_Puls* __overlapped_puls,easy_ulong __bytes_transferred )
 {
 	if(0 == __bytes_transferred)
 	{
@@ -1163,13 +1163,13 @@ BOOL Reactor_Impl_Iocp::post_recv( Client_Context* __client_context,Overlapped_P
 {
 	::EnterCriticalSection(&__client_context->lock_);
 	__overlapped_puls->sequence_num_ = __client_context->read_sequence_;
-	int __error = 0;
-	DWORD __bytes = 0;
-	DWORD __flags = 0;
+	easy_int32 __error = 0;
+	easy_ulong __bytes = 0;
+	easy_ulong __flags = 0;
 	__overlapped_puls->op_type_ = OP_READ;
 	__overlapped_puls->wsa_buf_.buf = __overlapped_puls->buffer_;
 	__overlapped_puls->wsa_buf_.len = __overlapped_puls->buffer_length_;
-	int __res = WSARecv(__client_context->socket_, &__overlapped_puls->wsa_buf_, 1, &__bytes, &__flags, &__overlapped_puls->overLapped_, NULL);
+	easy_int32 __res = WSARecv(__client_context->socket_, &__overlapped_puls->wsa_buf_, 1, &__bytes, &__flags, &__overlapped_puls->overLapped_, NULL);
 	if ((__res == SOCKET_ERROR) && (WSA_IO_PENDING != (__error = WSAGetLastError()))) 
 	{
 		printf("WSARecv failed: %d\n", __error);
@@ -1240,7 +1240,7 @@ void Reactor_Impl_Iocp::process_packet(Client_Context* __client_context,Overlapp
 		Overlapped_Puls* __temp_overlap_plus = __client_context->out_order_reads_;
 		if(__client_context->cur_read_sequence_ == __temp_overlap_plus->sequence_num_)
 		{
-			int __read_less_size = read_packet(__client_context,__temp_overlap_plus);
+			easy_int32 __read_less_size = read_packet(__client_context,__temp_overlap_plus);
 			if (0 == __read_less_size)
 			{
 				//add the sequence of the data to read
@@ -1295,12 +1295,12 @@ void Reactor_Impl_Iocp::on_connection_closing( Client_Context* __client_context,
 BOOL Reactor_Impl_Iocp::post_send( Client_Context* __client_context,Overlapped_Puls* __overlapped_puls )
 {
 	::EnterCriticalSection(&__client_context->lock_);
-	DWORD __bytes = 0;
-	DWORD __flags = 0;
+	easy_ulong __bytes = 0;
+	easy_ulong __flags = 0;
 	__overlapped_puls->op_type_ = OP_WRITE;
 	__overlapped_puls->wsa_buf_.buf = __overlapped_puls->buffer_;
 	__overlapped_puls->wsa_buf_.len = __overlapped_puls->buffer_length_;
-	int __res = WSASend(__client_context->socket_, &__overlapped_puls->wsa_buf_, 1, &__bytes, __flags, &__overlapped_puls->overLapped_, NULL);
+	easy_int32 __res = WSASend(__client_context->socket_, &__overlapped_puls->wsa_buf_, 1, &__bytes, __flags, &__overlapped_puls->overLapped_, NULL);
 	if ( __res == SOCKET_ERROR ) 
 	{
 		if( WSA_IO_PENDING == WSAGetLastError() )
@@ -1363,7 +1363,7 @@ void Reactor_Impl_Iocp::send_all_pending_send( )
 	active_clienk_context_lock_.release_lock();
 }
 
-void Reactor_Impl_Iocp::broadcast( int __fd,const char* __data,unsigned int __length )
+void Reactor_Impl_Iocp::broadcast( easy_int32 __fd,const easy_char* __data,easy_uint32 __length )
 {
 	while (active_cleint_context_)
 	{
@@ -1384,9 +1384,9 @@ Reactor_Impl_Iocp::~Reactor_Impl_Iocp()
 
 void Reactor_Impl_Iocp::set_sock_opt()
 {
-	int __dont_linger = true;
-	int __size = sizeof(int);
-	int __ret = getsockopt( fd_,SOL_SOCKET,SO_DONTLINGER,(char *)&__dont_linger, &__size );
+	easy_int32 __dont_linger = true;
+	easy_int32 __size = sizeof(int);
+	easy_int32 __ret = getsockopt( fd_,SOL_SOCKET,SO_DONTLINGER,(char *)&__dont_linger, &__size );
 	if(__ret == SOCKET_ERROR)
 	{
 		printf("getsockopt SO_DONTLINGER failed with error: %d\n", WSAGetLastError() );
@@ -1394,7 +1394,7 @@ void Reactor_Impl_Iocp::set_sock_opt()
 	}
 
 	//	get the size of send buffer,default size is 8192(windows 7)
-	int __send_buf_size = 0;
+	easy_int32 __send_buf_size = 0;
 	__ret = getsockopt(fd_,SOL_SOCKET,SO_SNDBUF,(char*)&__send_buf_size,&__size);
 	if(__ret == SOCKET_ERROR)
 	{
@@ -1411,7 +1411,7 @@ void Reactor_Impl_Iocp::set_sock_opt()
 
 		Disabling the send buffer has less serious repercussions than disabling the receive buffer.
 	*/
-	int __zero = __send_buf_size;
+	easy_int32 __zero = __send_buf_size;
 	__ret = setsockopt(fd_, SOL_SOCKET, SO_SNDBUF, (char *)&__zero, sizeof(__zero));
 	if(__ret == SOCKET_ERROR)
 	{
@@ -1425,7 +1425,7 @@ void Reactor_Impl_Iocp::set_sock_opt()
 		no longer be allowed to send data.
 		get the size of recv buffer,default size is 8192(windows 7)
 	*/
-	int __recv_buf_size = 0;
+	easy_int32 __recv_buf_size = 0;
 	__ret = getsockopt(fd_,SOL_SOCKET,SO_RCVBUF,(char*)&__recv_buf_size,&__size);
 	if(__ret == SOCKET_ERROR)
 	{
@@ -1467,7 +1467,7 @@ void Reactor_Impl_Iocp::set_sock_opt()
 		}
 	}
 
-	int __keep_alive = 1;
+	easy_int32 __keep_alive = 1;
 	__ret = setsockopt( fd_, SOL_SOCKET, SO_KEEPALIVE, (char*)&__keep_alive, sizeof(int));
 	if(__ret == SOCKET_ERROR)
 	{
@@ -1478,7 +1478,7 @@ void Reactor_Impl_Iocp::set_sock_opt()
 	//The Nagle algorithm is disabled if the TCP_NODELAY option is enabled 
 	if(0)
 	{
-		int _no_delay = TRUE;
+		easy_int32 _no_delay = TRUE;
 		__ret = setsockopt( fd_, IPPROTO_TCP, TCP_NODELAY, (char*)&_no_delay, sizeof(int));
 		if(__ret == SOCKET_ERROR)
 		{
@@ -1494,7 +1494,7 @@ void Reactor_Impl_Iocp::destoryt_net()
 	close_all_connection();
 	_close_socket(fd_);
 	//	all thread exit
-	for(int i = 0; i < work_thread_cur_; ++i)
+	for(easy_int32 i = 0; i < work_thread_cur_; ++i)
 	{
 		::PostQueuedCompletionStatus(completeion_port_, 0, -1, NULL);
 	}
@@ -1679,13 +1679,13 @@ Overlapped_Puls* Reactor_Impl_Iocp::get_next_read_overlap_puls( Client_Context* 
 
 int Reactor_Impl_Iocp::read_packet( Client_Context* __client_context,Overlapped_Puls* __overlapped_puls )
 {
-	const int __head_size = 12;
-	unsigned char __packet_head[__head_size] = {};
-	int __head = 0;
-	int __packet_length = 0;
-	int __log_level = 0;
-	int __frame_number = 0;
-	unsigned int __guid = 0;
+	const easy_int32 __head_size = 12;
+	easy_uint8 __packet_head[__head_size] = {};
+	easy_int32 __head = 0;
+	easy_int32 __packet_length = 0;
+	easy_int32 __log_level = 0;
+	easy_int32 __frame_number = 0;
+	easy_uint32 __guid = 0;
 	BOOL __enough = __overlapped_puls->is_enough(__head_size);
 	while(__enough)
 	{
@@ -1725,7 +1725,7 @@ int Reactor_Impl_Iocp::read_packet( Client_Context* __client_context,Overlapped_
 	}
 }
 
-void Reactor_Impl_Iocp::send_2_all_client( Client_Context* __client_context,const char* __data, int __length )
+void Reactor_Impl_Iocp::send_2_all_client( Client_Context* __client_context,const easy_char* __data, easy_int32 __length )
 {
 	active_clienk_context_lock_.acquire_lock();
 	Client_Context* __first_client_context = active_cleint_context_;
@@ -1758,7 +1758,7 @@ void Reactor_Impl_Iocp::send_2_all_client(Client_Context* __client_context, Over
 	}
 }
 
-BOOL Reactor_Impl_Iocp::send_2_client( Client_Context* __client_context,const char* __data, int __length )
+BOOL Reactor_Impl_Iocp::send_2_client( Client_Context* __client_context,const easy_char* __data, easy_int32 __length )
 {
 	Overlapped_Puls* __overlapped_puls = allocate_overlapped_puls(__length);
 	if(NULL != __overlapped_puls)

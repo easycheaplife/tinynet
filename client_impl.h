@@ -28,17 +28,17 @@
 class Client_Impl : public Event_Handle_Cli
 {
 public:
-	Client_Impl(Reactor* __reactor,const char* __host,unsigned int __port = 9876);
+	Client_Impl(Reactor* __reactor,const easy_char* __host,easy_uint32 __port = 9876);
 
 	~Client_Impl();
 
-	void on_read(int __fd);
+	void on_read(easy_int32 __fd);
 
 private:
 	void	_read_thread();
 
 private:
-	easy::EasyRingbuffer<unsigned char,easy::alloc>* ring_buf_;
+	easy::EasyRingbuffer<easy_uint8,easy::alloc>* ring_buf_;
 
 };
 

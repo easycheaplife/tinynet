@@ -39,7 +39,7 @@ Reactor_Impl_Epoll::Reactor_Impl_Epoll()
 	_init();
 }
 
-int Reactor_Impl_Epoll::register_handle(Event_Handle* __handle,int __fd,int __mask,int __connect)
+int Reactor_Impl_Epoll::register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask,easy_int32 __connect)
 {
 	if(kMaskAccept ==__mask)
 	{
@@ -65,17 +65,17 @@ int Reactor_Impl_Epoll::register_handle(Event_Handle* __handle,int __fd,int __ma
 	return -1;
 }
 
-int Reactor_Impl_Epoll::remove_handle(Event_Handle* __handle,int __mask)
+easy_int32 Reactor_Impl_Epoll::remove_handle(Event_Handle* __handle,easy_int32 __mask)
 {
 	return -1;
 }
 
-int Reactor_Impl_Epoll::handle_event(unsigned long __millisecond)
+easy_int32 Reactor_Impl_Epoll::handle_event(easy_ulong __millisecond)
 {
 	return -1;
 }
 
-int Reactor_Impl_Epoll::event_loop(unsigned long __millisecond)
+easy_int32 Reactor_Impl_Epoll::event_loop(easy_ulong __millisecond)
 {
 	while(1)
 	{
@@ -92,7 +92,7 @@ int Reactor_Impl_Epoll::event_loop(unsigned long __millisecond)
 			  printf("errno=%d\n",errno);
 		      exit(EXIT_FAILURE);
 		}
-		for(int __i = 0; __i < __nfds; ++__i)
+		for(easy_int32 __i = 0; __i < __nfds; ++__i)
 		{
 		      if (events_[__i].data.fd == fd_) 
 		      {
@@ -123,36 +123,36 @@ void Reactor_Impl_Epoll::_init()
 	}
 }
 
-void Reactor_Impl_Epoll::_add_event(int __fd,uint32_t __event)
+void Reactor_Impl_Epoll::_add_event(easy_int32 __fd,uint32_t __event)
 {
 	ev_.data.fd = __fd;  
-    	ev_.events = __event;   
-    	if( -1 == epoll_ctl(fd_epoll_,EPOLL_CTL_ADD,__fd,&ev_))
+    ev_.events = __event;   
+    if( -1 == epoll_ctl(fd_epoll_,EPOLL_CTL_ADD,__fd,&ev_))
 	{
 		perror("epoll_ctl EPOLL_CTL_ADD");
 		exit(EXIT_FAILURE);
 	}
 }
 
-void Reactor_Impl_Epoll::_mod_event(int __fd,uint32_t __event)
+void Reactor_Impl_Epoll::_mod_event(easy_int32 __fd,uint32_t __event)
 {
 	ev_.data.fd = __fd;  
-    	ev_.events = __event;   
-    	if( -1 == epoll_ctl(fd_epoll_,EPOLL_CTL_MOD,__fd,&ev_))
+    ev_.events = __event;   
+    if( -1 == epoll_ctl(fd_epoll_,EPOLL_CTL_MOD,__fd,&ev_))
 	{
 		perror("epoll_ctl EPOLL_CTL_MOD");
 		exit(EXIT_FAILURE);
 	}
 }
 
-int Reactor_Impl_Epoll::handle_close( int __fd )
+int Reactor_Impl_Epoll::handle_close( easy_int32 __fd )
 {
 	handle_->handle_close(__fd);
 	close(__fd);
 	return -1;
 }
 
-void Reactor_Impl_Epoll::broadcast(int __fd,const char* __data,unsigned int __length)
+void Reactor_Impl_Epoll::broadcast(easy_int32 __fd,const easy_char* __data,easy_uint32 __length)
 {
 	//	do nothing,broadcast should be done at layer of logic.
 	//	to be continue ...

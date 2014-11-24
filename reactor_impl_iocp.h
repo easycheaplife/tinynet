@@ -70,20 +70,20 @@ public:
 
 	~Reactor_Impl_Iocp();
 
-	int register_handle(Event_Handle* __handle,int __fd,int __mask,int __connect);
+	easy_int32 register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask,easy_int32 __connect);
 
-	int remove_handle(Event_Handle* __handle,int __mask);
+	easy_int32 remove_handle(Event_Handle* __handle,easy_int32 __mask);
 
-	int handle_event(unsigned long __millisecond);
+	easy_int32 handle_event(easy_ulong __millisecond);
 
-	int handle_close(int __fd);
+	easy_int32 handle_close(easy_int32 __fd);
 
-	int event_loop(unsigned long __millisecond);
+	easy_int32 event_loop(easy_ulong __millisecond);
 
 	//	__fd is the broadcaster
-	void broadcast(int __fd,const char* __data,unsigned int __length);
+	void broadcast(easy_int32 __fd,const easy_char* __data,easy_uint32 __length);
 
-	BOOL write(Client_Context* __client_context,const char* __data, int __length);
+	BOOL write(Client_Context* __client_context,const easy_char* __data, easy_int32 __length);
 
 public:
 
@@ -117,7 +117,7 @@ public:
 
 public:
 	//	object allocate and release function
-	Overlapped_Puls* allocate_overlapped_puls(int __buffer_len);
+	Overlapped_Puls* allocate_overlapped_puls(easy_int32 __buffer_len);
 
 	void release_overlapped_puls(Overlapped_Puls* __overlapped_puls);
 
@@ -227,10 +227,10 @@ private:
 	LONG							pending_accept_count_;
 
 	// post accept number beforehand
-	int								pre_post_accept_num_;
+	easy_int32						pre_post_accept_num_;
 
 	// post recv number beforehand
-	int								pre_post_recv_num_;
+	easy_int32						pre_post_recv_num_;
 
 private:
 	//lock
@@ -241,7 +241,7 @@ private:
 	easy::mutex_lock				waiting_sendt_lock_;
 	easy::mutex_lock				out_read_overlap_puls_lock_;
 
-	int								work_thread_cur_;
+	easy_int32						work_thread_cur_;
 };
 
 #endif //WIN32

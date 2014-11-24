@@ -19,6 +19,7 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
  ****************************************************************************/
+#include "easy_base_type.h"
 class Event_Handle;
 class Reactor_Impl;
 class Reactor
@@ -32,13 +33,13 @@ public:
 
 	static void destory();
 	
-	int register_handle(Event_Handle* __handle,int __fd,int __mask);
+	easy_int32 register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask);
 	
-	int remove_handle(Event_Handle* __handle,int __mask);
+	easy_int32 remove_handle(Event_Handle* __handle,easy_int32 __mask);
 	
-	int handle_event(unsigned long __millisecond);
+	easy_int32 handle_event(easy_ulong __millisecond);
 	
-	int event_loop(unsigned long __millisecond);
+	easy_int32 event_loop(easy_ulong __millisecond);
 	
 	Reactor_Impl* reactor_impl() const { return reactor_impl_; }
 private:

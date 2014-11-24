@@ -27,9 +27,9 @@
 
 struct Event_Handle_Data : public easy::my_alloc
 {
-	Event_Handle_Data(int __fd,Event_Handle* __event_handle):fd_(__fd),invalid_fd_(1),event_handle_(__event_handle) {}
-	int				invalid_fd_;
-	int				fd_;
+	Event_Handle_Data(easy_int32 __fd,Event_Handle* __event_handle):fd_(__fd),invalid_fd_(1),event_handle_(__event_handle) {}
+	easy_int32		invalid_fd_;
+	easy_int32		fd_;
 	Event_Handle*	event_handle_;
 };
 
@@ -42,7 +42,7 @@ Reactor_Impl_Select::Reactor_Impl_Select()
 	fd_ = -1;
 	max_fd_ = -1;
 }
-int Reactor_Impl_Select::register_handle(Event_Handle* __handle,int __fd,int __mask,int __connect)
+int Reactor_Impl_Select::register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask,easy_int32 __connect)
 {
 	if(kMaskAccept ==__mask || kMaskConnect == __mask)
 	{
@@ -62,15 +62,15 @@ int Reactor_Impl_Select::register_handle(Event_Handle* __handle,int __fd,int __m
 	}
 	return -1;
 }
-int Reactor_Impl_Select::remove_handle(Event_Handle* __handle,int __mask)
+int Reactor_Impl_Select::remove_handle(Event_Handle* __handle,easy_int32 __mask)
 {
 	return -1;
 }
-int Reactor_Impl_Select::handle_event(unsigned long __millisecond)
+int Reactor_Impl_Select::handle_event(easy_ulong __millisecond)
 {
 	return -1;
 }
-int Reactor_Impl_Select::event_loop(unsigned long __millisecond)
+int Reactor_Impl_Select::event_loop(easy_ulong __millisecond)
 {
 	while(true)
 	{
@@ -115,7 +115,7 @@ int Reactor_Impl_Select::event_loop(unsigned long __millisecond)
 		//	you must set max_fd_ is max use fd under unix/linux system, if not,part of fd will not be detected.
 		//	if write_set_ is not null, that means the write status will be watched to see. 
 		//	FD_SETSIZE = 64 at windows,so the max number of fd is FD_SETSIZE.if you want change it value, define before winsock.h.
-		int __ret = select(max_fd_ + 1,&read_set_,/*&write_set_*/NULL,&excepion_set_,&__tv);
+		easy_int32 __ret = select(max_fd_ + 1,&read_set_,/*&write_set_*/NULL,&excepion_set_,&__tv);
 		if ( -1 == __ret )
 		{
 			perror("error at select");
@@ -169,7 +169,7 @@ int Reactor_Impl_Select::event_loop(unsigned long __millisecond)
 	return -1;
 }
 
-void Reactor_Impl_Select::broadcast(int __fd,const char* __data,unsigned int __length)
+void Reactor_Impl_Select::broadcast(easy_int32 __fd,const easy_char* __data,easy_uint32 __length)
 {
 	for (std::vector<Event_Handle_Data*>::iterator __it = events_.begin(); __it != events_.end(); ++__it)
 	{
@@ -196,7 +196,7 @@ void Reactor_Impl_Select::broadcast(int __fd,const char* __data,unsigned int __l
 	}
 }
 
-int Reactor_Impl_Select::handle_close( int __fd )
+int Reactor_Impl_Select::handle_close( easy_int32 __fd )
 {
 	for (std::vector<Event_Handle_Data*>::iterator __it = events_.begin(); __it != events_.end(); ++__it)
 	{

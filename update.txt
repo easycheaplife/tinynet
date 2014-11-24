@@ -16,3 +16,8 @@ V 1.1.1
 5 add a sample using google protobuf.
 6 add a sample using json.
 
+2014/11/21
+V 2.0.0
+1 redefine base data type
+
+
