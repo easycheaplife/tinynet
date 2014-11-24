@@ -22,6 +22,7 @@
 #ifndef packet_handle_h__
 #define packet_handle_h__
 #include <string>
+#include "easy_base_type.h"
 
 class Event_Handle;
 class Packet_Handle
@@ -31,7 +32,7 @@ public:
 
 	virtual ~Packet_Handle() { }
 
-	virtual int handle_packet(int __fd,int __packet_id,const std::string& __packet) = 0;
+	virtual int handle_packet(easy_int32 __fd,easy_int32 __packet_id,const std::string& __packet) = 0;
 
 protected:
 	Event_Handle*	event_handle_;
