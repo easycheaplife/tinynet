@@ -43,22 +43,22 @@ struct Buffer;
 
 struct Buffer
 {
-	typedef easy::EasyRingbuffer<unsigned char,easy::alloc>	ring_buffer;
+	typedef easy::EasyRingbuffer<easy_uint8,easy::alloc>	ring_buffer;
 	static const size_t MAX_POOL_SIZE = 50000;
-	typedef  int _Key;
+	typedef  easy_int32 _Key;
 
 	ring_buffer*	input_;
 	ring_buffer*	output_;
-	int				fd_;
-	int				invalid_fd_;
-	Buffer(int __fd,unsigned int __max_buffer_size)
+	easy_int32				fd_;
+	easy_int32				invalid_fd_;
+	Buffer(easy_int32 __fd,easy_uint32 __max_buffer_size)
 	{
 		input_ = new easy::EasyRingbuffer<unsigned char,easy::alloc>(__max_buffer_size);
 		output_ = new easy::EasyRingbuffer<unsigned char,easy::alloc>(__max_buffer_size);
 		fd_ = __fd;
 		invalid_fd_ = 1;
 	}
-	void init(int __fd,unsigned int __max_buffer_size)
+	void init(easy_int32 __fd,easy_uint32 __max_buffer_size)
 	{
 		input_->reset();
 		output_->reset();
@@ -84,20 +84,20 @@ struct Buffer
 class Server_Impl : public Event_Handle_Srv
 {
 public:
-	Server_Impl(Reactor* __reactor,const char* __host = "0.0.0.0",unsigned int __port = 9876);
+	Server_Impl(Reactor* __reactor,const easy_char* __host = "0.0.0.0",easy_uint32 __port = 9876);
 
 	~Server_Impl();
 
-	void on_connected(int __fd);
+	void on_connected(easy_int32 __fd);
 
-	void on_disconnect(int __fd);
+	void on_disconnect(easy_int32 __fd);
 
-	void on_read(int __fd);
+	void on_read(easy_int32 __fd);
 
 private:
-	void _read(int __fd);
+	void _read(easy_int32 __fd);
 	
-	void _read_completely(int __fd);
+	void _read_completely(easy_int32 __fd);
 
 	void _read_thread();
 
@@ -106,15 +106,15 @@ private:
 	void _disconnect(Buffer* __buffer);
 
 private:
-	typedef	std::map<int,Buffer*>	map_buffer;
-	std::map<int,Buffer*>			connects_;
+	typedef	std::map<easy_int32,Buffer*>	map_buffer;
+	std::map<easy_int32,Buffer*>			connects_;
 
 	typedef	std::vector<Buffer*>	vector_buffer;
 	std::vector<Buffer*>			connects_copy;
 
-	static const unsigned int		max_buffer_size_;
+	static const easy_uint32		max_buffer_size_;
 
-	static const unsigned int		max_sleep_time_;
+	static const easy_uint32		max_sleep_time_;
 
 	easy::mutex_lock				lock_;
 

@@ -19,6 +19,7 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
  ****************************************************************************/
+#include "easy_base_type.h"
 class Event_Handle;
 
 enum Mask
@@ -39,16 +40,16 @@ public:
 	/*
 	 *	__connect: is coming connection
 	 */
-	virtual int register_handle(Event_Handle* __handle,int __fd,int __mask,int __connect = 0) = 0;
+	virtual easy_int32 register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask,easy_int32 __connect = 0) = 0;
 	
-	virtual int remove_handle(Event_Handle* __handle,int __mask) = 0;
+	virtual easy_int32 remove_handle(Event_Handle* __handle,easy_int32 __mask) = 0;
 	
-	virtual int handle_event(unsigned long __time) = 0;
+	virtual easy_int32 handle_event(easy_ulong __time) = 0;
 	
-	virtual int event_loop(unsigned long __time) = 0;
+	virtual easy_int32 event_loop(easy_ulong __time) = 0;
 
-	virtual int handle_close(int __fd) = 0;
+	virtual easy_int32 handle_close(easy_int32 __fd) = 0;
 
 	//	__fd is the broadcaster
-	virtual void broadcast(int __fd,const char* __data,unsigned int __length) = 0;
+	virtual void broadcast(easy_int32 __fd,const easy_char* __data,easy_uint32 __length) = 0;
 };

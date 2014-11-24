@@ -33,7 +33,7 @@
 const unsigned int Server_Impl::max_buffer_size_ = 1024*8;
 const unsigned int Server_Impl::max_sleep_time_ = 1000*500;
 
-Server_Impl::Server_Impl( Reactor* __reactor,const char* __host /*= "0.0.0.0"*/,unsigned int __port /*= 9876*/ )
+Server_Impl::Server_Impl( Reactor* __reactor,const easy_char* __host /*= "0.0.0.0"*/,easy_uint32 __port /*= 9876*/ )
 	: Event_Handle_Srv(__reactor,__host,__port) 
 {
 #ifndef __HAVE_IOCP
@@ -44,7 +44,7 @@ Server_Impl::Server_Impl( Reactor* __reactor,const char* __host /*= "0.0.0.0"*/,
 #endif // !__HAVE_IOCP
 }
 
-void Server_Impl::on_connected( int __fd )
+void Server_Impl::on_connected( easy_int32 __fd )
 {
 	printf("on_connected __fd = %d \n",__fd);
 	lock_.acquire_lock();
@@ -53,7 +53,7 @@ void Server_Impl::on_connected( int __fd )
 	lock_.release_lock();
 }
 
-void Server_Impl::on_read( int __fd )
+void Server_Impl::on_read( easy_int32 __fd )
 {
 #ifdef __HAVE_EPOLL
 	_read_completely(__fd);
@@ -62,10 +62,10 @@ void Server_Impl::on_read( int __fd )
 #endif //__HAVE_EPOLL
 }
 
-void Server_Impl::_read( int __fd )
+void Server_Impl::_read( easy_int32 __fd )
 {
 	//	the follow code is ring_buf's append function actually.
-	unsigned long __usable_size = 0;
+	easy_ulong __usable_size = 0;
 	if(!connects_[__fd])
 	{
 		return;
@@ -120,10 +120,10 @@ void Server_Impl::_read( int __fd )
 	}
 }
 
-void Server_Impl::_read_completely(int __fd)
+void Server_Impl::_read_completely(easy_int32 __fd)
 {
 	//	the follow code is ring_buf's append function actually.
-	unsigned long __usable_size = 0;
+	easy_ulong __usable_size = 0;
 	if(!connects_[__fd])
 	{
 		return;
@@ -187,7 +187,7 @@ void Server_Impl::_read_completely(int __fd)
 
 void Server_Impl::_read_thread()
 {
-	static const int __head_size = 12;
+	static const easy_int32 __head_size = 12;
 	char __read_buf[max_buffer_size_] = {};
 	while (true)
 	{
@@ -215,12 +215,12 @@ void Server_Impl::_read_thread()
 #endif //__DEBUG
 				while (!__input->read_finish())
 				{
-					int __packet_length = 0;
-					int __log_level = 0;
-					int __frame_number = 0;
-					unsigned char __packet_head[__head_size] = {};
-					int __head = 0;
-					unsigned int __guid = 0;
+					easy_int32 __packet_length = 0;
+					easy_int32 __log_level = 0;
+					easy_int32 __frame_number = 0;
+					easy_uint8 __packet_head[__head_size] = {};
+					easy_int32 __head = 0;
+					easy_uint32 __guid = 0;
 					if(!__input->pre_read((unsigned char*)&__packet_head,__head_size))
 					{
 						//	not enough data for read
@@ -255,8 +255,8 @@ void Server_Impl::_read_thread()
 #ifdef __DEBUG
 		struct timeval __end_timeval;
 		gettimeofday(&__end_timeval, NULL);
-		long __end_time = __end_timeval.tv_usec;
-		long __time_read = __end_time - __start_time;
+		easy_long __end_time = __end_timeval.tv_usec;
+		easy_long __time_read = __end_time - __start_time;
 		printf("start time = %ld, end time = %ld,server impl time read = %ld\n",__start_time,__end_time,__time_read);
 #endif //__DEBUG
 		lock_.release_lock();
@@ -268,8 +268,8 @@ void Server_Impl::_read_thread()
 
 void Server_Impl::_write_thread()
 {
-	int __fd = -1;
-	int __invalid_fd = 1;
+	easy_int32 __fd = -1;
+	easy_int32 __invalid_fd = 1;
 	while (true)
 	{
 		lock_.acquire_lock();
@@ -312,7 +312,7 @@ void Server_Impl::_write_thread()
 	}
 }
 
-void Server_Impl::on_disconnect( int __fd )
+void Server_Impl::on_disconnect( easy_int32 __fd )
 {
 	map_buffer::iterator __it = connects_.find(__fd);
 	if (__it != connects_.end())

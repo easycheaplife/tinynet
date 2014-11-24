@@ -30,10 +30,10 @@
     <ClInclude Include="..\reactor_impl_select.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\reactor_impl_iocp.h">
+    <ClInclude Include="..\server_impl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\server_impl.h">
+    <ClInclude Include="..\reactor_impl_iocp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -47,13 +47,13 @@
     <ClCompile Include="..\reactor_impl_select.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\reactor_impl_iocp.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\server_impl.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\srv_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\reactor_impl_iocp.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

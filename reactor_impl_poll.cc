@@ -33,7 +33,7 @@ Reactor_Impl_Poll::Reactor_Impl_Poll()
 	memset(fd_poll_,-1,sizeof(struct pollfd)*MAX_POLL_FD);
 }
 
-int Reactor_Impl_Poll::register_handle(Event_Handle* __handle,int __fd,int __mask,int __connect)
+easy_int32 Reactor_Impl_Poll::register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask,easy_int32 __connect)
 {
 	if(kMaskAccept ==__mask)
 	{
@@ -55,21 +55,21 @@ int Reactor_Impl_Poll::register_handle(Event_Handle* __handle,int __fd,int __mas
 	return -1;
 }
 
-int Reactor_Impl_Poll::remove_handle(Event_Handle* __handle,int __mask)
+easy_int32 Reactor_Impl_Poll::remove_handle(Event_Handle* __handle,easy_int32 __mask)
 {
 	return -1;
 }
 
-int Reactor_Impl_Poll::handle_event(unsigned long __millisecond)
+easy_int32 Reactor_Impl_Poll::handle_event(easy_ulong __millisecond)
 {
 	return -1;
 }
 
-int Reactor_Impl_Poll::event_loop(unsigned long __millisecond)
+easy_int32 Reactor_Impl_Poll::event_loop(easy_ulong __millisecond)
 {
 	while(1)
 	{
-		int __positive_num = poll(fd_poll_,cur_poll_fd_num_,-1);
+		easy_int32 __positive_num = poll(fd_poll_,cur_poll_fd_num_,-1);
 		if( -1 == __positive_num )
 		{
 			perror("poll");
@@ -98,14 +98,14 @@ int Reactor_Impl_Poll::event_loop(unsigned long __millisecond)
 	return -1;
 }
 
-void Reactor_Impl_Poll::_add_event(int __fd)
+void Reactor_Impl_Poll::_add_event(easy_int32 __fd)
 {
 	fd_poll_[cur_poll_fd_num_].fd = __fd;
 	fd_poll_[cur_poll_fd_num_].revents = POLLIN;
 	++cur_poll_fd_num_;	
 }
 
-int Reactor_Impl_Poll::handle_close( int __fd )
+easy_int32 Reactor_Impl_Poll::handle_close( easy_int32 __fd )
 {
 	return -1;
 }
