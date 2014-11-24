@@ -105,13 +105,13 @@ public:
 
 	void send_all_pending_send();
 
-	int read_packet(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls);
+	easy_int32 read_packet(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls);
 
-	void send_2_all_client(Client_Context* __client_context,const char* __data, int __length);
+	void send_2_all_client(Client_Context* __client_context,const easy_char* __data, easy_int32 __length);
 
 	void send_2_all_client(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls);
 
-	BOOL send_2_client(Client_Context* __client_context,const char* __data, int __length);
+	BOOL send_2_client(Client_Context* __client_context,const easy_char* __data, easy_int32 __length);
 
 	BOOL send_2_client(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls);
 
@@ -142,7 +142,7 @@ public:
 	Overlapped_Puls* get_next_read_overlap_puls(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls);
 
 public:
-	void on_connection_error(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls, int __error);
+	void on_connection_error(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls, easy_int32 __error);
 
 	void on_accept_completed(Overlapped_Puls* __overlapped_puls,DWORD __bytes_transferred);
 
@@ -172,20 +172,20 @@ private:
 
 	void _associate_completeion_port(HANDLE __completion_port,HANDLE __device,ULONG_PTR __completion_key);
 
-	int _get_cpu_number();
+	easy_int32 _get_cpu_number();
 
 	void _begin_thread(unsigned (__stdcall * __start_address ) (void *),void* __pv);
 
-	void _process_io(DWORD __per_handle,Overlapped_Puls* __overlapped_puls,DWORD __bytes_transferred,int __error);
+	void _process_io(DWORD __per_handle,Overlapped_Puls* __overlapped_puls,DWORD __bytes_transferred,easy_int32 __error);
 
 	void _close_socket(SOCKET __socket);
 private:
-	static unsigned int __stdcall work_thread_function(void* __pv);
+	static easy_uint32 __stdcall work_thread_function(void* __pv);
 
-	static unsigned int __stdcall listen_thread(void* __pv);
+	static easy_uint32 __stdcall listen_thread(void* __pv);
 
 private:
-	int								fd_;
+	easy_int32								fd_;
 
 	Event_Handle* 					handle_;
 
@@ -193,7 +193,7 @@ private:
 
 	WSAEVENT						event_array_[WSA_MAXIMUM_WAIT_EVENTS];
 
-	unsigned int					event_total_;
+	easy_uint32						event_total_;
 
 	//	for AcceptEx
 	LPFN_ACCEPTEX					lpfn_acceptex_;

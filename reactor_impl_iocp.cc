@@ -120,9 +120,9 @@ public:
 		{
 			return FALSE;
 		}
-		int __not_read_bytes = left_size();
+		easy_int32 __not_read_bytes = left_size();
 		//	may be the __next_overlap_puls 's buffer have all used.
-		int __can_flush_bytes = __next_overlap_puls->left_size();
+		easy_int32 __can_flush_bytes = __next_overlap_puls->left_size();
 		if (__can_flush_bytes < __flush_size)
 		{
 			//	fix #2
@@ -158,7 +158,7 @@ public:
 
 	BOOL is_enough( const easy_int32 __read_bytes )
 	{
-		int __not_read_bytes = buffer_length_ - used_size_;
+		easy_int32 __not_read_bytes = buffer_length_ - used_size_;
 		if (__not_read_bytes < __read_bytes)
 		{
 			return FALSE;
@@ -251,7 +251,7 @@ Reactor_Impl_Iocp::Reactor_Impl_Iocp()
 	work_thread_cur_ = 0;
 }
 
-int Reactor_Impl_Iocp::register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask,easy_int32 __connect)
+easy_int32 Reactor_Impl_Iocp::register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask,easy_int32 __connect)
 {
 	if(kMaskAccept ==__mask)
 	{
@@ -269,12 +269,12 @@ int Reactor_Impl_Iocp::register_handle(Event_Handle* __handle,easy_int32 __fd,ea
 	return -1;
 }
 
-int Reactor_Impl_Iocp::remove_handle(Event_Handle* __handle,easy_int32 __mask)
+easy_int32 Reactor_Impl_Iocp::remove_handle(Event_Handle* __handle,easy_int32 __mask)
 {
 	return -1;
 }
 
-int Reactor_Impl_Iocp::handle_event(easy_ulong __millisecond)
+easy_int32 Reactor_Impl_Iocp::handle_event(easy_ulong __millisecond)
 {
 	return -1;
 }
@@ -298,7 +298,7 @@ easy_int32 Reactor_Impl_Iocp::event_loop(easy_ulong __millisecond)
 					Overlapped_Puls* __temp_overlap_plus = __first_client_context->out_order_reads_;
 					if(__first_client_context->cur_read_sequence_ == __temp_overlap_plus->sequence_num_)
 					{
-						int __read_less_size = read_packet(__first_client_context,__temp_overlap_plus);
+						easy_int32 __read_less_size = read_packet(__first_client_context,__temp_overlap_plus);
 						if (0 == __read_less_size)
 						{
 							//add the sequence of the data to read
@@ -437,7 +437,7 @@ void Reactor_Impl_Iocp::_ready()
 	set_sock_opt();
 }
 
-int Reactor_Impl_Iocp::_get_cpu_number()
+easy_int32 Reactor_Impl_Iocp::_get_cpu_number()
 {
 	SYSTEM_INFO __systemInfo;
 	ZeroMemory(&__systemInfo,sizeof(__systemInfo));
@@ -560,7 +560,7 @@ easy_uint32 __stdcall Reactor_Impl_Iocp::listen_thread( void* __pv )
 				easy_int32 __seconds = 0;
 				easy_int32 __bytes = sizeof(__seconds);
 				//	check all AcceptEx is timeout
-				__error = getsockopt(__overlapped_puls->sock_client_, SOL_SOCKET, SO_CONNECT_TIME,(char*)&__seconds, (int*)&__bytes );
+				__error = getsockopt(__overlapped_puls->sock_client_, SOL_SOCKET, SO_CONNECT_TIME,(char*)&__seconds, (easy_int32*)&__bytes );
 				if ( NO_ERROR != (__error = WSAGetLastError())) 
 				{
 					printf("getsockopt(SO_CONNECT_TIME) failed: %ld\n", __error);
@@ -923,7 +923,7 @@ BOOL Reactor_Impl_Iocp::remove_pending_accept( Overlapped_Puls* __overlapped_pul
 	return FALSE;
 }
 
-void Reactor_Impl_Iocp::on_connection_error( Client_Context* __client_context,Overlapped_Puls* __overlapped_puls, int __error )
+void Reactor_Impl_Iocp::on_connection_error( Client_Context* __client_context,Overlapped_Puls* __overlapped_puls, easy_int32 __error )
 {
 
 }
@@ -1017,7 +1017,7 @@ void Reactor_Impl_Iocp::on_read_completed( Client_Context* __client_context,Over
 		{
 			return;
 		}
-		int __posr_recv_left = PRE_POST_RECV_NUM - __client_context->num_post_recv_;
+		easy_int32 __posr_recv_left = PRE_POST_RECV_NUM - __client_context->num_post_recv_;
 		for(easy_int32 i = 0; i < __posr_recv_left; ++i)
 		{
 			Overlapped_Puls* __temp_overLap_puls = allocate_overlapped_puls(DATA_BUFSIZE);
@@ -1323,7 +1323,7 @@ BOOL Reactor_Impl_Iocp::post_send( Client_Context* __client_context,Overlapped_P
 	return TRUE;
 }
 
-BOOL Reactor_Impl_Iocp::write( Client_Context* __client_context,const char* __data, int __length )
+BOOL Reactor_Impl_Iocp::write( Client_Context* __client_context,const easy_char* __data, easy_int32 __length )
 {
 
 	return FALSE;
@@ -1385,7 +1385,7 @@ Reactor_Impl_Iocp::~Reactor_Impl_Iocp()
 void Reactor_Impl_Iocp::set_sock_opt()
 {
 	easy_int32 __dont_linger = true;
-	easy_int32 __size = sizeof(int);
+	easy_int32 __size = sizeof(easy_int32);
 	easy_int32 __ret = getsockopt( fd_,SOL_SOCKET,SO_DONTLINGER,(char *)&__dont_linger, &__size );
 	if(__ret == SOCKET_ERROR)
 	{
@@ -1433,7 +1433,7 @@ void Reactor_Impl_Iocp::set_sock_opt()
 		return ;
 	}
 	//	set the size of recv buffer
-	__ret = setsockopt(fd_,SOL_SOCKET,SO_RCVBUF,(char*)&__recv_buf_size,sizeof(int));
+	__ret = setsockopt(fd_,SOL_SOCKET,SO_RCVBUF,(char*)&__recv_buf_size,sizeof(easy_int32));
 	if(__ret == SOCKET_ERROR)
 	{
 		printf("setsockopt SO_RCVBUF failed with error: %d\n", WSAGetLastError());
@@ -1468,7 +1468,7 @@ void Reactor_Impl_Iocp::set_sock_opt()
 	}
 
 	easy_int32 __keep_alive = 1;
-	__ret = setsockopt( fd_, SOL_SOCKET, SO_KEEPALIVE, (char*)&__keep_alive, sizeof(int));
+	__ret = setsockopt( fd_, SOL_SOCKET, SO_KEEPALIVE, (char*)&__keep_alive, sizeof(easy_int32));
 	if(__ret == SOCKET_ERROR)
 	{
 		printf("setsockopt SO_KEEPALIVE failed with error: %d\n", WSAGetLastError());
@@ -1479,7 +1479,7 @@ void Reactor_Impl_Iocp::set_sock_opt()
 	if(0)
 	{
 		easy_int32 _no_delay = TRUE;
-		__ret = setsockopt( fd_, IPPROTO_TCP, TCP_NODELAY, (char*)&_no_delay, sizeof(int));
+		__ret = setsockopt( fd_, IPPROTO_TCP, TCP_NODELAY, (char*)&_no_delay, sizeof(easy_int32));
 		if(__ret == SOCKET_ERROR)
 		{
 			printf("setsockopt IPPROTO_TCP failed with error: %d\n", WSAGetLastError());
@@ -1677,7 +1677,7 @@ Overlapped_Puls* Reactor_Impl_Iocp::get_next_read_overlap_puls( Client_Context* 
 	return NULL;
 }
 
-int Reactor_Impl_Iocp::read_packet( Client_Context* __client_context,Overlapped_Puls* __overlapped_puls )
+easy_int32 Reactor_Impl_Iocp::read_packet( Client_Context* __client_context,Overlapped_Puls* __overlapped_puls )
 {
 	const easy_int32 __head_size = 12;
 	easy_uint8 __packet_head[__head_size] = {};
