@@ -560,7 +560,7 @@ easy_uint32 __stdcall Reactor_Impl_Iocp::listen_thread( void* __pv )
 				easy_int32 __seconds = 0;
 				easy_int32 __bytes = sizeof(__seconds);
 				//	check all AcceptEx is timeout
-				__error = getsockopt(__overlapped_puls->sock_client_, SOL_SOCKET, SO_CONNECT_TIME,(char*)&__seconds, (easy_int32*)&__bytes );
+				__error = getsockopt(__overlapped_puls->sock_client_, SOL_SOCKET, SO_CONNECT_TIME,(easy_char*)&__seconds, (easy_int32*)&__bytes );
 				if ( NO_ERROR != (__error = WSAGetLastError())) 
 				{
 					printf("getsockopt(SO_CONNECT_TIME) failed: %ld\n", __error);
@@ -665,7 +665,7 @@ Overlapped_Puls* Reactor_Impl_Iocp::allocate_overlapped_puls( easy_int32 __buffe
 
 	if(NULL != __overlapped_plus)
 	{
-		__overlapped_plus->buffer_ = (char*)(__overlapped_plus + 1);
+		__overlapped_plus->buffer_ = (easy_char*)(__overlapped_plus + 1);
 		__overlapped_plus->buffer_length_ = __buffer_len;
 	}
 	overlap_puls_lock_.release_lock();
@@ -1122,7 +1122,7 @@ void Reactor_Impl_Iocp::close_connection( Client_Context* __client_context )
 		LINGER  lingerStruct;
 		lingerStruct.l_onoff = 1;
 		lingerStruct.l_linger = 0;
-		setsockopt(__client_context->socket_, SOL_SOCKET, SO_LINGER,(char*)&lingerStruct, sizeof(lingerStruct));
+		setsockopt(__client_context->socket_, SOL_SOCKET, SO_LINGER,(easy_char*)&lingerStruct, sizeof(lingerStruct));
 		//	add 2011-04-21 by Lee
 		//	now close the socket handle.this will do an abortive or graceful close, as requested.  
 		CancelIo((HANDLE)__client_context->socket_);
@@ -1385,7 +1385,7 @@ void Reactor_Impl_Iocp::set_sock_opt()
 {
 	easy_int32 __dont_linger = true;
 	easy_int32 __size = sizeof(easy_int32);
-	easy_int32 __ret = getsockopt( fd_,SOL_SOCKET,SO_DONTLINGER,(char *)&__dont_linger, &__size );
+	easy_int32 __ret = getsockopt( fd_,SOL_SOCKET,SO_DONTLINGER,(easy_char *)&__dont_linger, &__size );
 	if(__ret == SOCKET_ERROR)
 	{
 		printf("getsockopt SO_DONTLINGER failed with error: %d\n", WSAGetLastError() );
@@ -1394,7 +1394,7 @@ void Reactor_Impl_Iocp::set_sock_opt()
 
 	//	get the size of send buffer,default size is 8192(windows 7)
 	easy_int32 __send_buf_size = 0;
-	__ret = getsockopt(fd_,SOL_SOCKET,SO_SNDBUF,(char*)&__send_buf_size,&__size);
+	__ret = getsockopt(fd_,SOL_SOCKET,SO_SNDBUF,(easy_char*)&__send_buf_size,&__size);
 	if(__ret == SOCKET_ERROR)
 	{
 		printf("getsockopt SO_SNDBUF failed with error: %d\n", WSAGetLastError());
@@ -1411,7 +1411,7 @@ void Reactor_Impl_Iocp::set_sock_opt()
 		Disabling the send buffer has less serious repercussions than disabling the receive buffer.
 	*/
 	easy_int32 __zero = __send_buf_size;
-	__ret = setsockopt(fd_, SOL_SOCKET, SO_SNDBUF, (char *)&__zero, sizeof(__zero));
+	__ret = setsockopt(fd_, SOL_SOCKET, SO_SNDBUF, (easy_char *)&__zero, sizeof(__zero));
 	if(__ret == SOCKET_ERROR)
 	{
 		printf("setsockopt SO_SNDBUF failed with error: %d\n", WSAGetLastError());
@@ -1425,14 +1425,14 @@ void Reactor_Impl_Iocp::set_sock_opt()
 		get the size of recv buffer,default size is 8192(windows 7)
 	*/
 	easy_int32 __recv_buf_size = 0;
-	__ret = getsockopt(fd_,SOL_SOCKET,SO_RCVBUF,(char*)&__recv_buf_size,&__size);
+	__ret = getsockopt(fd_,SOL_SOCKET,SO_RCVBUF,(easy_char*)&__recv_buf_size,&__size);
 	if(__ret == SOCKET_ERROR)
 	{
 		printf("getsockopt SO_RCVBUF failed with error: %d\n", WSAGetLastError());
 		return ;
 	}
 	//	set the size of recv buffer
-	__ret = setsockopt(fd_,SOL_SOCKET,SO_RCVBUF,(char*)&__recv_buf_size,sizeof(easy_int32));
+	__ret = setsockopt(fd_,SOL_SOCKET,SO_RCVBUF,(easy_char*)&__recv_buf_size,sizeof(easy_int32));
 	if(__ret == SOCKET_ERROR)
 	{
 		printf("setsockopt SO_RCVBUF failed with error: %d\n", WSAGetLastError());
@@ -1458,7 +1458,7 @@ void Reactor_Impl_Iocp::set_sock_opt()
 		ling.l_onoff = 1;
 		ling.l_linger = 0;
 		//if ling.l_linger is 0,close socket at once,else waiting all data is recv/send or timeout.
-		__ret = setsockopt( fd_, SOL_SOCKET, SO_LINGER, (char *)&ling, sizeof(ling));
+		__ret = setsockopt( fd_, SOL_SOCKET, SO_LINGER, (easy_char *)&ling, sizeof(ling));
 		if(__ret == SOCKET_ERROR)
 		{
 			printf("setsockopt SO_LINGER failed with error: %d\n", WSAGetLastError());
@@ -1467,7 +1467,7 @@ void Reactor_Impl_Iocp::set_sock_opt()
 	}
 
 	easy_int32 __keep_alive = 1;
-	__ret = setsockopt( fd_, SOL_SOCKET, SO_KEEPALIVE, (char*)&__keep_alive, sizeof(easy_int32));
+	__ret = setsockopt( fd_, SOL_SOCKET, SO_KEEPALIVE, (easy_char*)&__keep_alive, sizeof(easy_int32));
 	if(__ret == SOCKET_ERROR)
 	{
 		printf("setsockopt SO_KEEPALIVE failed with error: %d\n", WSAGetLastError());
@@ -1478,7 +1478,7 @@ void Reactor_Impl_Iocp::set_sock_opt()
 	if(0)
 	{
 		easy_int32 _no_delay = TRUE;
-		__ret = setsockopt( fd_, IPPROTO_TCP, TCP_NODELAY, (char*)&_no_delay, sizeof(easy_int32));
+		__ret = setsockopt( fd_, IPPROTO_TCP, TCP_NODELAY, (easy_char*)&_no_delay, sizeof(easy_int32));
 		if(__ret == SOCKET_ERROR)
 		{
 			printf("setsockopt IPPROTO_TCP failed with error: %d\n", WSAGetLastError());
@@ -1689,7 +1689,7 @@ easy_int32 Reactor_Impl_Iocp::read_packet( Client_Context* __client_context,Over
 	while(__enough)
 	{
 		//	read packet head first
-		__overlapped_puls->read_data((char*)__packet_head,__head_size);
+		__overlapped_puls->read_data((easy_char*)__packet_head,__head_size);
 		memcpy(&__packet_length,__packet_head,4);
 		memcpy(&__head,__packet_head + 4,4);
 		memcpy(&__guid,__packet_head + 8,4);

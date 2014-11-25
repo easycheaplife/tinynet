@@ -39,7 +39,7 @@ Reactor_Impl_Epoll::Reactor_Impl_Epoll()
 	_init();
 }
 
-int Reactor_Impl_Epoll::register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask,easy_int32 __connect)
+easy_int32 Reactor_Impl_Epoll::register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask,easy_int32 __connect)
 {
 	if(kMaskAccept ==__mask)
 	{
@@ -79,7 +79,7 @@ easy_int32 Reactor_Impl_Epoll::event_loop(easy_ulong __millisecond)
 {
 	while(1)
 	{
-		int __nfds = epoll_wait(fd_epoll_, events_, MAX_EVENTS, -1);
+		easy_int32 __nfds = epoll_wait(fd_epoll_, events_, MAX_EVENTS, -1);
 		if( -1 == __nfds )
 		{
 			  //	for gdb
@@ -145,7 +145,7 @@ void Reactor_Impl_Epoll::_mod_event(easy_int32 __fd,uint32_t __event)
 	}
 }
 
-int Reactor_Impl_Epoll::handle_close( easy_int32 __fd )
+easy_int32 Reactor_Impl_Epoll::handle_close( easy_int32 __fd )
 {
 	handle_->handle_close(__fd);
 	close(__fd);

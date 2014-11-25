@@ -64,24 +64,24 @@ Reactor* Reactor::instance()
 	return Reactor::reactor_;
 }
 
-int Reactor::register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask)
+easy_int32 Reactor::register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask)
 {
 
 	return -1;
 }
 
-int Reactor::remove_handle(Event_Handle* __handle,easy_int32 __mask)
+easy_int32 Reactor::remove_handle(Event_Handle* __handle,easy_int32 __mask)
 {
 	return -1;
 }
 
-int Reactor::handle_event(easy_ulong __millisecond)
+easy_int32 Reactor::handle_event(easy_ulong __millisecond)
 {
 	
 	return -1;
 }
 
-int Reactor::event_loop(easy_ulong __millisecond)
+easy_int32 Reactor::event_loop(easy_ulong __millisecond)
 {
 	reactor_impl_->event_loop(__millisecond);
 	return -1;

@@ -42,7 +42,7 @@ Reactor_Impl_Select::Reactor_Impl_Select()
 	fd_ = -1;
 	max_fd_ = -1;
 }
-int Reactor_Impl_Select::register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask,easy_int32 __connect)
+easy_int32 Reactor_Impl_Select::register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask,easy_int32 __connect)
 {
 	if(kMaskAccept ==__mask || kMaskConnect == __mask)
 	{
@@ -62,15 +62,15 @@ int Reactor_Impl_Select::register_handle(Event_Handle* __handle,easy_int32 __fd,
 	}
 	return -1;
 }
-int Reactor_Impl_Select::remove_handle(Event_Handle* __handle,easy_int32 __mask)
+easy_int32 Reactor_Impl_Select::remove_handle(Event_Handle* __handle,easy_int32 __mask)
 {
 	return -1;
 }
-int Reactor_Impl_Select::handle_event(easy_ulong __millisecond)
+easy_int32 Reactor_Impl_Select::handle_event(easy_ulong __millisecond)
 {
 	return -1;
 }
-int Reactor_Impl_Select::event_loop(easy_ulong __millisecond)
+easy_int32 Reactor_Impl_Select::event_loop(easy_ulong __millisecond)
 {
 	while(true)
 	{
@@ -196,7 +196,7 @@ void Reactor_Impl_Select::broadcast(easy_int32 __fd,const easy_char* __data,easy
 	}
 }
 
-int Reactor_Impl_Select::handle_close( easy_int32 __fd )
+easy_int32 Reactor_Impl_Select::handle_close( easy_int32 __fd )
 {
 	for (std::vector<Event_Handle_Data*>::iterator __it = events_.begin(); __it != events_.end(); ++__it)
 	{

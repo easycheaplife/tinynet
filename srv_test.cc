@@ -27,7 +27,7 @@
 #include "easy_dump.h"
 #endif // __LINUX
 
-easy_int32 main(easy_int32 __arg_num,char** args)
+easy_int32 main(easy_int32 __arg_num,easy_char** args)
 {
 	/*	
 	g++ -g -Wl,--no-as-needed -std=c++11 -pthread -D__LINUX -D__HAVE_SELECT -o srv_test reactor.h reactor.cc event_handle.h event_handle_srv.h event_handle_srv.cc reactor_impl.h reactor_impl_select.h reactor_impl_select.cc server_impl.h server_impl.cc srv_test.cc  -I../easy/src/base

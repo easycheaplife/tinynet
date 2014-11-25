@@ -54,11 +54,11 @@ Event_Handle_Srv::~Event_Handle_Srv()
 
 }
 
-int Event_Handle_Srv::handle_input(easy_int32 __fd)
+easy_int32 Event_Handle_Srv::handle_input(easy_int32 __fd)
 {
 	if(__fd == fd_)
 	{
-		int __fd_accept = accept(fd_,NULL,NULL);
+		easy_int32 __fd_accept = accept(fd_,NULL,NULL);
 		if(-1 != __fd_accept)
 		{
 			_set_noblock(__fd_accept);
@@ -74,16 +74,16 @@ int Event_Handle_Srv::handle_input(easy_int32 __fd)
 	return 0;
 }
 
-int Event_Handle_Srv::handle_output(easy_int32 __fd)
+easy_int32 Event_Handle_Srv::handle_output(easy_int32 __fd)
 {
 #ifdef __DEBUG
 	printf("handle_outputd\n");
 #endif //__DEBUG
 	//	test data, if open it, it will cause something wrong
 #if 0
-	static int __data = 0;
+	static easy_int32 __data = 0;
 	++__data;
-	int __send_size = send(__fd,(char*)&__data,sizeof(int),0);
+	easy_int32 __send_size = send(__fd,(easy_char*)&__data,sizeof(easy_int32),0);
 	if( 0 == __send_size )
 	{
 		perror("error at send");  
@@ -94,19 +94,19 @@ int Event_Handle_Srv::handle_output(easy_int32 __fd)
 	return -1;
 }
 
-int Event_Handle_Srv::handle_exception(easy_int32 __fd)
+easy_int32 Event_Handle_Srv::handle_exception(easy_int32 __fd)
 {
 	printf("handle_exception\n");
 	return -1;
 }
 
-int Event_Handle_Srv::handle_close(easy_int32 __fd)
+easy_int32 Event_Handle_Srv::handle_close(easy_int32 __fd)
 {
 #ifdef __DEBUG
 #ifdef __LINUX
-	const int __max_stack_flow = 20;
+	const easy_int32 __max_stack_flow = 20;
 	void* __array[__max_stack_flow];
-	char** __strings;
+	easy_char** __strings;
 	size_t __size = backtrace(__array,__max_stack_flow);
 	printf("backtrace() returned %d addresses\n", (int)__size);
 	__strings = backtrace_symbols(__array,__size);
@@ -129,7 +129,7 @@ int Event_Handle_Srv::handle_close(easy_int32 __fd)
 	return -1;
 }
 
-int Event_Handle_Srv::handle_timeout(easy_int32 __fd)
+easy_int32 Event_Handle_Srv::handle_timeout(easy_int32 __fd)
 {
 	printf("handle_timeout\n");
 	return -1;
@@ -166,21 +166,21 @@ void Event_Handle_Srv::_init()
 	__serveraddr.sin_port = htons(port_);  
 #if 1
 	//	get local ip address
-	static const int __name_len = 128;
-	char __name[__name_len] = {0};
+	static const easy_int32 __name_len = 128;
+	easy_char __name[__name_len] = {0};
 	gethostname(__name,__name_len);
 	struct hostent* __host_entry = gethostbyname(__name);
 	if(__host_entry)
 	{
 		printf("hostname: %s \naddress list: \n", __host_entry->h_name);
-		for(int __i = 0; __host_entry->h_addr_list[__i]; __i++) 
+		for(easy_int32 __i = 0; __host_entry->h_addr_list[__i]; __i++) 
 		{
 		  	printf("%s\n", inet_ntoa(*(struct in_addr*)(__host_entry->h_addr_list[__i])));
 		}
 	}
 #endif
 	__serveraddr.sin_addr.s_addr = inet_addr(host_.c_str());
-	int __ret = bind(fd_,(sockaddr*)&__serveraddr,sizeof(sockaddr_in));  
+	easy_int32 __ret = bind(fd_,(sockaddr*)&__serveraddr,sizeof(sockaddr_in));  
 	if ( -1 == __ret )
 	{
 		perror("error at bind");
@@ -206,7 +206,7 @@ void Event_Handle_Srv::_set_noblock(easy_int32 __fd)
 		printf("_set_noblock() error at ioctlsocket,error code = %d\n", WSAGetLastError());
 	}
 #else
-	int __opts = fcntl(__fd,F_GETFL);  
+	easy_int32 __opts = fcntl(__fd,F_GETFL);  
 	if(0 > __opts)  
     	{  
       		perror("error at fcntl(sock,F_GETFL)");  
@@ -224,8 +224,8 @@ void Event_Handle_Srv::_set_noblock(easy_int32 __fd)
 
 void Event_Handle_Srv::_set_reuse_addr(easy_int32 __fd)
 {
-	int __option_name = 1;
-	if(setsockopt(__fd, SOL_SOCKET, SO_REUSEADDR, (char*)&__option_name, sizeof(int)) == -1)  
+	easy_int32 __option_name = 1;
+	if(setsockopt(__fd, SOL_SOCKET, SO_REUSEADDR, (easy_char*)&__option_name, sizeof(easy_int32)) == -1)  
 	{  
 		perror("setsockopt SO_REUSEADDR");  
 		exit(1);  
@@ -236,8 +236,8 @@ void Event_Handle_Srv::_set_no_delay(easy_int32 __fd)
 {
 #ifndef __LINUX
 	//	The Nagle algorithm is disabled if the TCP_NODELAY option is enabled 
-	int __no_delay = TRUE;
-	if(SOCKET_ERROR == setsockopt( __fd, IPPROTO_TCP, TCP_NODELAY, (char*)&__no_delay, sizeof(int)))
+	easy_int32 __no_delay = TRUE;
+	if(SOCKET_ERROR == setsockopt( __fd, IPPROTO_TCP, TCP_NODELAY, (easy_char*)&__no_delay, sizeof(int)))
 	{
 		perror("setsockopt TCP_NODELAY ");  
 		exit(1);  
@@ -266,7 +266,7 @@ void Event_Handle_Srv::broadcast(easy_int32 __fd,const easy_char* __data,easy_ui
 	reactor()->reactor_impl()->broadcast(__fd,__data,__length);
 }
 
-int Event_Handle_Srv::read( easy_int32 __fd,easy_char* __buf, easy_int32 __length )
+easy_int32 Event_Handle_Srv::read( easy_int32 __fd,easy_char* __buf, easy_int32 __length )
 {
 	easy_int32 __recv_size = recv(__fd,__buf,__length,0);
 	if(0 == __recv_size)
@@ -295,9 +295,9 @@ int Event_Handle_Srv::read( easy_int32 __fd,easy_char* __buf, easy_int32 __lengt
 	return __recv_size;
 }
 
-int Event_Handle_Srv::write( easy_int32 __fd,const easy_char* __data, easy_int32 __length )
+easy_int32 Event_Handle_Srv::write( easy_int32 __fd,const easy_char* __data, easy_int32 __length )
 {
-	int __send_bytes = send(__fd,__data,__length,0);
+	easy_int32 __send_bytes = send(__fd,__data,__length,0);
 	if(-1 == __send_bytes)
 	{
 #ifndef __LINUX
