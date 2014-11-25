@@ -47,8 +47,8 @@ struct Buffer
 	easy_int32				invalid_fd_;
 	Buffer(easy_int32 __fd,easy_uint32 __max_buffer_size)
 	{
-		input_ = new easy::EasyRingbuffer<unsigned char,easy::alloc>(__max_buffer_size);
-		output_ = new easy::EasyRingbuffer<unsigned char,easy::alloc>(__max_buffer_size);
+		input_ = new easy::EasyRingbuffer<easy_uint8,easy::alloc>(__max_buffer_size);
+		output_ = new easy::EasyRingbuffer<easy_uint8,easy::alloc>(__max_buffer_size);
 		fd_ = __fd;
 		invalid_fd_ = 1;
 	}

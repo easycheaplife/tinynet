@@ -46,10 +46,10 @@ public:
 	void	broadcast(easy_int32 __fd,const easy_char* __data, easy_uint32 __length);
 
 	//	read data from network cache
-	int	read(easy_int32 __fd,easy_char* __buf, easy_int32 __length); 
+	easy_int32	read(easy_int32 __fd,easy_char* __buf, easy_int32 __length); 
 
 	//	write data to peer 
-	int write(easy_int32 __fd,const easy_char* __data, easy_int32 __length);
+	easy_int32 write(easy_int32 __fd,const easy_char* __data, easy_int32 __length);
 
 public:
 	//	pure virtual function, subclass must define it.
