@@ -93,7 +93,7 @@ void Server_Impl::_read( easy_int32 __fd )
 		//	if not do this,the connection will be closed!
 		if(0 != __ring_buf_tail_left)
 		{
-			__read_bytes = Event_Handle_Srv::read(__fd,(char*)__input->buffer() +  __input->wpos(),__ring_buf_tail_left);
+			__read_bytes = Event_Handle_Srv::read(__fd,(easy_char*)__input->buffer() +  __input->wpos(),__ring_buf_tail_left);
 			if(-1 != __read_bytes && 0 != __read_bytes)
 			{
 				__input->set_wpos(__input->size());
