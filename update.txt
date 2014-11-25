@@ -19,5 +19,6 @@ V 1.1.1
 2014/11/21
 V 2.0.0
 1 redefine base data type
+2 use cmake generate win32 solution replace use existing.
 
 

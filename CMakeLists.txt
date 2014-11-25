@@ -1,9 +1,27 @@
 PROJECT(tinynet)
-SET(SRC_LIST reactor.cc event_handle_srv.cc reactor_impl_select.cc reactor_impl_poll.cc reactor_impl_epoll.cc server_impl.cc srv_test.cc)
-AUX_SOURCE_DIRECTORY( ./ SOURCE_DIRECTORY)	
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
-INCLUDE_DIRECTORIES( ../easy/src/base )
-ADD_DEFINITIONS(-D__HAVE_EPOLL -D__LINUX)
-SET(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb")
-SET(CMAKE_CXX_FLAGS "-Wl,--no-as-needed -std=c++11 -pthread") 
-ADD_EXECUTABLE(srv_test ${SRC_LIST})
+
+IF(UNIX)
+	SET(TINYNET_SRC_LIST reactor.cc reactor_impl_select.cc reactor_impl_poll.cc reactor_impl_epoll.cc
+	event_handle_srv.cc  server_framework_impl.cc event_handle_cli.cc client_impl.cc)
+ELSE(WIN32)
+	SET(TINYNET_SRC_LIST reactor.h reactor.cc reactor_impl_select.h reactor_impl_select.cc reactor_impl_iocp.h reactor_impl_iocp.cc
+	event_handle_srv.h event_handle_srv.cc server_impl.h server_impl.cc event_handle_cli.h event_handle_cli.cc client_impl.h client_impl.cc)
+ENDIF(UNIX)
+
+INCLUDE_DIRECTORIES( . ../easy/src/base . )
+
+IF(UNIX)
+	ADD_DEFINITIONS(-D__HAVE_EPOLL -D__LINUX)
+	SET(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb")
+	SET(CMAKE_CXX_FLAGS "-Wl,--no-as-needed -std=c++11 -pthread") 
+ELSE(WIN32)
+	ADD_DEFINITIONS(-D__HAVE_SELECT -D__WIN32 -DWIN32)
+ENDIF(UNIX)
+
+ADD_LIBRARY(tinynet STATIC ${TINYNET_SRC_LIST})
+SET_TARGET_PROPERTIES(tinynet PROPERTIES OUTPUT_NAME "tinynet")
+SET(LIBRARY_OUTPUT_PATH lib)
+ADD_SUBDIRECTORY( srv_test )
+ADD_SUBDIRECTORY( cli_test )
+
