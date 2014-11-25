@@ -17,6 +17,7 @@ IF(UNIX)
 		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64")    
 	ENDIF(USE_32BITS)  
 	SET(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb")
+	SET(CMAKE_CXX_FLAGS "-Wl,--no-as-needed -std=c++11 -pthread") 
 ELSE(WIN32)
 
 ENDIF(UNIX)
