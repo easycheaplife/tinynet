@@ -31,7 +31,7 @@
 #define PRE_POST_ACCEPT_NUM				50
 #define MAX_FREE_OVERLAPPED_PLUS_NUM	5000
 #define MAX_FREE_CLIENT_CONTEXT_NUM		5000
-#define MAX_CONNECT_NUM					5000
+#define MAX_CONNECT_NUM					50000
 #define DEFAULT_SEND_BUF_SIZE			256
 #define DEFAULT_RECV_BUF_SIZE			256
 
@@ -567,8 +567,7 @@ easy_uint32 __stdcall Reactor_Impl_Iocp::listen_thread( void* __pv )
 				}
 				if(-1 != __seconds && __seconds >= TIME_OVERTIME/1000)
 				{
-					closesocket(__overlapped_puls->sock_client_);
-					__overlapped_puls->sock_client_ = INVALID_SOCKET;
+					__this->_close_socket(__overlapped_puls->sock_client_);
 				}
 				__overlapped_puls = __overlapped_puls->next_;
 			}

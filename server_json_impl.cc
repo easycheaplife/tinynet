@@ -298,12 +298,12 @@ void Server_Impl::_write_thread()
 				}
 				if(__output->wpos() > __output->rpos())
 				{
-					write(__fd,(const char*)__output->buffer() + __output->rpos(),__output->wpos() - __output->rpos());
+					write(__fd,(const easy_char*)__output->buffer() + __output->rpos(),__output->wpos() - __output->rpos());
 				}
 				else if(__output->wpos() < __output->rpos())
 				{
-					write(__fd,(const char*)__output->buffer() + __output->rpos(),__output->size() - __output->rpos());
-					write(__fd,(const char*)__output->buffer(),__output->wpos());
+					write(__fd,(const easy_char*)__output->buffer() + __output->rpos(),__output->size() - __output->rpos());
+					write(__fd,(const easy_char*)__output->buffer(),__output->wpos());
 				}
 				__output->set_rpos(__output->wpos());
 				++__it;
