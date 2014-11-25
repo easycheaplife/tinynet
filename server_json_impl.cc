@@ -26,7 +26,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 #endif // __LINUX
-#include "server_protobuf_impl.h"
+#include "server_json_impl.h"
 #include <jansson.h>
 
 #define CC_CALLBACK_0(__selector__,__target__, ...) std::bind(&__selector__,__target__, ##__VA_ARGS__)
