@@ -121,7 +121,7 @@ easy_int32 Event_Handle_Srv::handle_close(easy_int32 __fd)
 		printf("%s\n", __strings[__i]);
 	}
 	//	This __strings is malloc(3)ed by backtrace_symbols(), and must be freed here
-	free (__strings);;
+	free (__strings);
 #endif // __LINUX
 #endif // __DEBUG
 	printf("socket close %d,errno %d\n",__fd,errno);
@@ -269,8 +269,11 @@ void Event_Handle_Srv::broadcast(easy_int32 __fd,const easy_char* __data,easy_ui
 easy_int32 Event_Handle_Srv::read( easy_int32 __fd,easy_char* __buf, easy_int32 __length )
 {
 	easy_int32 __recv_size = recv(__fd,__buf,__length,0);
+	//	These calls return the number of bytes received, or -1 if an error occurred.  
+	//	The return value will be 0 when the peer has performed an orderly shutdown
 	if(0 == __recv_size)
 	{
+		//	socket close *,errno 11
 		reactor()->reactor_impl()->handle_close(__fd);
 	}
 	else if (-1 == __recv_size)
