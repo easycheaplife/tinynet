@@ -23,6 +23,7 @@
 #include <netinet/in.h>		//	sockaddr_in
 #include <strings.h>		//	bzero
 #include <arpa/inet.h>		//	inet_addr
+#include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <string.h>
@@ -136,16 +137,55 @@ void test_4_transform_monitor(int sock)
 		{
 			output("%d bytes send: %s",send_bytes,__random_string[__random_index].c_str());
 		}
-		
+		else
+		{
+			printf("recv error,errno = %d\n",errno);
+			break;
+		}
 		//	receive data
 		int __length2 = 0;
 		int __head2 = 0;
 		int __guid2 = 0;
+		unsigned long __usable_size = 0;
 		memset(__packet_head,0,__packet_head_size);
+		if(ioctl(sock,FIONREAD,&__usable_size))
+		{
+			perror("ioctl FIONREAD");
+		}
+		if(__usable_size > __buf_size)
+		{
+			__usable_size = __buf_size;
+		}
+		if(__usable_size < __packet_head_size)
+		{
+			//	not enough,continue;
+			usleep(1000*100);
+			output("#1,__usable_size %lu\n",__usable_size);
+			continue;
+		}
 		int recv_bytes = recv(sock,(void*)&__packet_head,__packet_head_size,0);
+		if(0 == recv_bytes)
+		{
+			printf("The return value will be 0 when the peer has performed an orderly shutdown \n");
+			break;
+		}
+		else if(-1 == recv_bytes)
+		{
+			if(EAGAIN == errno || EWOULDBLOCK == errno)
+			{
+				usleep(1000*100);
+				output("#2\n");
+				continue;
+			}
+			else
+			{
+				printf("recv error,errno = %d\n",errno);
+				break;
+			}
+		}
 		if(__packet_head_size != recv_bytes)
 		{
-			printf(" __packet_head error! %d bytes recv\n", recv_bytes);
+			printf(" __packet_head error! %d bytes recv,sock %d\n", recv_bytes,sock);
 		}
 		memcpy(&__length2,(void*)__packet_head,4);
 #if 0
@@ -160,11 +200,42 @@ void test_4_transform_monitor(int sock)
 			}
 		}
 		memset(__recv_buf,0,__buf_size);
-		recv_bytes = recv(sock,(void*)__recv_buf,__length2,0);
-		if(-1 != recv_bytes)
+		if(ioctl(sock,FIONREAD,&__usable_size))
 		{
-			output("%d bytes recv: %s",recv_bytes + __packet_head_size,__recv_buf);
+			perror("ioctl FIONREAD");
 		}
+		if(__usable_size > __buf_size)
+		{
+			__usable_size = __buf_size;
+		}
+		if(__usable_size < __length2)
+		{
+			//	not enough,continue;
+			usleep(1000*100);
+			output("#3\n");
+			continue;
+		}
+		recv_bytes = recv(sock,(void*)__recv_buf,__length2,0);
+		if(0 == recv_bytes)
+		{
+			printf("The return value will be 0 when the peer has performed an orderly shutdown \n");
+			break;
+		}
+		else if(-1 == recv_bytes)
+		{
+			if(EAGAIN == errno || EWOULDBLOCK == errno)
+			{
+				usleep(1000*100);
+				output("#4\n");
+				continue;
+			}
+			else
+			{
+				printf("recv error,errno = %d\n",errno);
+				break;
+			}
+		}
+		output("%d bytes recv: %s",recv_bytes + __packet_head_size,__recv_buf);
 		usleep(1000*100);
 	}
 }

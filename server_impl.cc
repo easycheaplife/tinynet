@@ -27,6 +27,7 @@
 #include <sys/time.h>
 #endif // __LINUX
 #include "server_impl.h"
+#include "easy_util.h"
 
 #define CC_CALLBACK_0(__selector__,__target__, ...) std::bind(&__selector__,__target__, ##__VA_ARGS__)
 
@@ -75,8 +76,19 @@ void Server_Impl::_read( easy_int32 __fd )
 	{
 		return;
 	}
-	
+	if (__input->write_full())
+	{
+		return;
+	}
 	_get_usable(__fd,__usable_size);
+	if (__usable_size > (__input->size() - __input->bytes()))
+	{
+		__usable_size = __input->size() - __input->bytes();
+		if (0 == __usable_size)
+		{
+			return;
+		}
+	}
 	easy_int32 __ring_buf_tail_left = __input->size() - __input->wpos();
 	easy_int32 __read_bytes = 0;
 	if(__usable_size <= __ring_buf_tail_left)
@@ -85,6 +97,7 @@ void Server_Impl::_read( easy_int32 __fd )
 		if(-1 != __read_bytes && 0 != __read_bytes)
 		{
 			__input->set_wpos(__input->wpos() + __usable_size);
+			__input->increase_bytes(__usable_size);
 		}
 	}
 	else
@@ -96,6 +109,7 @@ void Server_Impl::_read( easy_int32 __fd )
 			if(-1 != __read_bytes && 0 != __read_bytes)
 			{
 				__input->set_wpos(__input->size());
+				__input->increase_bytes(__ring_buf_tail_left);
 			}
 		}
 		easy_int32 __ring_buf_head_left = __input->rpos();
@@ -106,6 +120,7 @@ void Server_Impl::_read( easy_int32 __fd )
 			if(-1 != __read_bytes && 0 != __read_bytes)
 			{
 				__input->set_wpos(__read_left);
+				__input->increase_bytes(__read_left);
 			}
 		}
 		else
@@ -115,6 +130,7 @@ void Server_Impl::_read( easy_int32 __fd )
 			if(-1 != __read_bytes && 0 != __read_bytes)
 			{
 				__input->set_wpos(__ring_buf_head_left);
+				__input->increase_bytes(__ring_buf_head_left);
 			}
 		}
 	}
@@ -153,7 +169,8 @@ void Server_Impl::_read_completely(easy_int32 __fd)
 			__read_bytes = Event_Handle_Srv::read(__fd,(easy_char*)__input->buffer() +  __input->wpos(),__ring_buf_tail_left);
 			if(-1 != __read_bytes && 0 != __read_bytes)
 			{
-				__input->set_wpos(__input->size());
+				//	size,rpos,wpos 's value maybe change by call reallocate function.
+				__input->set_wpos(/*__input->size()*/__input->wpos() + __ring_buf_tail_left);
 			}
 		}
 		easy_int32 __ring_buf_head_left = __input->rpos();
@@ -168,12 +185,14 @@ void Server_Impl::_read_completely(easy_int32 __fd)
 		}
 		else
 		{
-			//	make sure __read_left is less than __input.size() + __ring_buf_head_left,usually,It's no problem.
-			__input->reallocate(__input->size());
+			//	fix bug #20004
+			//	reallocate's size is less than __read_left, it will memory overflow when call Event_Handle_Srv::read
+			connects_[__fd]->input__lock_.acquire_lock();
+			__input->reallocate((__read_left / __input->size() + 1) * __input->size());
 			__read_bytes = Event_Handle_Srv::read(__fd,(easy_char*)__input->buffer() + __input->wpos(),__read_left);
 			if(-1 != __read_bytes && 0 != __read_bytes)
 			{
-				__input->set_wpos(__read_left);
+				__input->set_wpos(__input->wpos() + __read_left);
 			}
 #ifdef __DEBUG
 			//	test ok! set max_buffer_size_ = 256 will easy to test. 
@@ -181,6 +200,7 @@ void Server_Impl::_read_completely(easy_int32 __fd)
 			easy_int32 __head_size = 12;
 			printf("after __input->reallocate called,buffer = %s\n",__input->buffer() + __input->rpos() + __head_size);
 #endif //__DEBUG
+			connects_[__fd]->input__lock_.release_lock();
 		}
 	}
 }
@@ -213,7 +233,11 @@ void Server_Impl::_read_thread()
 					printf("fd =%d,rpos = %d, wpos = %d\n",(*__it)->fd_,__input->rpos(),__input->wpos());
 				}
 #endif //__DEBUG
+#ifdef __HAVE_EPOLL
 				while (!__input->read_finish())
+#else
+				while (!__input->read_finish_4_bug_20002())
+#endif // __HAVE_EPOLL
 				{
 					easy_int32 __packet_length = 0;
 					easy_int32 __log_level = 0;
@@ -221,7 +245,19 @@ void Server_Impl::_read_thread()
 					easy_uint8 __packet_head[__head_size] = {};
 					easy_int32 __head = 0;
 					easy_uint32 __guid = 0;
+#ifdef __HAVE_EPOLL
+					if(__input->read_finish())
+#else
+					if(__input->read_finish_4_bug_20002())
+#endif //__HAVE_EPOLL
+					{
+						break;
+					}
+#ifdef __HAVE_EPOLL
 					if(!__input->pre_read((easy_uint8*)&__packet_head,__head_size))
+#else
+					if(!__input->pre_read_4_bug_20002((easy_uint8*)&__packet_head,__head_size))
+#endif //__HAVE_EPOLL
 					{
 						//	not enough data for read
 						break;
@@ -231,9 +267,9 @@ void Server_Impl::_read_thread()
 					memcpy(&__head,__packet_head + 4,4);
 					memcpy(&__guid,__packet_head + 8,4);
 #endif
-					if(!__packet_length)
+					if(!__packet_length || __packet_length > __input->size())
 					{
-						printf("__packet_length error\n");
+						printf("__packet_length error %d\n",__packet_length);
 						break;
 					}
 #if 0
@@ -241,7 +277,16 @@ void Server_Impl::_read_thread()
 					__frame_number = (__head >> 8);
 #endif
 					memset(__read_buf,0,max_buffer_size_);
+					if (__packet_length + __head_size > max_buffer_size_)
+					{
+						printf("__packet_length + __head_size error %d\n",__packet_length);
+						break;
+					}
+#ifdef __HAVE_EPOLL
 					if(__input->read((easy_uint8*)__read_buf,__packet_length + __head_size))
+#else
+					if(__input->read_4_bug_20002((easy_uint8*)__read_buf,__packet_length + __head_size))
+#endif //__HAVE_EPOLL
 					{
 						__output->append((easy_uint8*)__read_buf,__packet_length + __head_size);
 					}
@@ -260,9 +305,7 @@ void Server_Impl::_read_thread()
 		printf("start time = %ld, end time = %ld,server impl time read = %ld\n",__start_time,__end_time,__time_read);
 #endif //__DEBUG
 		lock_.release_lock();
-#ifdef __LINUX
-		usleep(max_sleep_time_);
-#endif // __LINUX
+		easy::Util::sleep(max_sleep_time_);
 	}
 }
 
@@ -292,23 +335,36 @@ void Server_Impl::_write_thread()
 					++__it;
 					continue;
 				}
+				easy_int32 __write_bytes = 0;
 				if(__output->wpos() > __output->rpos())
 				{
-					write(__fd,(const easy_char*)__output->buffer() + __output->rpos(),__output->wpos() - __output->rpos());
+					easy_int32 __read_left = __output->wpos() - __output->rpos();
+					__write_bytes = write(__fd,(const easy_char*)__output->buffer() + __output->rpos(),__read_left);
+					if (-1 != __write_bytes && 0 != __write_bytes)
+					{
+						__output->set_rpos(__output->wpos());
+					}
 				}
 				else if(__output->wpos() < __output->rpos())
 				{
-					write(__fd,(const easy_char*)__output->buffer() + __output->rpos(),__output->size() - __output->rpos());
-					write(__fd,(const easy_char*)__output->buffer(),__output->wpos());
+					easy_int32 __ring_buf_tail_left = __output->size() - __output->rpos();
+					__write_bytes = write(__fd,(const easy_char*)__output->buffer() + __output->rpos(),__ring_buf_tail_left);
+					if (-1 != __write_bytes && 0 != __write_bytes)
+					{
+						__output->set_rpos(__output->size());
+					}
+					easy_int32 __wpos = __output->wpos();
+					__write_bytes = write(__fd,(const easy_char*)__output->buffer(),__wpos);
+					if (-1 != __write_bytes && 0 != __write_bytes)
+					{
+						__output->set_rpos(__output->wpos());
+					}
 				}
-				__output->set_rpos(__output->wpos());
 				++__it;
 			}
 		}
 		lock_.release_lock();
-#ifdef __LINUX
-		usleep(max_sleep_time_);
-#endif // __LINUX
+		easy::Util::sleep(max_sleep_time_);
 	}
 }
 

@@ -20,5 +20,9 @@ V 1.1.1
 V 2.0.0
 1 redefine base data type
 2 use cmake generate win32 solution replace use existing.
+3 when reading from buffer,wpos_ changed at another thread,but is as a factor for read,that will cause a overflow. 
+4 data coverage for write quick fast than read and more than a cycle when using select model.
+5 memory overflow when read data from system cache, but the ring buffer is not enough.
+6 if client request very fast, it will occupy all of resource, other thread will get no resource when using select model.
 
 
