@@ -19,6 +19,15 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
  ****************************************************************************/
+/************************************************************************/
+/*  
+ *  a ring buffer to work with network buffer cache 
+ *  bugs:
+ *  #20003	2014-12-08 
+ *  if client request very fast, it will occupy all of resource, other thread will get no resource.
+ *
+ */
+/************************************************************************/
 #ifndef __LINUX
 #ifndef FD_SETSIZE
 #define FD_SETSIZE      1024
@@ -70,6 +79,8 @@ private:
 	easy_int32						max_fd_;
 	
 	Event_Handle* 					handle_;
+
+	static const easy_uint32		max_sleep_time_;
 
 	std::vector<Event_Handle_Data*>	events_;
 };

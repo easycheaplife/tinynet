@@ -21,6 +21,15 @@
  ****************************************************************************/
 #ifndef server_impl_h__
 #define server_impl_h__
+/************************************************************************/
+/*  
+ *  a ring buffer to work with network buffer cache 
+ *  bugs:
+ *  #20004	2014-12-08 
+ *  memory overflow
+ *
+ */
+/************************************************************************/
 #include <map>
 #include <vector>
 #include <list>
@@ -37,18 +46,19 @@ struct Buffer;
 
 struct Buffer
 {
-	typedef easy::EasyRingbuffer<easy_uint8,easy::alloc>	ring_buffer;
+	typedef easy::EasyRingbuffer<easy_uint8,easy::alloc,easy::mutex_lock>	ring_buffer;
 	static const size_t MAX_POOL_SIZE = 50000;
 	typedef  easy_int32 _Key;
 
-	ring_buffer*	input_;
-	ring_buffer*	output_;
-	easy_int32				fd_;
-	easy_int32				invalid_fd_;
+	ring_buffer*		input_;
+	easy::mutex_lock	input__lock_;
+	ring_buffer*		output_;
+	easy_int32			fd_;
+	easy_int32			invalid_fd_;
 	Buffer(easy_int32 __fd,easy_uint32 __max_buffer_size)
 	{
-		input_ = new easy::EasyRingbuffer<easy_uint8,easy::alloc>(__max_buffer_size);
-		output_ = new easy::EasyRingbuffer<easy_uint8,easy::alloc>(__max_buffer_size);
+		input_ = new easy::EasyRingbuffer<easy_uint8,easy::alloc,easy::mutex_lock>(__max_buffer_size);
+		output_ = new easy::EasyRingbuffer<easy_uint8,easy::alloc,easy::mutex_lock>(__max_buffer_size);
 		fd_ = __fd;
 		invalid_fd_ = 1;
 	}

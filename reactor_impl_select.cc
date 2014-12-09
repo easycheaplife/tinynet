@@ -24,6 +24,9 @@
 #include "reactor_impl_select.h"
 #include "event_handle.h"
 #include "easy_allocator.h"
+#include "easy_util.h"
+
+const easy_uint32 Reactor_Impl_Select::max_sleep_time_ = 1000*100;
 
 struct Event_Handle_Data : public easy::my_alloc
 {
@@ -165,6 +168,8 @@ easy_int32 Reactor_Impl_Select::event_loop(easy_ulong __millisecond)
 				}
 			}
 		}
+		//	fix bug #20003
+		easy::Util::sleep(1000);
 	}
 	return -1;
 }
