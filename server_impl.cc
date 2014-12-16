@@ -56,84 +56,7 @@ void Server_Impl::on_connected( easy_int32 __fd )
 
 void Server_Impl::on_read( easy_int32 __fd )
 {
-#ifdef __HAVE_EPOLL
 	_read_completely(__fd);
-#else
-	_read(__fd);
-#endif //__HAVE_EPOLL
-}
-
-void Server_Impl::_read( easy_int32 __fd )
-{
-	//	the follow code is ring_buf's append function actually.
-	easy_ulong __usable_size = 0;
-	if(!connects_[__fd])
-	{
-		return;
-	}
-	Buffer::ring_buffer* __input = connects_[__fd]->input_;
-	if(!__input)
-	{
-		return;
-	}
-	if (__input->write_full())
-	{
-		return;
-	}
-	_get_usable(__fd,__usable_size);
-	if (__usable_size > (__input->size() - __input->bytes()))
-	{
-		__usable_size = __input->size() - __input->bytes();
-		if (0 == __usable_size)
-		{
-			return;
-		}
-	}
-	easy_int32 __ring_buf_tail_left = __input->size() - __input->wpos();
-	easy_int32 __read_bytes = 0;
-	if(__usable_size <= __ring_buf_tail_left)
-	{
-		__read_bytes = Event_Handle_Srv::read(__fd,(easy_char*)__input->buffer() + __input->wpos(),__usable_size);
-		if(-1 != __read_bytes && 0 != __read_bytes)
-		{
-			__input->set_wpos(__input->wpos() + __usable_size);
-			__input->increase_bytes(__usable_size);
-		}
-	}
-	else
-	{	
-		//	if not do this,the connection will be closed!
-		if(0 != __ring_buf_tail_left)
-		{
-			__read_bytes = Event_Handle_Srv::read(__fd,(easy_char*)__input->buffer() +  __input->wpos(),__ring_buf_tail_left);
-			if(-1 != __read_bytes && 0 != __read_bytes)
-			{
-				__input->set_wpos(__input->size());
-				__input->increase_bytes(__ring_buf_tail_left);
-			}
-		}
-		easy_int32 __ring_buf_head_left = __input->rpos();
-		easy_int32 __read_left = __usable_size - __ring_buf_tail_left;
-		if(__ring_buf_head_left >= __read_left)
-		{
-			__read_bytes = Event_Handle_Srv::read(__fd,(easy_char*)__input->buffer(),__read_left);
-			if(-1 != __read_bytes && 0 != __read_bytes)
-			{
-				__input->set_wpos(__read_left);
-				__input->increase_bytes(__read_left);
-			}
-		}
-		else
-		{
-			//	maybe some problem here when data not recv completed for epoll ET.you can realloc the input buffer or use while(recv) until return EAGAIN.
-			__read_bytes = Event_Handle_Srv::read(__fd,(easy_char*)__input->buffer(),__ring_buf_head_left);
-			if(-1 != __read_bytes && 0 != __read_bytes)
-			{
-				__input->set_wpos(__ring_buf_head_left);
-				__input->increase_bytes(__ring_buf_head_left);
-			}
-		}
-	}
 }
 
 void Server_Impl::_read_completely(easy_int32 __fd)
@@ -149,58 +72,64 @@ void Server_Impl::_read_completely(easy_int32 __fd)
 	{
 		return;
 	}
-	
-	_get_usable(__fd,__usable_size);
-	easy_int32 __ring_buf_tail_left = __input->size() - __input->wpos();
+
 	easy_int32 __read_bytes = 0;
-	if(__usable_size <= __ring_buf_tail_left)
+	_get_usable(__fd,__usable_size);
+	//	case 1: rpos_ <= wpos_
+	if (__input->rpos() <= __input->wpos())
 	{
-		__read_bytes = Event_Handle_Srv::read(__fd,(easy_char*)__input->buffer() + __input->wpos(),__usable_size);
-		if(-1 != __read_bytes && 0 != __read_bytes)
+		if (__input->size() - __input->wpos() >= __usable_size)
 		{
-			__input->set_wpos(__input->wpos() + __usable_size);
-		}
-	}
-	else
-	{	
-		//	if not do this,the connection will be closed!
-		if(0 != __ring_buf_tail_left)
-		{
-			__read_bytes = Event_Handle_Srv::read(__fd,(easy_char*)__input->buffer() +  __input->wpos(),__ring_buf_tail_left);
+			__read_bytes = Event_Handle_Srv::read(__fd,(easy_char*)__input->buffer() + __input->wpos(),__usable_size);
 			if(-1 != __read_bytes && 0 != __read_bytes)
 			{
-				//	size,rpos,wpos 's value maybe change by call reallocate function.
-				__input->set_wpos(/*__input->size()*/__input->wpos() + __ring_buf_tail_left);
-			}
-		}
-		easy_int32 __ring_buf_head_left = __input->rpos();
-		easy_int32 __read_left = __usable_size - __ring_buf_tail_left;
-		if(__ring_buf_head_left >= __read_left)
-		{
-			__read_bytes = Event_Handle_Srv::read(__fd,(easy_char*)__input->buffer(),__read_left);
-			if(-1 != __read_bytes && 0 != __read_bytes)
-			{
-				__input->set_wpos(__read_left);
+				__input->set_wpos(__input->wpos() + __read_bytes);
 			}
 		}
 		else
 		{
-			//	fix bug #20004
-			//	reallocate's size is less than __read_left, it will memory overflow when call Event_Handle_Srv::read
-			connects_[__fd]->input__lock_.acquire_lock();
-			__input->reallocate((__read_left / __input->size() + 1) * __input->size());
-			__read_bytes = Event_Handle_Srv::read(__fd,(easy_char*)__input->buffer() + __input->wpos(),__read_left);
-			if(-1 != __read_bytes && 0 != __read_bytes)
+			if (__input->size() - __input->wpos() + __input->rpos() > __usable_size)	// do not >= , reserev at lest on byte avoid data coveage!
 			{
-				__input->set_wpos(__input->wpos() + __read_left);
+				size_t __buf_wpos_tail_left = __input->size() - __input->wpos();
+				__read_bytes = Event_Handle_Srv::read(__fd,(easy_char*)__input->buffer() + __input->wpos(),__buf_wpos_tail_left);
+				if(-1 != __read_bytes && 0 != __read_bytes)
+				{
+					__input->set_wpos(__input->wpos() + __read_bytes);
+				}
+				__read_bytes = Event_Handle_Srv::read(__fd,(easy_char*)__input->buffer(),__usable_size - __buf_wpos_tail_left);
+				if(-1 != __read_bytes && 0 != __read_bytes)
+				{
+					__input->set_wpos(__usable_size - __buf_wpos_tail_left);
+				}
 			}
-#ifdef __DEBUG
-			//	test ok! set max_buffer_size_ = 256 will easy to test. 
-			printf("__input->reallocate called, __fd = %d,__read_left = %d,buffer left size = %d\n",__fd,__read_left,__input->size() - __input->wpos());
-			easy_int32 __head_size = 12;
-			printf("after __input->reallocate called,buffer = %s\n",__input->buffer() + __input->rpos() + __head_size);
-#endif //__DEBUG
-			connects_[__fd]->input__lock_.release_lock();
+			else
+			{
+				size_t __new_size = (__input->size() + __usable_size - (__input->size() - __input->wpos())) / __input->size() * __input->size();
+				__input->reallocate(__new_size,true);
+				__read_bytes = Event_Handle_Srv::read(__fd,(easy_char*)__input->buffer() + __input->wpos(),__usable_size);
+				if(-1 != __read_bytes && 0 != __read_bytes)
+				{
+					__input->set_wpos(__input->wpos() + __read_bytes);
+				}
+			}
+		}
+	}
+	//	case 2: rpos_ > wpos_ 
+	else if(__input->rpos() > __input->wpos())
+	{
+		if (__input->rpos() - __input->wpos() <= __usable_size)	// (rpos_ - wpos_ > cnt)  do not >= , reserev at lest on byte avoid data coveage!
+		{
+			easy_uint32 __new_size = __input->size() * 2;
+			if ( __new_size <= __usable_size)
+			{
+				__new_size = __input->size() * 2 + __usable_size / __input->size() * __input->size();
+			}
+			__input->reallocate(__new_size,true);
+		}
+		__read_bytes = Event_Handle_Srv::read(__fd,(easy_char*)__input->buffer() + __input->wpos(),__usable_size);
+		if(-1 != __read_bytes && 0 != __read_bytes)
+		{
+			__input->set_wpos(__input->wpos() + __read_bytes);
 		}
 	}
 }
@@ -233,11 +162,7 @@ void Server_Impl::_read_thread()
 					printf("fd =%d,rpos = %d, wpos = %d\n",(*__it)->fd_,__input->rpos(),__input->wpos());
 				}
 #endif //__DEBUG
-#ifdef __HAVE_EPOLL
 				while (!__input->read_finish())
-#else
-				while (!__input->read_finish_4_bug_20002())
-#endif // __HAVE_EPOLL
 				{
 					easy_int32 __packet_length = 0;
 					easy_int32 __log_level = 0;
@@ -245,19 +170,11 @@ void Server_Impl::_read_thread()
 					easy_uint8 __packet_head[__head_size] = {};
 					easy_int32 __head = 0;
 					easy_uint32 __guid = 0;
-#ifdef __HAVE_EPOLL
 					if(__input->read_finish())
-#else
-					if(__input->read_finish_4_bug_20002())
-#endif //__HAVE_EPOLL
 					{
 						break;
 					}
-#ifdef __HAVE_EPOLL
 					if(!__input->pre_read((easy_uint8*)&__packet_head,__head_size))
-#else
-					if(!__input->pre_read_4_bug_20002((easy_uint8*)&__packet_head,__head_size))
-#endif //__HAVE_EPOLL
 					{
 						//	not enough data for read
 						break;
@@ -282,11 +199,7 @@ void Server_Impl::_read_thread()
 						printf("__packet_length + __head_size error %d\n",__packet_length);
 						break;
 					}
-#ifdef __HAVE_EPOLL
 					if(__input->read((easy_uint8*)__read_buf,__packet_length + __head_size))
-#else
-					if(__input->read_4_bug_20002((easy_uint8*)__read_buf,__packet_length + __head_size))
-#endif //__HAVE_EPOLL
 					{
 						__output->append((easy_uint8*)__read_buf,__packet_length + __head_size);
 					}
