@@ -132,7 +132,15 @@ void Client_Impl::_read_thread()
 			if(ring_buf_->read((unsigned char*)__read_buf,__packet_length + __head_size))
 			{
 				printf("data send: %s\n",__read_buf + __head_size);
-				Event_Handle_Cli::write(__read_buf,__packet_length + __head_size);
+				if (0)
+				{
+					Event_Handle_Cli::write(__read_buf,__packet_length + __head_size);
+				}
+				else
+				{
+					handle_packet(__read_buf,__packet_length + __head_size);
+				}
+				
 			}
 			else
 			{

@@ -19,7 +19,7 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
  ****************************************************************************/
-#include "server_impl.h"
+#include "srv_test.h"
 #include "reactor.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -27,12 +27,29 @@
 #include "easy_dump.h"
 #endif // __LINUX
 
+Srv_Test::Srv_Test(Reactor* __reactor,const easy_char* __host /*= "0.0.0.0"*/,easy_uint32 __port/* = 9876*/)
+	: Server_Impl(__reactor,__host,__port) 
+{
+
+}
+
+Srv_Test::~Srv_Test()
+{
+
+}
+
+easy_int32 Srv_Test::handle_packet( easy_int32 __fd,const easy_char* __packet,easy_int32 __length )
+{
+	send_packet(__fd,__packet,__length);
+	return -1;
+}
+
 easy_int32 main(easy_int32 __arg_num,easy_char** args)
 {
 	/*	
-	g++ -g -Wl,--no-as-needed -std=c++11 -pthread -D__LINUX -D__HAVE_SELECT -o ./bin/srv_test reactor.h reactor.cc event_handle.h event_handle_srv.h event_handle_srv.cc reactor_impl.h reactor_impl_select.h reactor_impl_select.cc server_impl.h server_impl.cc ./srv_test/srv_test.cc  -I../easy/src/base -I.
-	g++ -g -Wl,--no-as-needed -std=c++11 -pthread -D__LINUX -D__HAVE_EPOLL -o ./bin/srv_test reactor.h reactor.cc event_handle.h event_handle_srv.h event_handle_srv.cc reactor_impl.h reactor_impl_epoll.h reactor_impl_epoll.cc server_impl.h server_impl.cc ./srv_test/srv_test.cc -I../easy/src/base -I.
-	g++ -g -Wl,--no-as-needed -std=c++11 -pthread -D__LINUX -D__HAVE_POLL -o ./bin/srv_test reactor.h reactor.cc event_handle.h event_handle_srv.h event_handle_srv.cc reactor_impl.h reactor_impl_poll.h reactor_impl_poll.cc server_impl.h server_impl.cc ./srv_test/srv_test.cc -I../easy/src/base -I.
+	g++ -g -Wl,--no-as-needed -std=c++11 -pthread -D__LINUX -D__HAVE_SELECT -o ./bin/srv_test reactor.h reactor.cc event_handle.h event_handle_srv.h event_handle_srv.cc reactor_impl.h reactor_impl_select.h reactor_impl_select.cc server_impl.h server_impl.cc ./srv_test/srv_test.h ./srv_test/srv_test.cc  -I../easy/src/base -I.
+	g++ -g -Wl,--no-as-needed -std=c++11 -pthread -D__LINUX -D__HAVE_EPOLL -o ./bin/srv_test reactor.h reactor.cc event_handle.h event_handle_srv.h event_handle_srv.cc reactor_impl.h reactor_impl_epoll.h reactor_impl_epoll.cc server_impl.h server_impl.cc ./srv_test/srv_test.h ./srv_test/srv_test.cc -I../easy/src/base -I.
+	g++ -g -Wl,--no-as-needed -std=c++11 -pthread -D__LINUX -D__HAVE_POLL -o ./bin/srv_test reactor.h reactor.cc event_handle.h event_handle_srv.h event_handle_srv.cc reactor_impl.h reactor_impl_poll.h reactor_impl_poll.cc server_impl.h server_impl.cc ./srv_test/srv_test.h ./srv_test/srv_test.cc -I../easy/src/base -I.
 	*/
 	if(3 != __arg_num)
 	{
@@ -48,8 +65,9 @@ easy_int32 main(easy_int32 __arg_num,easy_char** args)
 	easy_char* __host = args[1];
 	easy_uint32 __port = atoi(args[2]);
 	Reactor* __reactor = Reactor::instance();
-	Server_Impl __event_handle_srv(__reactor,__host,__port);
+	Srv_Test __srv_test(__reactor,__host,__port);
 	static const easy_int32 __max_time_out = 5000*1000;
 	__reactor->event_loop(__max_time_out);
 	return 0;
 }
+

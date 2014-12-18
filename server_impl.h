@@ -88,15 +88,20 @@ struct Buffer
 class Server_Impl : public Event_Handle_Srv
 {
 public:
-	Server_Impl(Reactor* __reactor,const easy_char* __host = "0.0.0.0",easy_uint32 __port = 9876);
+	Server_Impl(Reactor* __reactor,const easy_char* __host ,easy_uint32 __port);
 
-	~Server_Impl();
+	virtual ~Server_Impl();
 
 	void on_connected(easy_int32 __fd);
 
 	void on_disconnect(easy_int32 __fd);
 
 	void on_read(easy_int32 __fd);
+
+	virtual easy_int32 handle_packet(easy_int32 __fd,const easy_char* __packet,easy_int32 __length) = 0;
+
+protected:
+	void send_packet(easy_int32 __fd,const easy_char* __packet,easy_int32 __length);
 
 private:
 	void _read(easy_int32 __fd);

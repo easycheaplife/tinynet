@@ -19,31 +19,21 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
  ****************************************************************************/
-#ifndef client_impl_h__
-#define client_impl_h__
-#include "event_handle_cli.h"
-#include "easy_ring_buffer.h"
-#include "easy_allocator.h"
-#include "easy_lock.h"
+#ifndef srv_test_h__
+#define srv_test_h__
+#include "server_impl.h"
 
-class Client_Impl : public Event_Handle_Cli
+class Srv_Test : public Server_Impl
 {
 public:
-	Client_Impl(Reactor* __reactor,const easy_char* __host,easy_uint32 __port);
+	Srv_Test(Reactor* __reactor,const easy_char* __host = "0.0.0.0",easy_uint32 __port = 9876);
 
-	virtual ~Client_Impl();
+	easy_int32 handle_packet(easy_int32 __fd,const easy_char* __packet,easy_int32 __length);
 
-	void on_read(easy_int32 __fd);
-
-protected:
-	virtual easy_int32 handle_packet(const easy_char* __packet,easy_int32 __length) = 0;
-
-private:
-	void	_read_thread();
-
-private:
-	easy::EasyRingbuffer<easy_uint8,easy::alloc,easy::mutex_lock>* ring_buf_;
-
+	~Srv_Test();
 };
 
-#endif // client_impl_h__
+
+#endif // srv_test_h__
+
+
