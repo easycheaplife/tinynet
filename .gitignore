@@ -22,19 +22,18 @@
 
 # for win32
 *.sdf
+*.pdb
 *.opensdf
+*.sln
+*.vcxproj.filters
+*.vcxproj.user
+*.vcxproj
+*.suo
 Debug/
 Release/
 
 # for cmake
 CMakeCache.txt
-ALL_BUILD.vcxproj
-ALL_BUILD.vcxproj.filters
-ZERO_CHECK.vcxproj.filters
-ZERO_CHECK.vcxproj
-tinynet.sln
-test.vcxproj.filters
-test.vcxproj
 CMakeFiles/
 Makefile
 CMakeCache.txt

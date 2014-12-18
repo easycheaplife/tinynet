@@ -19,12 +19,28 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
  ****************************************************************************/
-
+#include "cli_test.h"
 #include "reactor.h"
 #include "easy_util.h"
-#include "client_impl.h"
 #include "easy_byte_buffer.h"
 #include "easy_time.h"
+
+Cli_Test::Cli_Test( Reactor* __reactor,const easy_char* __host,easy_uint32 __port /*= 9876*/ )
+	: Client_Impl(__reactor,__host,__port)
+{
+
+}
+
+easy_int32 Cli_Test::handle_packet( const easy_char* __packet,easy_int32 __length )
+{
+	Event_Handle_Cli::write(__packet,__length);
+	return -1;
+}
+
+Cli_Test::~Cli_Test()
+{
+
+}
 
 static std::string __random_string[] = 
 {
@@ -57,7 +73,7 @@ static int __random_string_size = 22;
 int main(int argc, char* argv[])
 {
 	/*
-		g++ -g -Wl,--no-as-needed -std=c++11 -pthread -D__LINUX -D__HAVE_SELECT -o ./bin/cli_test  reactor.h reactor.cc event_handle.h event_handle_cli.h event_handle_cli.cc reactor_impl.h reactor_impl_select.h reactor_impl_select.cc client_impl.h client_impl.cc cli_test/cli_test.cc  -I../easy/src/base -I.
+		g++ -g -Wl,--no-as-needed -std=c++11 -pthread -D__LINUX -D__HAVE_SELECT -o ./bin/cli_test  reactor.h reactor.cc event_handle.h event_handle_cli.h event_handle_cli.cc reactor_impl.h reactor_impl_select.h reactor_impl_select.cc client_impl.h client_impl.cc cli_test/cli_test.h cli_test/cli_test.cc  -I../easy/src/base -I.
 	*/
 	if(3 != argc)
 	{
@@ -67,7 +83,7 @@ int main(int argc, char* argv[])
 	char* __host = argv[1];
 	unsigned int __port = atoi(argv[2]);
 	Reactor* __reactor = Reactor::instance();
-	Client_Impl* client_impl_ = new Client_Impl(__reactor,__host,__port);
+	Cli_Test* __cli_test = new Cli_Test(__reactor,__host,__port);
 	
 	int __log_level = 1;
 	int __frame_number = 7;
@@ -96,7 +112,7 @@ int main(int argc, char* argv[])
 	__byte_buffer << __head;
 	__byte_buffer << __guid;
 	__byte_buffer << __context;
-	client_impl_->write((char*)__byte_buffer.contents(),__byte_buffer.size());
+	__cli_test->write((char*)__byte_buffer.contents(),__byte_buffer.size());
 #endif
 	static const int __sleep_time = 100*1000;
 	while (true)

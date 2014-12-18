@@ -34,7 +34,7 @@
 const easy_uint32 Server_Impl::max_buffer_size_ = 1024*8;
 const easy_uint32 Server_Impl::max_sleep_time_ = 1000*500;
 
-Server_Impl::Server_Impl( Reactor* __reactor,const easy_char* __host /*= "0.0.0.0"*/,easy_uint32 __port /*= 9876*/ )
+Server_Impl::Server_Impl( Reactor* __reactor,const easy_char* __host ,easy_uint32 __port  )
 	: Event_Handle_Srv(__reactor,__host,__port) 
 {
 #ifndef __HAVE_IOCP
@@ -201,7 +201,14 @@ void Server_Impl::_read_thread()
 					}
 					if(__input->read((easy_uint8*)__read_buf,__packet_length + __head_size))
 					{
-						__output->append((easy_uint8*)__read_buf,__packet_length + __head_size);
+						if (0)
+						{
+							__output->append((easy_uint8*)__read_buf,__packet_length + __head_size);
+						}
+						else
+						{
+							handle_packet((*__it)->fd_,__read_buf,__packet_length + __head_size);
+						}
 					}
 					else
 					{
@@ -281,6 +288,19 @@ void Server_Impl::_write_thread()
 	}
 }
 
+void Server_Impl::send_packet( easy_int32 __fd,const easy_char* __packet,easy_int32 __length )
+{
+	if (connects_[__fd])
+	{
+		if (connects_[__fd]->output_)
+		{
+			connects_[__fd]->output_->append((easy_uint8*)__packet,__length);
+		}
+	}
+	
+}
+
+
 void Server_Impl::on_disconnect( easy_int32 __fd )
 {
 	map_buffer::iterator __it = connects_.find(__fd);
@@ -314,6 +334,7 @@ Server_Impl::~Server_Impl()
 {
 	buffer_queue_.clear();
 }
+
 
 
 
