@@ -193,7 +193,7 @@ void Server_Impl::_read_thread()
 					{
 						break;
 					}
-					if(!__input->pre_read((easy_uint8*)&__packet_head,__head_size))
+					if(!__input->peek((easy_uint8*)&__packet_head,__head_size))
 					{
 						//	not enough data for read
 						break;
