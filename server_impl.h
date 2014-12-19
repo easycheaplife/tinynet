@@ -98,14 +98,20 @@ public:
 
 	void on_read(easy_int32 __fd);
 
+	easy_int32 on_packet(easy_int32 __fd,const easy_char* __packet,easy_int32 __length);
+public:
+	//	callback function
 	virtual easy_int32 handle_packet(easy_int32 __fd,const easy_char* __packet,easy_int32 __length) = 0;
+
+	virtual	void connected(easy_int32 __fd) = 0;
+
+	virtual	void dis_connected(easy_int32 __fd) = 0;
+
 
 protected:
 	void send_packet(easy_int32 __fd,const easy_char* __packet,easy_int32 __length);
 
 private:
-	void _read(easy_int32 __fd);
-	
 	void _read_completely(easy_int32 __fd);
 
 	void _read_thread();

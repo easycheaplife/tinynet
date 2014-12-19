@@ -47,16 +47,25 @@ Server_Impl::Server_Impl( Reactor* __reactor,const easy_char* __host ,easy_uint3
 
 void Server_Impl::on_connected( easy_int32 __fd )
 {
-	printf("on_connected __fd = %d \n",__fd);
+#ifndef __HAVE_IOCP
 	lock_.acquire_lock();
 	connects_[__fd] = buffer_queue_.allocate(__fd,max_buffer_size_);
 	connects_copy.push_back(connects_[__fd]);
 	lock_.release_lock();
+#endif // __HAVE_IOCP
+	//	callback connected 
+	connected(__fd);
 }
 
 void Server_Impl::on_read( easy_int32 __fd )
 {
 	_read_completely(__fd);
+}
+
+easy_int32 Server_Impl::on_packet( easy_int32 __fd,const easy_char* __packet,easy_int32 __length )
+{
+	handle_packet(__fd,__packet,__length);
+	return -1;
 }
 
 void Server_Impl::_read_completely(easy_int32 __fd)
@@ -290,6 +299,7 @@ void Server_Impl::_write_thread()
 
 void Server_Impl::send_packet( easy_int32 __fd,const easy_char* __packet,easy_int32 __length )
 {
+#ifndef __HAVE_IOCP
 	if (connects_[__fd])
 	{
 		if (connects_[__fd]->output_)
@@ -297,20 +307,29 @@ void Server_Impl::send_packet( easy_int32 __fd,const easy_char* __packet,easy_in
 			connects_[__fd]->output_->append((easy_uint8*)__packet,__length);
 		}
 	}
-	
+#else
+	write(__fd,__packet,__length);
+#endif // __HAVE_IOCP
 }
 
 
 void Server_Impl::on_disconnect( easy_int32 __fd )
 {
+#ifndef __HAVE_IOCP
 	map_buffer::iterator __it = connects_.find(__fd);
 	if (__it != connects_.end())
 	{
 		if (__it->second)
 		{
 			__it->second->invalid_fd_ = 0;
+			//	callback dis_connected
+			dis_connected(__fd);
 		}
 	}
+#else
+	//	callback dis_connected
+	dis_connected(__fd);
+#endif // __HAVE_IOCP
 }
 
 void Server_Impl::_disconnect( Buffer* __buffer)
@@ -334,6 +353,7 @@ Server_Impl::~Server_Impl()
 {
 	buffer_queue_.clear();
 }
+
 
 
 

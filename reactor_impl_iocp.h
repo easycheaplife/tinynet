@@ -78,6 +78,8 @@ public:
 
 	easy_int32 handle_close(easy_int32 __fd);
 
+	easy_int32 handle_packet(easy_int32 __fd,const easy_char* __packet,easy_uint32 __length);
+
 	easy_int32 event_loop(easy_ulong __millisecond);
 
 	//	__fd is the broadcaster
@@ -179,6 +181,8 @@ private:
 	void _process_io(DWORD __per_handle,Overlapped_Puls* __overlapped_puls,DWORD __bytes_transferred,easy_int32 __error);
 
 	void _close_socket(SOCKET __socket);
+
+	Client_Context* _get_client_context(easy_int32 __fd);
 private:
 	static easy_uint32 __stdcall work_thread_function(void* __pv);
 

@@ -56,6 +56,7 @@ Event_Handle_Srv::~Event_Handle_Srv()
 
 easy_int32 Event_Handle_Srv::handle_input(easy_int32 __fd)
 {
+#ifndef __HAVE_IOCP
 	if(__fd == fd_)
 	{
 		easy_int32 __fd_accept = accept(fd_,NULL,NULL);
@@ -71,6 +72,9 @@ easy_int32 Event_Handle_Srv::handle_input(easy_int32 __fd)
 		//	read data from system buffer and write to ring buffer, that will reduce a memory copy in every data transform
 		on_read(__fd);
 	}
+#else
+	on_connected(__fd);
+#endif // __HAVE_IOCP
 	return 0;
 }
 
@@ -102,6 +106,7 @@ easy_int32 Event_Handle_Srv::handle_exception(easy_int32 __fd)
 
 easy_int32 Event_Handle_Srv::handle_close(easy_int32 __fd)
 {
+#ifndef __HAVE_IOCP
 #ifdef __DEBUG
 #ifdef __LINUX
 	const easy_int32 __max_stack_flow = 20;
@@ -125,6 +130,7 @@ easy_int32 Event_Handle_Srv::handle_close(easy_int32 __fd)
 #endif // __LINUX
 #endif // __DEBUG
 	printf("socket close %d,errno %d\n",__fd,errno);
+#endif // __HAVE_IOCP
 	on_disconnect(__fd);
 	return -1;
 }
@@ -134,6 +140,15 @@ easy_int32 Event_Handle_Srv::handle_timeout(easy_int32 __fd)
 	printf("handle_timeout\n");
 	return -1;
 }
+
+easy_int32 Event_Handle_Srv::handle_packet( easy_int32 __fd,const easy_char* __packet,easy_int32 __length )
+{
+#ifdef __HAVE_IOCP
+	on_packet(__fd,__packet,__length);
+#endif // __HAVE_IOCP
+	return -1;
+}
+
 
 void Event_Handle_Srv::_init()
 {
@@ -304,6 +319,7 @@ easy_int32 Event_Handle_Srv::read( easy_int32 __fd,easy_char* __buf, easy_int32 
 
 easy_int32 Event_Handle_Srv::write( easy_int32 __fd,const easy_char* __data, easy_int32 __length )
 {
+#ifndef __HAVE_IOCP
 	if (0 == __length)
 	{
 		return 0;
@@ -333,7 +349,12 @@ easy_int32 Event_Handle_Srv::write( easy_int32 __fd,const easy_char* __data, eas
 		}
 	}
 	return __send_bytes;
+#else
+	return reactor()->reactor_impl()->handle_packet(__fd,__data,__length);
+#endif // __HAVE_IOCP
 }
+
+
 
 
 

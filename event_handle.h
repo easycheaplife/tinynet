@@ -39,7 +39,9 @@ public:
 	
 	virtual easy_int32 handle_timeout(easy_int32 __fd){ return -1; }
 
-	virtual easy_int32	read(easy_int32 __fd,easy_char* __buf, easy_int32 __length) { return -1;}
+	virtual easy_int32 handle_packet(easy_int32 __fd,const easy_char* __packet,easy_int32 __length){ return -1; }
+
+	virtual easy_int32 read(easy_int32 __fd,easy_char* __buf, easy_int32 __length) { return -1;}
 
 	virtual easy_int32 write(easy_int32 __fd,const easy_char* __data, easy_int32 __length) { return -1; }
 	
