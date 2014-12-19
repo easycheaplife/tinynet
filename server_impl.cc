@@ -23,6 +23,7 @@
 #include <string.h>
 #include <thread>
 #ifdef __LINUX
+#include <sys/socket.h>
 #include <unistd.h>
 #include <sys/time.h>
 #endif // __LINUX
@@ -71,7 +72,6 @@ easy_int32 Server_Impl::on_packet( easy_int32 __fd,const easy_char* __packet,eas
 void Server_Impl::_read_completely(easy_int32 __fd)
 {
 	//	the follow code is ring_buf's append function actually.
-	easy_ulong __usable_size = 0;
 	if(!connects_[__fd])
 	{
 		return;
@@ -81,9 +81,19 @@ void Server_Impl::_read_completely(easy_int32 __fd)
 	{
 		return;
 	}
-
-	easy_int32 __read_bytes = 0;
+	easy_int32 __usable_size = 0;
+	//	check the peer socket is ok
+	static easy_uint8  __check_buf[max_buffer_size_] = {};
+	__usable_size = Event_Handle_Srv::read(__fd,(easy_char*)__check_buf,max_buffer_size_,MSG_PEEK);
+	if(-1 == __usable_size)
+	{
+		return;
+	}
+#if 0
+	//	replace by recv using flag of MSG_PEEK
 	_get_usable(__fd,__usable_size);
+#endif
+	easy_int32 __read_bytes = 0;
 	//	case 1: rpos_ <= wpos_
 	if (__input->rpos() <= __input->wpos())
 	{

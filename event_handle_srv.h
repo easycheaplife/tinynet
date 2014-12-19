@@ -48,7 +48,7 @@ public:
 	void	broadcast(easy_int32 __fd,const easy_char* __data, easy_uint32 __length);
 
 	//	read data from network cache
-	easy_int32 read(easy_int32 __fd,easy_char* __buf, easy_int32 __length); 
+	easy_int32 read(easy_int32 __fd,easy_char* __buf, easy_int32 __length,easy_int32 __flags = 0); 
 
 	//	write data to peer 
 	easy_int32 write(easy_int32 __fd,const easy_char* __data, easy_int32 __length);
