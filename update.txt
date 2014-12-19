@@ -24,5 +24,7 @@ V 2.0.0
 4 data coverage for write quick fast than read and more than a cycle when using select model.
 5 memory overflow when read data from system cache, but the ring buffer is not enough.
 6 if client request very fast, it will occupy all of resource, other thread will get no resource when using select model.
-
+7 implement server_imple::read_completely again, improve the stability of server,and fix the problem of data coverage. 
+8 add a sub class srv_test/cli_test from server_impl/client_impl for test,more convenient for using you game server.
+9 adaptive the iocp model at windows,unification api for all model,you do not care about how to implement the model,just use it for everyone. 
 

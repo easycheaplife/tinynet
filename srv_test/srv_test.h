@@ -30,6 +30,10 @@ public:
 
 	easy_int32 handle_packet(easy_int32 __fd,const easy_char* __packet,easy_int32 __length);
 
+	void connected(easy_int32 __fd);
+
+	void dis_connected(easy_int32 __fd);
+
 	~Srv_Test();
 };
 

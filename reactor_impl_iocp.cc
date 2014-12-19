@@ -534,6 +534,16 @@ easy_int32 Reactor_Impl_Iocp::handle_close( easy_int32 __fd )
 	return -1;
 }
 
+easy_int32 Reactor_Impl_Iocp::handle_packet( easy_int32 __fd,const easy_char* __packet,easy_uint32 __length )
+{
+	Client_Context* __client_context = _get_client_context(__fd);
+	if (__client_context)
+	{
+		send_2_client(__client_context,__packet,__length);
+	}
+	return -1;
+}
+
 easy_uint32 __stdcall Reactor_Impl_Iocp::listen_thread( void* __pv )
 {
 	Overlapped_Puls* __overlapped_puls = NULL;
@@ -773,6 +783,7 @@ void Reactor_Impl_Iocp::release_client_context( Client_Context* __client_context
 			InterlockedDecrement(&cur_connection_);
 		}
 	}
+	on_connection_closing(__client_context, NULL);	
 	printf("connection closed,cur_connection_ = %d\n",cur_connection_);
 	client_context_lock_.release_lock();
 	//	to be continue ...
@@ -1139,6 +1150,22 @@ void Reactor_Impl_Iocp::_close_socket( SOCKET __socket )
 	__socket = INVALID_SOCKET;
 }
 
+Client_Context* Reactor_Impl_Iocp::_get_client_context( easy_int32 __fd )
+{
+	active_clienk_context_lock_.acquire_lock();
+	Client_Context* __first_client_context = active_cleint_context_;
+	while(__first_client_context)
+	{
+		if(__fd == __first_client_context->socket_)
+		{
+			active_clienk_context_lock_.release_lock();
+			return __first_client_context;
+		}
+		__first_client_context = __first_client_context->next_;
+	}
+	active_clienk_context_lock_.release_lock();
+}
+
 BOOL Reactor_Impl_Iocp::add_connection( Client_Context* __client_context )
 {
 	active_clienk_context_lock_.acquire_lock();
@@ -1155,7 +1182,8 @@ BOOL Reactor_Impl_Iocp::add_connection( Client_Context* __client_context )
 
 void Reactor_Impl_Iocp::on_connection_established( Client_Context* __client_context,Overlapped_Puls* __overlapped_puls )
 {
-	printf("new connection socket = %d,cur_connection_ = %d\n",__client_context->socket_,cur_connection_);
+	handle_->handle_input(__client_context->socket_);
+	printf("new connection,cur_connection_ = %d\n",cur_connection_);
 }
 
 BOOL Reactor_Impl_Iocp::post_recv( Client_Context* __client_context,Overlapped_Puls* __overlapped_puls )
@@ -1288,7 +1316,7 @@ void Reactor_Impl_Iocp::process_packet(Client_Context* __client_context,Overlapp
 
 void Reactor_Impl_Iocp::on_connection_closing( Client_Context* __client_context,Overlapped_Puls* __overlapped_puls )
 {
-
+	handle_->handle_close(fd_);
 }
 
 BOOL Reactor_Impl_Iocp::post_send( Client_Context* __client_context,Overlapped_Puls* __overlapped_puls )
@@ -1700,11 +1728,11 @@ easy_int32 Reactor_Impl_Iocp::read_packet( Client_Context* __client_context,Over
 		{
 			if(0)
 			{
-				send_2_all_client(__client_context,__overlapped_puls->buffer_ + __overlapped_puls->used_size_,__packet_length + __head_size);
+				send_2_client(__client_context,__overlapped_puls->buffer_ + __overlapped_puls->used_size_,__packet_length + __head_size);
 			}
 			else
 			{
-				send_2_client(__client_context,__overlapped_puls->buffer_ + __overlapped_puls->used_size_,__packet_length + __head_size);
+				handle_->handle_packet(__client_context->socket_,__overlapped_puls->buffer_ + __overlapped_puls->used_size_,__packet_length + __head_size);
 			}
 			__overlapped_puls->setp_used_size( __packet_length + __head_size );
 		}
@@ -1854,5 +1882,4 @@ BOOL Reactor_Impl_Iocp::remove_pending_send( Client_Context* __client_context,Ov
 	}
 	return __res;
 }
-
 #endif //WIN32

@@ -40,13 +40,15 @@ public:
 	virtual easy_int32 handle_close(easy_int32 __fd);
 	
 	virtual easy_int32 handle_timeout(easy_int32 __fd);
+
+	virtual easy_int32 handle_packet(easy_int32 __fd,const easy_char* __packet,easy_int32 __length);
 	
 	virtual easy_int32 get_handle() const { return fd_;}
 
 	void	broadcast(easy_int32 __fd,const easy_char* __data, easy_uint32 __length);
 
 	//	read data from network cache
-	easy_int32	read(easy_int32 __fd,easy_char* __buf, easy_int32 __length); 
+	easy_int32 read(easy_int32 __fd,easy_char* __buf, easy_int32 __length); 
 
 	//	write data to peer 
 	easy_int32 write(easy_int32 __fd,const easy_char* __data, easy_int32 __length);
@@ -58,6 +60,8 @@ public:
 	virtual void on_read(easy_int32 __fd) = 0;
 
 	virtual void on_disconnect(easy_int32 __fd) = 0;
+
+	virtual easy_int32 on_packet(easy_int32 __fd,const easy_char* __packet,easy_int32 __length) = 0;
 
 protected:
 	void 	_init();

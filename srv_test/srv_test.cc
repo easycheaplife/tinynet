@@ -44,12 +44,22 @@ easy_int32 Srv_Test::handle_packet( easy_int32 __fd,const easy_char* __packet,ea
 	return -1;
 }
 
+void Srv_Test::connected( easy_int32 __fd )
+{
+	printf("connected __fd = %d \n",__fd);
+}
+
+void Srv_Test::dis_connected( easy_int32 __fd )
+{
+	printf("dis_connected __fd = %d \n",__fd);
+}
+
 easy_int32 main(easy_int32 __arg_num,easy_char** args)
 {
 	/*	
-	g++ -g -Wl,--no-as-needed -std=c++11 -pthread -D__LINUX -D__HAVE_SELECT -o ./bin/srv_test reactor.h reactor.cc event_handle.h event_handle_srv.h event_handle_srv.cc reactor_impl.h reactor_impl_select.h reactor_impl_select.cc server_impl.h server_impl.cc ./srv_test/srv_test.h ./srv_test/srv_test.cc  -I../easy/src/base -I.
-	g++ -g -Wl,--no-as-needed -std=c++11 -pthread -D__LINUX -D__HAVE_EPOLL -o ./bin/srv_test reactor.h reactor.cc event_handle.h event_handle_srv.h event_handle_srv.cc reactor_impl.h reactor_impl_epoll.h reactor_impl_epoll.cc server_impl.h server_impl.cc ./srv_test/srv_test.h ./srv_test/srv_test.cc -I../easy/src/base -I.
-	g++ -g -Wl,--no-as-needed -std=c++11 -pthread -D__LINUX -D__HAVE_POLL -o ./bin/srv_test reactor.h reactor.cc event_handle.h event_handle_srv.h event_handle_srv.cc reactor_impl.h reactor_impl_poll.h reactor_impl_poll.cc server_impl.h server_impl.cc ./srv_test/srv_test.h ./srv_test/srv_test.cc -I../easy/src/base -I.
+		g++ -g -Wl,--no-as-needed -std=c++11 -pthread -D__LINUX -D__HAVE_SELECT -o ./bin/srv_test reactor.h reactor.cc event_handle.h event_handle_srv.h event_handle_srv.cc reactor_impl.h reactor_impl_select.h reactor_impl_select.cc server_impl.h server_impl.cc ./srv_test/srv_test.h ./srv_test/srv_test.cc  -I../easy/src/base -I.
+		g++ -g -Wl,--no-as-needed -std=c++11 -pthread -D__LINUX -D__HAVE_EPOLL -o ./bin/srv_test reactor.h reactor.cc event_handle.h event_handle_srv.h event_handle_srv.cc reactor_impl.h reactor_impl_epoll.h reactor_impl_epoll.cc server_impl.h server_impl.cc ./srv_test/srv_test.h ./srv_test/srv_test.cc -I../easy/src/base -I.
+		g++ -g -Wl,--no-as-needed -std=c++11 -pthread -D__LINUX -D__HAVE_POLL -o ./bin/srv_test reactor.h reactor.cc event_handle.h event_handle_srv.h event_handle_srv.cc reactor_impl.h reactor_impl_poll.h reactor_impl_poll.cc server_impl.h server_impl.cc ./srv_test/srv_test.h ./srv_test/srv_test.cc -I../easy/src/base -I.
 	*/
 	if(3 != __arg_num)
 	{
