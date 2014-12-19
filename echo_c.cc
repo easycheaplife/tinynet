@@ -60,6 +60,7 @@ static std::string __random_string[] =
 
 static int __random_string_size = 22;
 static int __buf_size = 256;
+static int __sleep_time = 1000*100;
 
 void 	_set_noblock(int __fd)
 {
@@ -159,7 +160,7 @@ void test_4_transform_monitor(int sock)
 		if(__usable_size < __packet_head_size)
 		{
 			//	not enough,continue;
-			usleep(1000*100);
+			usleep(__sleep_time);
 			output("#1,__usable_size %lu\n",__usable_size);
 			continue;
 		}
@@ -173,7 +174,7 @@ void test_4_transform_monitor(int sock)
 		{
 			if(EAGAIN == errno || EWOULDBLOCK == errno)
 			{
-				usleep(1000*100);
+				usleep(__sleep_time);
 				output("#2\n");
 				continue;
 			}
@@ -211,7 +212,7 @@ void test_4_transform_monitor(int sock)
 		if(__usable_size < __length2)
 		{
 			//	not enough,continue;
-			usleep(1000*100);
+			usleep(__sleep_time);
 			output("#3\n");
 			continue;
 		}
@@ -225,7 +226,7 @@ void test_4_transform_monitor(int sock)
 		{
 			if(EAGAIN == errno || EWOULDBLOCK == errno)
 			{
-				usleep(1000*100);
+				usleep(__sleep_time);
 				output("#4\n");
 				continue;
 			}
@@ -236,7 +237,7 @@ void test_4_transform_monitor(int sock)
 			}
 		}
 		output("%d bytes recv: %s",recv_bytes + __packet_head_size,__recv_buf);
-		usleep(1000*100);
+		usleep(__sleep_time);
 	}
 }
 int main(int __arg_num, char** __args)
