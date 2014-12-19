@@ -283,6 +283,10 @@ void Event_Handle_Srv::broadcast(easy_int32 __fd,const easy_char* __data,easy_ui
 
 easy_int32 Event_Handle_Srv::read( easy_int32 __fd,easy_char* __buf, easy_int32 __length )
 {
+	if (0 == __length)
+	{
+		return 0;
+	}
 	easy_int32 __recv_size = recv(__fd,__buf,__length,0);
 	//	These calls return the number of bytes received, or -1 if an error occurred.  
 	//	The return value will be 0 when the peer has performed an orderly shutdown

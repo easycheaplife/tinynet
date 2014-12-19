@@ -150,11 +150,11 @@ void Server_Impl::_read_thread()
 	while (true)
 	{
 		lock_.acquire_lock();
-#ifdef __DEBUG
+#ifdef __DEBUG_TIME
 		struct timeval __start_timeval;
 		gettimeofday(&__start_timeval, NULL);
 		easy_long __start_time = __start_timeval.tv_usec;
-#endif //__DEBUG
+#endif // __DEBUG_TIME
 		for (std::vector<Buffer*>::iterator __it = connects_copy.begin(); __it != connects_copy.end(); ++__it)
 		{
 			if(*__it)
@@ -165,12 +165,12 @@ void Server_Impl::_read_thread()
 				{
 					continue;
 				}
-#ifdef __DEBUG
+#ifdef __DEBUG_TIME
 				if(0 == (*__it)->fd_ % 1000)
 				{
 					printf("fd =%d,rpos = %d, wpos = %d\n",(*__it)->fd_,__input->rpos(),__input->wpos());
 				}
-#endif //__DEBUG
+#endif // __DEBUG_TIME
 				while (!__input->read_finish())
 				{
 					easy_int32 __packet_length = 0;
@@ -226,13 +226,13 @@ void Server_Impl::_read_thread()
 				}
 			}
 		}
-#ifdef __DEBUG
+#ifdef __DEBUG_TIME
 		struct timeval __end_timeval;
 		gettimeofday(&__end_timeval, NULL);
 		easy_long __end_time = __end_timeval.tv_usec;
 		easy_long __time_read = __end_time - __start_time;
 		printf("start time = %ld, end time = %ld,server impl time read = %ld\n",__start_time,__end_time,__time_read);
-#endif //__DEBUG
+#endif // __DEBUG_TIME
 		lock_.release_lock();
 		easy::Util::sleep(max_sleep_time_);
 	}
