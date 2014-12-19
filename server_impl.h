@@ -4,6 +4,7 @@
 #include "event_handle_srv.h"
 #include "easy_ring_buffer.h"
 #include "easy_allocator.h"
+#include "easy_lock.h"
 
 class Reactor;
 
