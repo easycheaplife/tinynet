@@ -59,6 +59,7 @@ static std::string __random_string[] =
 
 static int __random_string_size = 22;
 static int __buf_size = 256;
+static int __sleep_time = 1000*100;
 
 void 	_set_noblock(int __fd)
 {
@@ -143,6 +144,24 @@ void test_4_transform_monitor(int sock)
 		int __guid2 = 0;
 		memset(__packet_head,0,__packet_head_size);
 		int recv_bytes = recv(sock,(void*)&__packet_head,__packet_head_size,0);
+		if(0 == recv_bytes)
+		{
+			printf("The return value will be 0 when the peer has performed an orderly shutdown \n");
+			break;
+		}
+		else if(-1 == recv_bytes)
+		{
+			if(EAGAIN == errno || EWOULDBLOCK == errno)
+			{
+				usleep(__sleep_time*10);
+				continue;
+			}
+			else
+			{
+				printf("recv error,errno = %d\n",errno);
+				break;
+			}
+		}
 		if(__packet_head_size != recv_bytes)
 		{
 			printf(" __packet_head error! %d bytes recv\n", recv_bytes);
@@ -161,11 +180,26 @@ void test_4_transform_monitor(int sock)
 		}
 		memset(__recv_buf,0,__buf_size);
 		recv_bytes = recv(sock,(void*)__recv_buf,__length2,0);
-		if(-1 != recv_bytes)
+		if(0 == recv_bytes)
 		{
-			output("%d bytes recv: %s",recv_bytes + __packet_head_size,__recv_buf);
+			printf("The return value will be 0 when the peer has performed an orderly shutdown \n");
+			break;
 		}
-		usleep(1000*100);
+		else if(-1 == recv_bytes)
+		{
+			if(EAGAIN == errno || EWOULDBLOCK == errno)
+			{
+				usleep(__sleep_time*10);
+				continue;
+			}
+			else
+			{
+				printf("recv error,errno = %d\n",errno);
+				break;
+			}
+		}
+		output("%d bytes recv: %s",recv_bytes + __packet_head_size,__recv_buf);
+		usleep(__sleep_time);
 	}
 }
 int main(int __arg_num, char** __args)
