@@ -160,7 +160,7 @@ void test_4_transform_monitor(int sock)
 		if(__usable_size < __packet_head_size)
 		{
 			//	not enough,continue;
-			usleep(__sleep_time);
+			usleep(__sleep_time*10);
 			output("#1,__usable_size %lu\n",__usable_size);
 			continue;
 		}
@@ -174,7 +174,7 @@ void test_4_transform_monitor(int sock)
 		{
 			if(EAGAIN == errno || EWOULDBLOCK == errno)
 			{
-				usleep(__sleep_time);
+				usleep(__sleep_time*10);
 				output("#2\n");
 				continue;
 			}
@@ -212,7 +212,7 @@ void test_4_transform_monitor(int sock)
 		if(__usable_size < __length2)
 		{
 			//	not enough,continue;
-			usleep(__sleep_time);
+			usleep(__sleep_time*10);
 			output("#3\n");
 			continue;
 		}
@@ -226,7 +226,7 @@ void test_4_transform_monitor(int sock)
 		{
 			if(EAGAIN == errno || EWOULDBLOCK == errno)
 			{
-				usleep(__sleep_time);
+				usleep(__sleep_time*10);
 				output("#4\n");
 				continue;
 			}
