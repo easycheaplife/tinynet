@@ -115,7 +115,7 @@ void Client_Impl::_read_thread()
 			easy_uint8 __packet_head[__head_size] = {};
 			easy_int32 __head = 0;
 			easy_uint32 __guid = 0;
-			if(!ring_buf_->pre_read((easy_uint8*)&__packet_head,__head_size))
+			if(!ring_buf_->peek((easy_uint8*)&__packet_head,__head_size))
 			{
 				break;
 			}
