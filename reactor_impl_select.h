@@ -28,17 +28,17 @@
  *
  */
 /************************************************************************/
-#ifndef __LINUX
-#ifndef FD_SETSIZE
-#define FD_SETSIZE      1024
-#endif /* FD_SETSIZE */
-#include <WinSock.h>
-#else
-#include <sys/select.h>
- #include <sys/socket.h>
-#include <errno.h>
-#include <unistd.h>
-#endif //__LINUX
+#ifdef __WINDOWS
+    #ifndef FD_SETSIZE
+    #define FD_SETSIZE      1024
+    #endif /* FD_SETSIZE */
+    #include <WinSock.h>
+#elif defined __LINUX || defined __MACX
+    #include <sys/select.h>
+    #include <sys/socket.h>
+    #include <errno.h>
+    #include <unistd.h>
+#endif //   __WINDOWS
 
 #include <map>
 #include <vector>
