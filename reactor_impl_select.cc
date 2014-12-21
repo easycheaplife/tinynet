@@ -30,7 +30,7 @@ const easy_uint32 Reactor_Impl_Select::max_sleep_time_ = 1000*100;
 
 struct Event_Handle_Data : public easy::my_alloc
 {
-	Event_Handle_Data(easy_int32 __fd,Event_Handle* __event_handle):fd_(__fd),invalid_fd_(1),event_handle_(__event_handle) {}
+	Event_Handle_Data(easy_int32 __fd,Event_Handle* __event_handle):invalid_fd_(-1),fd_(__fd),event_handle_(__event_handle) {}
 	easy_int32		invalid_fd_;
 	easy_int32		fd_;
 	Event_Handle*	event_handle_;
@@ -82,10 +82,15 @@ easy_int32 Reactor_Impl_Select::event_loop(easy_ulong __millisecond)
 		FD_ZERO(&excepion_set_); 
 		FD_SET(fd_,&read_set_); 
 		FD_SET(fd_,&write_set_); 
-		FD_SET(fd_,&excepion_set_); 
-		struct timeval __tv;  
+		FD_SET(fd_,&excepion_set_);
+        struct timeval __tv;
+#ifndef __MACX
 		__tv.tv_sec = 0;  
 		__tv.tv_usec = __millisecond;
+#else
+        __tv.tv_sec = __millisecond/1000/1000;
+        __tv.tv_usec = 0;
+#endif //__MACX
 
 		for (std::vector<Event_Handle_Data*>::iterator __it = events_.begin(); __it != events_.end(); )
 		{
@@ -101,7 +106,7 @@ easy_int32 Reactor_Impl_Select::event_loop(easy_ulong __millisecond)
 				else
 				{
 					//	socket is to be closed,release all resource
-#ifdef __LINUX
+#if defined __LINUX || defined __MACX
 					close((*__it)->fd_);
 #else
 					closesocket((*__it)->fd_);
@@ -122,14 +127,14 @@ easy_int32 Reactor_Impl_Select::event_loop(easy_ulong __millisecond)
 		if ( -1 == __ret )
 		{
 			perror("error at select");
-#ifndef __LINUX
+#ifdef __WINDOWS
 			DWORD __last_error = ::WSAGetLastError();
 			//	usually some socket is closed, such as closesocket called. it maybe exist a invalid socket.
 			if(WSAENOTSOCK == __last_error)
 			{
 				
 			}
-#endif // __LINUX
+#endif // __WINDOWS
 			exit(1);
 		}
 		else if ( 0 == __ret )
@@ -169,7 +174,7 @@ easy_int32 Reactor_Impl_Select::event_loop(easy_ulong __millisecond)
 			}
 		}
 		//	fix bug #20003
-		easy::Util::sleep(1000);
+		easy::Util::sleep(max_sleep_time_);
 	}
 	return -1;
 }

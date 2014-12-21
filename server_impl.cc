@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <thread>
-#ifdef __LINUX
+#if defined __LINUX || defined __MACX
 #include <sys/socket.h>
 #include <unistd.h>
 #include <sys/time.h>
@@ -183,12 +183,14 @@ void Server_Impl::_read_thread()
 #endif // __DEBUG_TIME
 				while (!__input->read_finish())
 				{
-					easy_int32 __packet_length = 0;
+#if 0
 					easy_int32 __log_level = 0;
 					easy_int32 __frame_number = 0;
-					easy_uint8 __packet_head[__head_size] = {};
 					easy_int32 __head = 0;
 					easy_uint32 __guid = 0;
+#endif
+                    easy_int32 __packet_length = 0;
+                    easy_uint8 __packet_head[__head_size] = {};
 					if(__input->read_finish())
 					{
 						break;

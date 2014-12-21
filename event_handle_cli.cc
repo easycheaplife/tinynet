@@ -26,9 +26,9 @@
 #include <thread>
 #include <functional>
 
-#ifndef __LINUX
+#if defined __WINDOWS
 #include <WinSock2.h>
-#else
+#elif defined __LINUX || defined __MACX
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <fcntl.h>
@@ -83,7 +83,7 @@ easy_int32 Event_Handle_Cli::handle_timeout(easy_int32 __fd)
 
 void Event_Handle_Cli::_init(easy_uint32 __port)
 {
-#ifndef __LINUX
+#ifdef __WINDOWS
 	easy_uint16 __version_requested = MAKEWORD(2,2);
 	WSADATA __data;
 	if (0 != WSAStartup( __version_requested, &__data))
@@ -98,7 +98,7 @@ void Event_Handle_Cli::_init(easy_uint32 __port)
 		WSACleanup();
 		return;
 	}
-#endif //__LINUX
+#endif //__WINDOWS
 	fd_ = socket(AF_INET,SOCK_STREAM,0); 
 	if ( -1 == fd_ )
 	{
@@ -114,22 +114,19 @@ void Event_Handle_Cli::_init(easy_uint32 __port)
 	if(-1 == __res)
 	{
 		perror("error at connect");
-#ifndef __LINUX
-		DWORD __last_error = ::GetLastError();
-#endif // __LINUX
 		exit(1);
 	}
 }
 
 void Event_Handle_Cli::_set_noblock(easy_int32 __fd)
 {
-#ifndef __LINUX
+#ifdef __WINDOWS
 	easy_ulong __non_block = 1;
 	if (SOCKET_ERROR == ioctlsocket(__fd, FIONBIO, &__non_block))
 	{
 		printf("_set_noblock() error at ioctlsocket,error code = %d\n", WSAGetLastError());
 	}
-#else
+#elif defined __LINUX || defined __MACX
 	int __opts = fcntl(__fd,F_GETFL);  
 	if(0 > __opts)  
     	{  
@@ -142,7 +139,7 @@ void Event_Handle_Cli::_set_noblock(easy_int32 __fd)
        		perror("error at fcntl(sock,F_SETFL)");  
        		exit(1);  
    	}  
-#endif //__LINUX
+#endif //__WINDOWS
 }
 
 void Event_Handle_Cli::write( const easy_char* __data,easy_uint32 __length )
@@ -150,7 +147,7 @@ void Event_Handle_Cli::write( const easy_char* __data,easy_uint32 __length )
 	easy_int32 __send_bytes = send(fd_,__data,__length,0);
 	if(-1 == __send_bytes)
 	{
-#ifndef __LINUX
+#ifdef __WINDOWS
 		easy_ulong __last_error = ::GetLastError();
 		if(WSAEWOULDBLOCK  == __last_error)
 		{
@@ -158,7 +155,7 @@ void Event_Handle_Cli::write( const easy_char* __data,easy_uint32 __length )
 			handle_close(fd_);
 			return;
 		}
-#else
+#elif defined __LINUX || defined __MACX
 		//error happend but EAGAIN and EWOULDBLOCK meams that peer socket have been close
 		//EWOULDBLOCK means messages are available at the socket and O_NONBLOCK  is set on the socket's file descriptor
 		if(EAGAIN == errno && EWOULDBLOCK == errno)
@@ -167,7 +164,7 @@ void Event_Handle_Cli::write( const easy_char* __data,easy_uint32 __length )
 			handle_close(fd_);
 			return;
 		}
-#endif // __LINUX
+#endif // __WINDOWS
 		perror("error at send");  
 	}
 }
@@ -194,7 +191,7 @@ void Event_Handle_Cli::_set_reuse_addr( easy_int32 __fd )
 
 void Event_Handle_Cli::_set_no_delay( easy_int32 __fd )
 {
-#ifndef __LINUX
+#ifdef __WINDOWS
 	//	The Nagle algorithm is disabled if the TCP_NODELAY option is enabled 
 	easy_int32 __no_delay = TRUE;
 	if(SOCKET_ERROR == setsockopt( __fd, IPPROTO_TCP, TCP_NODELAY, (char*)&__no_delay, sizeof(int)))
@@ -202,22 +199,22 @@ void Event_Handle_Cli::_set_no_delay( easy_int32 __fd )
 		perror("setsockopt TCP_NODELAY");  
 		exit(1);  
 	}
-#endif // __LINUX
+#endif // __WINDOWS
 }
 
 void Event_Handle_Cli::_get_usable( easy_int32 __fd, easy_ulong& __usable_size)
 {
-#ifndef __LINUX
+#ifdef __WINDOWS
 	if(SOCKET_ERROR == ioctlsocket(__fd, FIONREAD, &__usable_size))
 	{
 		printf("ioctlsocket failed with error %d\n", WSAGetLastError());
 	}
-#else
+#elif defined __LINUX || defined __MACX
 	if(ioctl(__fd,FIONREAD,&__usable_size))
 	{
 		perror("ioctl FIONREAD");
 	}
-#endif //__LINUX
+#endif //__WINDOWS
 }
 
 easy_int32 Event_Handle_Cli::read( easy_int32 __fd,easy_char* __buf, easy_int32 __length )
@@ -229,14 +226,14 @@ easy_int32 Event_Handle_Cli::read( easy_int32 __fd,easy_char* __buf, easy_int32 
 	}
 	else if (-1 == __recv_size)
 	{
-#ifndef __LINUX
+#ifdef __WINDOWS
 		easy_ulong __last_error = ::GetLastError();
 		if(WSAEWOULDBLOCK  == __last_error)
 		{
 			//	close peer socket
 		}
 		closesocket(fd_);
-#else
+#elif defined __LINUX || defined __MACX
 		if(EAGAIN == errno || EWOULDBLOCK == errno)
 		{
 
