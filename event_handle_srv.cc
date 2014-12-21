@@ -22,9 +22,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#ifndef __LINUX
+#ifdef __WINDOWS
 #include <WinSock2.h>
-#else
+#elif defined __LINUX || defined __MACX
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <fcntl.h>
@@ -36,7 +36,7 @@
 #include <netdb.h>			//	gethostbyname
 #include <sys/ioctl.h>		//	ioctl
 #include <execinfo.h>
-#endif //__LINUX_
+#endif //   __WINDOWS
 
 #include "event_handle_srv.h"
 #include "reactor_impl_select.h"
@@ -152,7 +152,7 @@ easy_int32 Event_Handle_Srv::handle_packet( easy_int32 __fd,const easy_char* __p
 
 void Event_Handle_Srv::_init()
 {
-#ifndef __LINUX
+#if defined __WINDOWS
 	WORD __version_requested = MAKEWORD(2,2);
 	WSADATA __data;
 	if (0 != WSAStartup( __version_requested, &__data))
@@ -167,7 +167,7 @@ void Event_Handle_Srv::_init()
 		WSACleanup();
 		return;
 	}
-#endif //__LINUX
+#endif //__WINDOWS
 	//	the socket that is created will have the overlapped attribute as a default
 	fd_ = socket(AF_INET,SOCK_STREAM,0); 
 	if ( -1 == fd_ )
@@ -214,13 +214,13 @@ void Event_Handle_Srv::_init()
 
 void Event_Handle_Srv::_set_noblock(easy_int32 __fd)
 {
-#ifndef __LINUX
+#ifdef __WINDOWS
 	unsigned long __non_block = 1;
 	if (SOCKET_ERROR == ioctlsocket(__fd, FIONBIO, &__non_block))
 	{
 		printf("_set_noblock() error at ioctlsocket,error code = %d\n", WSAGetLastError());
 	}
-#else
+#elif defined __LINUX || defined __MACX
 	easy_int32 __opts = fcntl(__fd,F_GETFL);  
 	if(0 > __opts)  
     	{  
@@ -233,7 +233,7 @@ void Event_Handle_Srv::_set_noblock(easy_int32 __fd)
        		perror("error at fcntl(sock,F_SETFL)");  
        		exit(1);  
    	}  
-#endif //__LINUX
+#endif //__WINDOWS
 }
 
 
@@ -249,7 +249,7 @@ void Event_Handle_Srv::_set_reuse_addr(easy_int32 __fd)
 
 void Event_Handle_Srv::_set_no_delay(easy_int32 __fd)
 {
-#ifndef __LINUX
+#ifdef __WINDOWS
 	//	The Nagle algorithm is disabled if the TCP_NODELAY option is enabled 
 	easy_int32 __no_delay = TRUE;
 	if(SOCKET_ERROR == setsockopt( __fd, IPPROTO_TCP, TCP_NODELAY, (easy_char*)&__no_delay, sizeof(int)))
@@ -257,17 +257,17 @@ void Event_Handle_Srv::_set_no_delay(easy_int32 __fd)
 		perror("setsockopt TCP_NODELAY ");  
 		exit(1);  
 	}
-#endif //__LINUX
+#endif //__WINDOWS
 }
 
 void Event_Handle_Srv::_get_usable( easy_int32 __fd, easy_ulong& __usable_size)
 {
-#ifndef __LINUX
+#ifdef __WINDOWS
 	if(SOCKET_ERROR == ioctlsocket(__fd, FIONREAD, &__usable_size))
 	{
 		printf("ioctlsocket failed with error %d\n", WSAGetLastError());
 	}
-#else
+#elif defined __LINUX || defined __MACX
 	if(ioctl(__fd,FIONREAD,&__usable_size))
 	{
 		perror("ioctl FIONREAD");
@@ -297,18 +297,18 @@ easy_int32 Event_Handle_Srv::read( easy_int32 __fd,easy_char* __buf, easy_int32 
 	}
 	else if (-1 == __recv_size)
 	{
-#ifndef __LINUX
+#ifdef __WINDOWS
 		DWORD __last_error = ::GetLastError();
 		if(WSAEWOULDBLOCK  == __last_error)
 		{
 			printf("recv error at %d\n",__last_error);
 		}
-#else
+#elif defined __LINUX || defined __MACX
 		if(EAGAIN == errno || EWOULDBLOCK == errno)
 		{
 			printf("recv errno %d\n",errno);
 		}
-#endif //__LINUX
+#endif //__WINDOWS
 		else
 		{
 			reactor()->reactor_impl()->handle_close(__fd);
@@ -327,13 +327,13 @@ easy_int32 Event_Handle_Srv::write( easy_int32 __fd,const easy_char* __data, eas
 	easy_int32 __send_bytes = send(__fd,__data,__length,0);
 	if(-1 == __send_bytes)
 	{
-#ifndef __LINUX
+#ifdef __WINDOWS
 		DWORD __last_error = ::GetLastError();
 		if(WSAEWOULDBLOCK  == __last_error)
 		{	
 			printf("send error at %d\n",__last_error);
 		}
-#else
+#elif defined __LINUX || defined __MACX
 		//error happend but EAGAIN and EWOULDBLOCK meams that peer socket have been close
 		//EWOULDBLOCK means messages are available at the socket and O_NONBLOCK  is set on the socket's file descriptor
 		// ECONNRESET means an existing connection was forcibly closed by the remote host
@@ -341,7 +341,7 @@ easy_int32 Event_Handle_Srv::write( easy_int32 __fd,const easy_char* __data, eas
 		{
 			printf("send errno %d\n",errno);
 		}
-#endif // __LINUX
+#endif // __WINDOWS
 		else
 		{
 		//	close peer socket
