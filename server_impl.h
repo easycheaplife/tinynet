@@ -51,7 +51,6 @@ struct Buffer
 	typedef  easy_int32 _Key;
 
 	ring_buffer*		input_;
-	easy::mutex_lock	input__lock_;
 	ring_buffer*		output_;
 	easy_int32			fd_;
 	easy_int32			invalid_fd_;

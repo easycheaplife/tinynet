@@ -28,7 +28,7 @@
  *
  */
 /************************************************************************/
-#ifdef __WINDOWS
+#if defined __WINDOWS || defined WIN32
     #ifndef FD_SETSIZE
     #define FD_SETSIZE      1024
     #endif /* FD_SETSIZE */

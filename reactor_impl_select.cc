@@ -127,7 +127,7 @@ easy_int32 Reactor_Impl_Select::event_loop(easy_ulong __millisecond)
 		if ( -1 == __ret )
 		{
 			perror("error at select");
-#ifdef __WINDOWS
+#if defined __WINDOWS || defined WIN32
 			DWORD __last_error = ::WSAGetLastError();
 			//	usually some socket is closed, such as closesocket called. it maybe exist a invalid socket.
 			if(WSAENOTSOCK == __last_error)
