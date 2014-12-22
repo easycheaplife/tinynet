@@ -26,7 +26,7 @@
 #include <thread>
 #include <functional>
 
-#if defined __WINDOWS
+#if defined __WINDOWS || defined WIN32
 #include <WinSock2.h>
 #elif defined __LINUX || defined __MACX
 #include <sys/socket.h>
@@ -83,7 +83,7 @@ easy_int32 Event_Handle_Cli::handle_timeout(easy_int32 __fd)
 
 void Event_Handle_Cli::_init(easy_uint32 __port)
 {
-#ifdef __WINDOWS
+#if defined __WINDOWS || defined WIN32
 	easy_uint16 __version_requested = MAKEWORD(2,2);
 	WSADATA __data;
 	if (0 != WSAStartup( __version_requested, &__data))
@@ -120,7 +120,7 @@ void Event_Handle_Cli::_init(easy_uint32 __port)
 
 void Event_Handle_Cli::_set_noblock(easy_int32 __fd)
 {
-#ifdef __WINDOWS
+#if defined __WINDOWS || defined WIN32
 	easy_ulong __non_block = 1;
 	if (SOCKET_ERROR == ioctlsocket(__fd, FIONBIO, &__non_block))
 	{
@@ -147,7 +147,7 @@ void Event_Handle_Cli::write( const easy_char* __data,easy_uint32 __length )
 	easy_int32 __send_bytes = send(fd_,__data,__length,0);
 	if(-1 == __send_bytes)
 	{
-#ifdef __WINDOWS
+#if defined __WINDOWS || defined WIN32
 		easy_ulong __last_error = ::GetLastError();
 		if(WSAEWOULDBLOCK  == __last_error)
 		{
@@ -191,7 +191,7 @@ void Event_Handle_Cli::_set_reuse_addr( easy_int32 __fd )
 
 void Event_Handle_Cli::_set_no_delay( easy_int32 __fd )
 {
-#ifdef __WINDOWS
+#if defined __WINDOWS || defined WIN32
 	//	The Nagle algorithm is disabled if the TCP_NODELAY option is enabled 
 	easy_int32 __no_delay = TRUE;
 	if(SOCKET_ERROR == setsockopt( __fd, IPPROTO_TCP, TCP_NODELAY, (char*)&__no_delay, sizeof(int)))
@@ -204,7 +204,7 @@ void Event_Handle_Cli::_set_no_delay( easy_int32 __fd )
 
 void Event_Handle_Cli::_get_usable( easy_int32 __fd, easy_ulong& __usable_size)
 {
-#ifdef __WINDOWS
+#if defined __WINDOWS || defined WIN32
 	if(SOCKET_ERROR == ioctlsocket(__fd, FIONREAD, &__usable_size))
 	{
 		printf("ioctlsocket failed with error %d\n", WSAGetLastError());
@@ -226,7 +226,7 @@ easy_int32 Event_Handle_Cli::read( easy_int32 __fd,easy_char* __buf, easy_int32 
 	}
 	else if (-1 == __recv_size)
 	{
-#ifdef __WINDOWS
+#if defined __WINDOWS || defined WIN32
 		easy_ulong __last_error = ::GetLastError();
 		if(WSAEWOULDBLOCK  == __last_error)
 		{

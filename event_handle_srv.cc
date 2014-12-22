@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#ifdef __WINDOWS
+#if defined __WINDOWS || defined WIN32
 #include <WinSock2.h>
 #elif defined __LINUX || defined __MACX
 #include <sys/socket.h>
@@ -152,7 +152,7 @@ easy_int32 Event_Handle_Srv::handle_packet( easy_int32 __fd,const easy_char* __p
 
 void Event_Handle_Srv::_init()
 {
-#if defined __WINDOWS
+#if defined __WINDOWS || defined WIN32
 	WORD __version_requested = MAKEWORD(2,2);
 	WSADATA __data;
 	if (0 != WSAStartup( __version_requested, &__data))
@@ -214,7 +214,7 @@ void Event_Handle_Srv::_init()
 
 void Event_Handle_Srv::_set_noblock(easy_int32 __fd)
 {
-#ifdef __WINDOWS
+#if defined __WINDOWS || defined WIN32
 	unsigned long __non_block = 1;
 	if (SOCKET_ERROR == ioctlsocket(__fd, FIONBIO, &__non_block))
 	{
@@ -249,7 +249,7 @@ void Event_Handle_Srv::_set_reuse_addr(easy_int32 __fd)
 
 void Event_Handle_Srv::_set_no_delay(easy_int32 __fd)
 {
-#ifdef __WINDOWS
+#if defined __WINDOWS || defined WIN32
 	//	The Nagle algorithm is disabled if the TCP_NODELAY option is enabled 
 	easy_int32 __no_delay = TRUE;
 	if(SOCKET_ERROR == setsockopt( __fd, IPPROTO_TCP, TCP_NODELAY, (easy_char*)&__no_delay, sizeof(int)))
@@ -262,7 +262,7 @@ void Event_Handle_Srv::_set_no_delay(easy_int32 __fd)
 
 void Event_Handle_Srv::_get_usable( easy_int32 __fd, easy_ulong& __usable_size)
 {
-#ifdef __WINDOWS
+#if defined __WINDOWS || defined WIN32
 	if(SOCKET_ERROR == ioctlsocket(__fd, FIONREAD, &__usable_size))
 	{
 		printf("ioctlsocket failed with error %d\n", WSAGetLastError());
@@ -297,7 +297,7 @@ easy_int32 Event_Handle_Srv::read( easy_int32 __fd,easy_char* __buf, easy_int32 
 	}
 	else if (-1 == __recv_size)
 	{
-#ifdef __WINDOWS
+#if defined __WINDOWS || defined WIN32
 		DWORD __last_error = ::GetLastError();
 		if(WSAEWOULDBLOCK  == __last_error)
 		{
@@ -327,7 +327,7 @@ easy_int32 Event_Handle_Srv::write( easy_int32 __fd,const easy_char* __data, eas
 	easy_int32 __send_bytes = send(__fd,__data,__length,0);
 	if(-1 == __send_bytes)
 	{
-#ifdef __WINDOWS
+#if defined __WINDOWS || defined WIN32
 		DWORD __last_error = ::GetLastError();
 		if(WSAEWOULDBLOCK  == __last_error)
 		{	
