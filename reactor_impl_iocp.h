@@ -66,96 +66,135 @@ struct Overlapped_Puls;
 class Reactor_Impl_Iocp : public Reactor_Impl
 {
 public:
+	//	constructor function
 	Reactor_Impl_Iocp();
 
+	//	destructor function
 	~Reactor_Impl_Iocp();
 
+	//	register handle
 	easy_int32 register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask,easy_int32 __connect);
 
+	//	remove handle
 	easy_int32 remove_handle(Event_Handle* __handle,easy_int32 __mask);
 
+	//	handle event
 	easy_int32 handle_event(easy_ulong __millisecond);
 
+	//	handle connection close
 	easy_int32 handle_close(easy_int32 __fd);
 
+	//	handle packet
 	easy_int32 handle_packet(easy_int32 __fd,const easy_char* __packet,easy_uint32 __length);
 
+	//	process event loop
 	easy_int32 event_loop(easy_ulong __millisecond);
 
 	//	__fd is the broadcaster
 	void broadcast(easy_int32 __fd,const easy_char* __data,easy_uint32 __length);
-
+	//	write data to client
 	BOOL write(Client_Context* __client_context,const easy_char* __data, easy_int32 __length);
 
 public:
 
+	//	set socket option
 	void set_sock_opt();
 
+	//	release resource
 	void destoryt_net();
 
+	//	post a accept
 	void post_accept(Overlapped_Puls* __overlapped_plus);
 
+	//post a recv
 	BOOL post_recv(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls);
 
+	//	post a send
 	BOOL post_send(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls);
 
+	//	process packet
 	void process_packet(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls);
 
 	void process_packet2(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls);
 
+	//	send a client pending
 	void send_pending_send(Client_Context* __client_context);
 
+	//	send all client pending 
 	void send_all_pending_send();
 
+	//	read packet from client 
 	easy_int32 read_packet(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls);
 
+	//	send data to all client
 	void send_2_all_client(Client_Context* __client_context,const easy_char* __data, easy_int32 __length);
 
+	//	send data to all client
 	void send_2_all_client(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls);
 
+	//	send data to special client
 	BOOL send_2_client(Client_Context* __client_context,const easy_char* __data, easy_int32 __length);
 
+	//	send data to special client
 	BOOL send_2_client(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls);
 
 public:
-	//	object allocate and release function
+	//	object allocate a function
 	Overlapped_Puls* allocate_overlapped_puls(easy_int32 __buffer_len);
 
+	//	object release function
 	void release_overlapped_puls(Overlapped_Puls* __overlapped_puls);
 
+	//	allocate a client context
 	Client_Context* allocate_client_context(SOCKET __sock);
 
+	//	release client context
 	void release_client_context(Client_Context* __client_context);
 
+	//	remove a accept from pending
 	BOOL remove_pending_accept(Overlapped_Puls* __overlapped_puls);
 
+	//	free all client context
 	void free_all_client_context();
 
+	//	free all buffer
 	void free_all_overlap_puls();
 
+	//	insert a accept to pending
 	void insert_pending_accept(Overlapped_Puls* __overlapped_puls);
 
+	//	insert a buffer to pending
 	void insert_pending_send(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls);
 
+	//	get the next buffer from pending
 	Overlapped_Puls* get_penging_send(Client_Context* __client_context);
 
+	//	remove a buffer from pending
 	BOOL remove_pending_send(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls);
 
+	//	get the next completed buffer
 	Overlapped_Puls* get_next_read_overlap_puls(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls);
 
 public:
+	//	a error happened at connecting
 	void on_connection_error(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls, easy_int32 __error);
 
+	//	new connection accept completed
 	void on_accept_completed(Overlapped_Puls* __overlapped_puls,DWORD __bytes_transferred);
 
+	//	read operator completed
 	void on_read_completed(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls,DWORD __bytes_transferred);
 
+	//	zero byte read operator completed
 	void on_zero_read_completed(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls,DWORD __bytes_transferred);
 
+	//	write operator completed
 	void on_write_completed(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls,DWORD __bytes_transferred);
 
+	//	add a new connection
 	BOOL add_connection(Client_Context* __client_context);
 
+	//	close a connection
 	void close_connection(Client_Context* __client_context);
 
 	//	close all client connection
@@ -163,33 +202,43 @@ public:
 
 	void check_all_connection_timeout();
 
+	//	callback function
 	virtual void on_connection_established(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls);
 
 	virtual void on_connection_closing(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls);
 private:
-
+	//	read for server start
 	void _ready(); 
 
+	//	create completion port
 	void _create_completeion_port();
 
+	//	associate completion port
 	void _associate_completeion_port(HANDLE __completion_port,HANDLE __device,ULONG_PTR __completion_key);
 
+	//	get the number of cpu
 	easy_int32 _get_cpu_number();
 
+	//	begin a new thread
 	void _begin_thread(unsigned (__stdcall * __start_address ) (void *),void* __pv);
 
+	//	process i/o
 	void _process_io(DWORD __per_handle,Overlapped_Puls* __overlapped_puls,DWORD __bytes_transferred,easy_int32 __error);
 
+	//	close socket
 	void _close_socket(SOCKET __socket);
 
+	//	get client context by fd
 	Client_Context* _get_client_context(easy_int32 __fd);
+
 private:
+	//	thread function
 	static easy_uint32 __stdcall work_thread_function(void* __pv);
 
 	static easy_uint32 __stdcall listen_thread(void* __pv);
 
 private:
-	easy_int32								fd_;
+	easy_int32						fd_;
 
 	Event_Handle* 					handle_;
 
@@ -248,6 +297,6 @@ private:
 	easy_int32						work_thread_cur_;
 };
 
-#endif //WIN32
+#endif // WIN32
 
 #endif // reactor_impl_iocp_h__
