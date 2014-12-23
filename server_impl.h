@@ -47,13 +47,19 @@ struct Buffer;
 struct Buffer
 {
 	typedef easy::EasyRingbuffer<easy_uint8,easy::alloc,easy::mutex_lock>	ring_buffer;
-	static const size_t MAX_POOL_SIZE = 50000;
-	typedef  easy_int32 _Key;
 
+	static const size_t MAX_POOL_SIZE = 50000;
+
+	typedef  easy_int32 _Key;
+	//	for input buffer
 	ring_buffer*		input_;
+	//	for output buffer
 	ring_buffer*		output_;
+	//	incoming socket
 	easy_int32			fd_;
+	//	the status of incoming socket
 	easy_int32			invalid_fd_;
+
 	Buffer(easy_int32 __fd,easy_uint32 __max_buffer_size)
 	{
 		input_ = new easy::EasyRingbuffer<easy_uint8,easy::alloc,easy::mutex_lock>(__max_buffer_size);
@@ -87,51 +93,71 @@ struct Buffer
 class Server_Impl : public Event_Handle_Srv
 {
 public:
+	//	constructor function
 	Server_Impl(Reactor* __reactor,const easy_char* __host ,easy_uint32 __port);
 
+	//	destructor function, add virtual qualifier to avoid memory leak
 	virtual ~Server_Impl();
 
+	//	a new connection coming
 	void on_connected(easy_int32 __fd);
 
+	//	a connection disconnect
 	void on_disconnect(easy_int32 __fd);
 
+	//	a read event trigger
 	void on_read(easy_int32 __fd);
 
+	//	time to handler packet
 	easy_int32 on_packet(easy_int32 __fd,const easy_char* __packet,easy_int32 __length);
+
 public:
-	//	callback function
+	//	callback function, you should define this interface as follows
+	//	called at a packet to be handle
 	virtual easy_int32 handle_packet(easy_int32 __fd,const easy_char* __packet,easy_int32 __length) = 0;
 
+	//	called at a connection coming
 	virtual	void connected(easy_int32 __fd) = 0;
 
+	//	called at a connection leaving
 	virtual	void dis_connected(easy_int32 __fd) = 0;
 
-
 protected:
+	//	send packet to special connection
 	void send_packet(easy_int32 __fd,const easy_char* __packet,easy_int32 __length);
 
 private:
+	//	read completely from system cache,it design for EPOLL model
 	void _read_completely(easy_int32 __fd);
 
+	//	a thread work with read data
 	void _read_thread();
 
+	//	a thread work with write data
 	void _write_thread();
 
+	//	disconnect a connection
 	void _disconnect(Buffer* __buffer);
 
 private:
+	//	all connection 
 	typedef	std::map<easy_int32,Buffer*>	map_buffer;
 	std::map<easy_int32,Buffer*>			connects_;
 
+	//	a copy of all connections, whiych stores a point, it's quickly to travel all.
 	typedef	std::vector<Buffer*>	vector_buffer;
 	std::vector<Buffer*>			connects_copy;
 
+	//	the max size of read/write buffer
 	static const easy_uint32		max_buffer_size_;
 
+	//	the max time of read/write sleep time
 	static const easy_uint32		max_sleep_time_;
 
+	//	a lock for all connections
 	easy::mutex_lock				lock_;
 
+	//	buffer memory manager queue
 	easy::lock_queue<Buffer,easy::mutex_lock,std::list<Buffer*> >	buffer_queue_;
 };
 

@@ -137,7 +137,6 @@ easy_int32 Event_Handle_Srv::handle_close(easy_int32 __fd)
 
 easy_int32 Event_Handle_Srv::handle_timeout(easy_int32 __fd)
 {
-	printf("handle_timeout\n");
 	return -1;
 }
 

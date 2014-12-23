@@ -32,15 +32,6 @@
 #define MAX_FREE_OVERLAPPED_PLUS_NUM	5000
 #define MAX_FREE_CLIENT_CONTEXT_NUM		5000
 #define MAX_CONNECT_NUM					50000
-#define DEFAULT_SEND_BUF_SIZE			256
-#define DEFAULT_RECV_BUF_SIZE			256
-
-enum emErrorCode
-{
-	ERROR_READ_BUFFER_ERROR	= -1,
-	ERROR_CONNECION_CLOSE = 10000,		//	more than 8192
-	ERROR_IO_WRITE_PENDING,
-};
 
 struct   Overlapped_Puls
 {
@@ -70,8 +61,8 @@ struct   Overlapped_Puls
 
 	struct Overlapped_Puls*	next_;
 public:
-	//packet data interface
-	//add data to buffer
+	//	packet data interface
+	//	add data to buffer
 	BOOL add_data(easy_char* __data,easy_int32 __length)
 	{
 		if (used_size_ + __length > DATA_BUFSIZE)
@@ -83,37 +74,43 @@ public:
 		return TRUE;
 	}
 
-	//add a bool to buffer
+	//	add a bool to buffer
 	BOOL add_data(easy_bool __data)
 	{
 		return add_data((easy_char*)&__data,sizeof(easy_bool));
 	}
 
+	//	add a easy_uint8 to buffer
 	BOOL add_data( easy_uint8 __data )
 	{
 		return add_data((easy_char*)&__data,sizeof(easy_uint8));
 	}
 
+	//	add a easy_int16 to buffer
 	BOOL add_data( easy_int16 __data )
 	{
 		return add_data((easy_char*)&__data,sizeof(easy_int16));
 	}
 
+	//	add a easy_int32 to buffer
 	BOOL add_data( easy_int32 __data )
 	{
 		return add_data((easy_char*)&__data,sizeof(easy_int32));
 	}
 
+	//	read data from buffer
 	void read_data( easy_char* __data,const easy_int32 __bytes )
 	{
 		memcpy_s(__data,__bytes,buffer_ + used_size_,__bytes);
 	}
 
+	//	read easy_int32 from buffer
 	void read_int( easy_int32& __val )
 	{
 		read_data((easy_char*)&__val,sizeof(easy_int32));
 	}
 
+	//	flush buffer
 	BOOL flush_buffer( Overlapped_Puls* __next_overlap_puls,easy_int32 __flush_size )
 	{
 		if (!__next_overlap_puls)
@@ -180,7 +177,7 @@ public:
 	}
 };
 
-//desc : implement SOCKET pool instead of PER_HANDLE_DATA
+//	desc : implement SOCKET pool instead of PER_HANDLE_DATA
 struct Client_Context
 {
 	//	accept socket
@@ -503,7 +500,7 @@ easy_uint32 __stdcall Reactor_Impl_Iocp::work_thread_function( void* __pv )
 			easy_ulong __flags = 0;
 			if (!__res)
 			{
-				//specify the socket for WSAGetOverlappedResult
+				//	specify the socket for WSAGetOverlappedResult
 				SOCKET __sock = INVALID_SOCKET;
 				if(__overlapped_puls->op_type_ == OP_ACCEPT)
 				{
@@ -739,7 +736,7 @@ void Reactor_Impl_Iocp::release_client_context( Client_Context* __client_context
 	}
 	if(free_client_context_ != __client_context)
 	{
-		//first release the overlappuls in which the socket have not read yet
+		//	first release the overlappuls in which the socket have not read yet
 		Overlapped_Puls* __next_overlap_plus = NULL;
 		while(NULL != __client_context->out_order_reads_)
 		{
@@ -810,7 +807,7 @@ void Reactor_Impl_Iocp::_process_io( easy_ulong __per_handle,Overlapped_Puls* __
 			//	client socket overlapped send count sub by one
 			InterlockedDecrement(&__client_context->num_post_send_);
 		}
-		//check the client close or not
+		//	check the client close or not
 		if( TRUE == __client_context->close_ )
 		{
 			if(0 == __client_context->num_post_recv_ && 0 == __client_context->num_post_send_)
@@ -1037,7 +1034,7 @@ void Reactor_Impl_Iocp::on_read_completed( Client_Context* __client_context,Over
 				{
 					close_connection(__client_context);
 					//	this part will come out memory leak, how to work it out?
-					//	add by Lee 2011-04-08
+					//	add 2011-04-08
 					if(0 == __client_context->num_post_recv_ && 0 == __client_context->num_post_send_)
 					{
 						release_client_context(__client_context);
@@ -1120,7 +1117,7 @@ void Reactor_Impl_Iocp::close_connection( Client_Context* __client_context )
 		}
 		if(NULL != __temp_client_context)
 		{
-			//	update 2011-04-05 by Lee
+			//	update 2011-04-05 
 			__temp_client_context->next_ = __client_context->next_;
 		}
 	}
@@ -1128,13 +1125,13 @@ void Reactor_Impl_Iocp::close_connection( Client_Context* __client_context )
 	::EnterCriticalSection(&__client_context->lock_);
 	if(INVALID_SOCKET != __client_context->socket_)
 	{
-		//	add 2011-04-13 by Lee
+		//	add 2011-04-13 
 		//	force the subsequent closesocket to be abortative.
 		LINGER  lingerStruct;
 		lingerStruct.l_onoff = 1;
 		lingerStruct.l_linger = 0;
 		setsockopt(__client_context->socket_, SOL_SOCKET, SO_LINGER,(easy_char*)&lingerStruct, sizeof(lingerStruct));
-		//	add 2011-04-21 by Lee
+		//	add 2011-04-21 
 		//	now close the socket handle.this will do an abortive or graceful close, as requested.  
 		CancelIo((HANDLE)__client_context->socket_);
 		_close_socket(__client_context->socket_);
@@ -1164,6 +1161,7 @@ Client_Context* Reactor_Impl_Iocp::_get_client_context( easy_int32 __fd )
 		__first_client_context = __first_client_context->next_;
 	}
 	active_clienk_context_lock_.release_lock();
+	return NULL;
 }
 
 BOOL Reactor_Impl_Iocp::add_connection( Client_Context* __client_context )
@@ -1270,7 +1268,7 @@ void Reactor_Impl_Iocp::process_packet(Client_Context* __client_context,Overlapp
 			easy_int32 __read_less_size = read_packet(__client_context,__temp_overlap_plus);
 			if (0 == __read_less_size)
 			{
-				//add the sequence of the data to read
+				//	add the sequence of the data to read
 				::InterlockedIncrement(&__client_context->cur_read_sequence_);
 				__client_context->out_order_reads_ = __client_context->out_order_reads_->next_;	
 				release_overlapped_puls(__temp_overlap_plus);
@@ -1352,7 +1350,6 @@ BOOL Reactor_Impl_Iocp::post_send( Client_Context* __client_context,Overlapped_P
 
 BOOL Reactor_Impl_Iocp::write( Client_Context* __client_context,const easy_char* __data, easy_int32 __length )
 {
-
 	return FALSE;
 }
 
@@ -1485,7 +1482,7 @@ void Reactor_Impl_Iocp::set_sock_opt()
 		struct linger ling;
 		ling.l_onoff = 1;
 		ling.l_linger = 0;
-		//if ling.l_linger is 0,close socket at once,else waiting all data is recv/send or timeout.
+		//	if ling.l_linger is 0,close socket at once,else waiting all data is recv/send or timeout.
 		__ret = setsockopt( fd_, SOL_SOCKET, SO_LINGER, (easy_char *)&ling, sizeof(ling));
 		if(__ret == SOCKET_ERROR)
 		{
@@ -1502,7 +1499,7 @@ void Reactor_Impl_Iocp::set_sock_opt()
 		return ;
 	}
 
-	//The Nagle algorithm is disabled if the TCP_NODELAY option is enabled 
+	//	The Nagle algorithm is disabled if the TCP_NODELAY option is enabled 
 	if(0)
 	{
 		easy_int32 _no_delay = TRUE;
@@ -1804,7 +1801,7 @@ BOOL Reactor_Impl_Iocp::send_2_client( Client_Context* __client_context,const ea
 		}
 		if(__client_context)
 		{
-			//	add by Lee 2011-06-20
+			//	add 2011-06-20
 			//	if the overlapped have not finished, add the pending send to list
 			//	if the client send packet one packer per time, it is not need to check sequence!
 			if ( __client_context->cur_write_sequence_ == __overlapped_puls->sequence_num_ )
