@@ -32,6 +32,7 @@
 #include <strings.h>		//	bzero
 #include <arpa/inet.h>		//	inet_addr
 #include <sys/socket.h>
+#include <sys/ioctl.h>
 #include <unistd.h>
 #include <string.h>
 #include <string>
@@ -68,6 +69,7 @@ static std::string __random_string[] =
 
 static int __random_string_size = 22;
 static int __buf_size = 256;
+static int __sleep_time = 1000*100;
 
 void 	_set_noblock(int __fd)
 {
@@ -100,88 +102,108 @@ void output(const char* __fmt,...)
 
 void test_4_transform_monitor(int sock)
 {
-	/*
-	xx | xx | xx  | xx
-		length
-	xx        | xx | xx  | xx
-	log level | 	frame number(index)
-	*/
 	srand( (unsigned)time(NULL)); 
-	int __log_level = 1;
-	int __frame_number = 7;
-	int __guid = 15;
-	int __res_frane_number = 0;
-	int __res_log_level = 0;
-	int __head = 0;
-	//	set head
-	__head |= (__frame_number << 8);
-	__head |= (__log_level);
-	
-	//	get head
-	__res_frane_number = (__head ) >> 8;
-	__res_log_level = (__head) & 0x000000ff;
-
 	int __random_index = 0;
 	
+	char __send_buf[__buf_size];
 	char __recv_buf[__buf_size];
-	static const int __packet_head_size = 4;
-	unsigned char __packet_head[__packet_head_size] = {};
+	static const int __packet_head_size = sizeof(unsigned short);
 	transfer::Packet __packet_protobuf;
 	std::string __string_packet;
 	for(int __i = 0; ; ++__i)
 	{
-		//	the first time must send the DeviceName
-		if(0 != __i)
-		{
-			__random_index = rand()%__random_string_size;
-		}
+		__random_index = rand()%__random_string_size;
 		//	serialize
 		__packet_protobuf.Clear();
 		__string_packet.clear();
-		__packet_protobuf.set_head(__head);
-		__packet_protobuf.set_guid(__guid);
 		__packet_protobuf.set_content(__random_string[__random_index]);
 		__packet_protobuf.SerializeToString(&__string_packet);
-		int __length = __string_packet.length();
-		int send_bytes = send(sock,&__length,__packet_head_size,0);
-		if(-1 != send_bytes)
-		{
-			output("%d bytes send: %d",send_bytes,__length);
-		}
-		send_bytes = send(sock,(void*)__string_packet.c_str(),__length,0);
+		unsigned short __length = __string_packet.length();
+		memset(__send_buf,0,__buf_size);
+		memcpy(__send_buf,(void*)&__length,__packet_head_size);
+		strcpy(__send_buf + __packet_head_size,__string_packet.c_str());
+		int send_bytes = send(sock,(void*)__send_buf,__packet_head_size + __length,0);
 		if(-1 != send_bytes)
 		{
 			output("%d bytes send: %s",send_bytes,__random_string[__random_index].c_str());
 		}
-		//	receive data
-		int __length2 = 0;
-		int __head2 = 0;
-		int __guid2 = 0;
-		memset(__packet_head,0,__packet_head_size);
-		int recv_bytes = recv(sock,(void*)&__packet_head,__packet_head_size,0);
-		if(__packet_head_size != recv_bytes)
+		else
 		{
-			printf(" __packet_head error! %d bytes recv\n", recv_bytes);
+			printf("recv error,errno = %d\n",errno);
+			break;
 		}
-		__length2 = (int)*__packet_head;
-		if(0)
+		//	receive data
+		unsigned short __length2 = 0;
+		unsigned long __usable_size = 0;
+		if(ioctl(sock,FIONREAD,&__usable_size))
 		{
-			if(__length2 != __length)
+			perror("ioctl FIONREAD");
+		}
+		if(__usable_size < __packet_head_size)
+		{
+			//	not enough,continue;
+			usleep(__sleep_time*10);
+			continue;
+		}
+		int recv_bytes = recv(sock,(void*)&__length2,__packet_head_size,0);
+		if(0 == recv_bytes)
+		{
+			printf("The return value will be 0 when the peer has performed an orderly shutdown \n");
+			break;
+		}
+		else if(-1 == recv_bytes)
+		{
+			if(EAGAIN == errno || EWOULDBLOCK == errno)
 			{
-				printf(" __length2 error! __length = %d,__length2 = %d\n", __length,__length2);
+				usleep(__sleep_time*10);
+				continue;
+			}
+			else
+			{
+				printf("recv error,errno = %d\n",errno);
+				break;
 			}
 		}
+		if(__packet_head_size != recv_bytes)
+		{
+			printf(" __packet_head_size error! %d bytes recv,sock %d\n", recv_bytes,sock);
+		}
 		memset(__recv_buf,0,__buf_size);
+		if(ioctl(sock,FIONREAD,&__usable_size))
+		{
+			perror("ioctl FIONREAD");
+		}
+		if(__usable_size < __length2)
+		{
+			//	not enough,continue;
+			usleep(__sleep_time*10);
+			continue;
+		}
 		recv_bytes = recv(sock,(void*)__recv_buf,__length2,0);
+		if(0 == recv_bytes)
+		{
+			printf("The return value will be 0 when the peer has performed an orderly shutdown \n");
+			break;
+		}
+		else if(-1 == recv_bytes)
+		{
+			if(EAGAIN == errno || EWOULDBLOCK == errno)
+			{
+				usleep(__sleep_time*10);
+				output("#4\n");
+				continue;
+			}
+			else
+			{
+				printf("recv error,errno = %d\n",errno);
+				break;
+			}
+		}
 		__string_packet = __recv_buf;
 		__packet_protobuf.Clear();
 		__packet_protobuf.ParseFromString(__string_packet);
-		if(-1 != recv_bytes)
-		{
-			//	recv_bytes include head and guid
-			output("%d bytes recv: %s",recv_bytes,__packet_protobuf.content().c_str());
-		}
-		usleep(1000*100);
+		output("%d bytes recv: %s",recv_bytes,__packet_protobuf.content().c_str());
+		usleep(__sleep_time);
 	}
 }
 int main(int __arg_num, char** __args)

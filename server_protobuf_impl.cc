@@ -19,22 +19,35 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
  ****************************************************************************/
+/*
+  protobuf version:V2.5.0
+  general:
+	$export LD_LIBRARY_PATH=$LD_LIBRARY_PATH../easy/dep/protobuf/src/.libs
+	$../easy/dep/protobuf/src/.libs/protoc -I./ --cpp_out=. transfer.proto
+  compile:
+	$g++ -g -Wl,--no-as-needed -std=c++11 -pthread -D__LINUX -D__HAVE_EPOLL -D__TEST -o ./bin/srv_test reactor.h reactor.cc event_handle.h event_handle_srv.h event_handle_srv.cc reactor_impl.h reactor_impl_epoll.h reactor_impl_epoll.cc transfer.pb.h transfer.pb.cc server_impl.h server_protobuf_impl.cc ./srv_test/srv_test.h ./srv_test/srv_test.cc -I. -I../easy/src/base -I../easy/dep/protobuf/src/ -L../easy/dep/protobuf/src/.libs -lprotobuf 
+  run: 
+    $./test 192.168.22.61 9876
+*/
 #include <stdio.h>
 #include <string.h>
 #include <thread>
-#ifdef __LINUX
-#include <sys/time.h>
+#if defined __LINUX || defined __MACX
+#include <sys/socket.h>
 #include <unistd.h>
+#include <sys/time.h>
 #endif // __LINUX
-#include "server_protobuf_impl.h"
+#include "server_impl.h"
+#include "easy_util.h"
 #include "transfer.pb.h"
+#include "packet_handle.h"
 
 #define CC_CALLBACK_0(__selector__,__target__, ...) std::bind(&__selector__,__target__, ##__VA_ARGS__)
 
 const easy_uint32 Server_Impl::max_buffer_size_ = 1024*8;
 const easy_uint32 Server_Impl::max_sleep_time_ = 1000*500;
 
-Server_Impl::Server_Impl( Reactor* __reactor,const easy_char* __host /*= "0.0.0.0"*/,easy_uint32 __port /*= 9876*/ )
+Server_Impl::Server_Impl( Reactor* __reactor,const easy_char* __host,easy_uint32 __port )
 	: Event_Handle_Srv(__reactor,__host,__port) 
 {
 #ifndef __HAVE_IOCP
@@ -47,84 +60,35 @@ Server_Impl::Server_Impl( Reactor* __reactor,const easy_char* __host /*= "0.0.0.
 
 void Server_Impl::on_connected( easy_int32 __fd )
 {
-	printf("on_connected __fd = %d \n",__fd);
+#ifndef __HAVE_IOCP
 	lock_.acquire_lock();
 	connects_[__fd] = buffer_queue_.allocate(__fd,max_buffer_size_);
 	connects_copy.push_back(connects_[__fd]);
 	lock_.release_lock();
+#endif // __HAVE_IOCP
+	//	callback connected 
+	connected(__fd);
 }
 
 void Server_Impl::on_read( easy_int32 __fd )
 {
-#ifdef __HAVE_EPOLL
 	_read_completely(__fd);
-#else
-	_read(__fd);
-#endif //__HAVE_EPOLL
 }
 
-void Server_Impl::_read( easy_int32 __fd )
+easy_int32 Server_Impl::on_packet(easy_int32 __fd,const easy_char* __packet,easy_int32 __length)
 {
-	//	the follow code is ring_buf's append function actually.
-	easy_ulong __usable_size = 0;
-	if(!connects_[__fd])
-	{
-		return;
-	}
-	Buffer::ring_buffer* __input = connects_[__fd]->input_;
-	if(!__input)
-	{
-		return;
-	}
-	
-	_get_usable(__fd,__usable_size);
-	easy_int32 __ring_buf_tail_left = __input->size() - __input->wpos();
-	easy_int32 __read_bytes = 0;
-	if(__usable_size <= __ring_buf_tail_left)
-	{
-		__read_bytes = Event_Handle_Srv::read(__fd,(easy_char*)__input->buffer() + __input->wpos(),__usable_size);
-		if(-1 != __read_bytes && 0 != __read_bytes)
-		{
-			__input->set_wpos(__input->wpos() + __usable_size);
-		}
-	}
-	else
-	{	
-		//	if not do this,the connection will be closed!
-		if(0 != __ring_buf_tail_left)
-		{
-			__read_bytes = Event_Handle_Srv::read(__fd,(easy_char*)__input->buffer() +  __input->wpos(),__ring_buf_tail_left);
-			if(-1 != __read_bytes && 0 != __read_bytes)
-			{
-				__input->set_wpos(__input->size());
-			}
-		}
-		easy_int32 __ring_buf_head_left = __input->rpos();
-		easy_int32 __read_left = __usable_size - __ring_buf_tail_left;
-		if(__ring_buf_head_left >= __read_left)
-		{
-			__read_bytes = Event_Handle_Srv::read(__fd,(easy_char*)__input->buffer(),__read_left);
-			if(-1 != __read_bytes && 0 != __read_bytes)
-			{
-				__input->set_wpos(__read_left);
-			}
-		}
-		else
-		{
-			//	maybe some problem here when data not recv completed for epoll ET.you can realloc the input buffer or use while(recv) until return EAGAIN.
-			__read_bytes = Event_Handle_Srv::read(__fd,(easy_char*)__input->buffer(),__ring_buf_head_left);
-			if(-1 != __read_bytes && 0 != __read_bytes)
-			{
-				__input->set_wpos(__ring_buf_head_left);
-			}
-		}
-	}
+	return -1;
+}
+
+easy_int32 Server_Impl::on_packet( easy_int32 __fd,const std::string& __string_packet)
+{
+	handle_packet(__fd,__string_packet);
+	return -1;
 }
 
 void Server_Impl::_read_completely(easy_int32 __fd)
 {
 	//	the follow code is ring_buf's append function actually.
-	easy_ulong __usable_size = 0;
 	if(!connects_[__fd])
 	{
 		return;
@@ -134,71 +98,86 @@ void Server_Impl::_read_completely(easy_int32 __fd)
 	{
 		return;
 	}
-	
-	_get_usable(__fd,__usable_size);
-	easy_int32 __ring_buf_tail_left = __input->size() - __input->wpos();
-	easy_int32 __read_bytes = 0;
-	if(__usable_size <= __ring_buf_tail_left)
+	easy_int32 __usable_size = 0;
+	//	check the peer socket is ok
+	static easy_uint8  __check_buf[max_buffer_size_] = {};
+	__usable_size = Event_Handle_Srv::read(__fd,(easy_char*)__check_buf,max_buffer_size_,MSG_PEEK);
+	if(-1 == __usable_size)
 	{
-		__read_bytes = Event_Handle_Srv::read(__fd,(easy_char*)__input->buffer() + __input->wpos(),__usable_size);
-		if(-1 != __read_bytes && 0 != __read_bytes)
-		{
-			__input->set_wpos(__input->wpos() + __usable_size);
-		}
+		return;
 	}
-	else
-	{	
-		//	if not do this,the connection will be closed!
-		if(0 != __ring_buf_tail_left)
+#if 0
+	//	replace by recv using flag of MSG_PEEK
+	_get_usable(__fd,__usable_size);
+#endif
+	easy_int32 __read_bytes = 0;
+	//	case 1: rpos_ <= wpos_
+	if (__input->rpos() <= __input->wpos())
+	{
+		if (__input->size() - __input->wpos() >= __usable_size)
 		{
-			__read_bytes = Event_Handle_Srv::read(__fd,(easy_char*)__input->buffer() +  __input->wpos(),__ring_buf_tail_left);
+			__read_bytes = Event_Handle_Srv::read(__fd,(easy_char*)__input->buffer() + __input->wpos(),__usable_size);
 			if(-1 != __read_bytes && 0 != __read_bytes)
 			{
-				__input->set_wpos(__input->size());
-			}
-		}
-		easy_int32 __ring_buf_head_left = __input->rpos();
-		easy_int32 __read_left = __usable_size - __ring_buf_tail_left;
-		if(__ring_buf_head_left >= __read_left)
-		{
-			__read_bytes = Event_Handle_Srv::read(__fd,(easy_char*)__input->buffer(),__read_left);
-			if(-1 != __read_bytes && 0 != __read_bytes)
-			{
-				__input->set_wpos(__read_left);
+				__input->set_wpos(__input->wpos() + __read_bytes);
 			}
 		}
 		else
 		{
-			//	make sure __read_left is less than __input.size() + __ring_buf_head_left,usually,It's no problem.
-			__input->reallocate(__input->size());
-			__read_bytes = Event_Handle_Srv::read(__fd,(easy_char*)__input->buffer() + __input->wpos(),__read_left);
-			if(-1 != __read_bytes && 0 != __read_bytes)
+			if (__input->size() - __input->wpos() + __input->rpos() > __usable_size)	// do not >= , reserev at lest on byte avoid data coveage!
 			{
-				__input->set_wpos(__read_left);
+				size_t __buf_wpos_tail_left = __input->size() - __input->wpos();
+				__read_bytes = Event_Handle_Srv::read(__fd,(easy_char*)__input->buffer() + __input->wpos(),__buf_wpos_tail_left);
+				if(-1 != __read_bytes && 0 != __read_bytes)
+				{
+					__input->set_wpos(__input->wpos() + __read_bytes);
+				}
+				__read_bytes = Event_Handle_Srv::read(__fd,(easy_char*)__input->buffer(),__usable_size - __buf_wpos_tail_left);
+				if(-1 != __read_bytes && 0 != __read_bytes)
+				{
+					__input->set_wpos(__usable_size - __buf_wpos_tail_left);
+				}
 			}
-#ifdef __DEBUG
-			//	test ok! set max_buffer_size_ = 256 will easy to test. 
-			printf("__input->reallocate called, __fd = %d,__read_left = %d,buffer left size = %d\n",__fd,__read_left,__input->size() - __input->wpos());
-			easy_int32 __head_size = 12;
-			printf("after __input->reallocate called,buffer = %s\n",__input->buffer() + __input->rpos() + __head_size);
-#endif //__DEBUG
+			else
+			{
+				size_t __new_size = (__input->size() + __usable_size - (__input->size() - __input->wpos())) / __input->size() * __input->size();
+				__input->reallocate(__new_size,true);
+				__read_bytes = Event_Handle_Srv::read(__fd,(easy_char*)__input->buffer() + __input->wpos(),__usable_size);
+				if(-1 != __read_bytes && 0 != __read_bytes)
+				{
+					__input->set_wpos(__input->wpos() + __read_bytes);
+				}
+			}
+		}
+	}
+	//	case 2: rpos_ > wpos_ 
+	else if(__input->rpos() > __input->wpos())
+	{
+		if (__input->rpos() - __input->wpos() <= __usable_size)	// (rpos_ - wpos_ > cnt)  do not >= , reserev at lest on byte avoid data coveage!
+		{
+			easy_uint32 __new_size = __input->size() * 2;
+			if ( __new_size <= __usable_size)
+			{
+				__new_size = __input->size() * 2 + __usable_size / __input->size() * __input->size();
+			}
+			__input->reallocate(__new_size,true);
+		}
+		__read_bytes = Event_Handle_Srv::read(__fd,(easy_char*)__input->buffer() + __input->wpos(),__usable_size);
+		if(-1 != __read_bytes && 0 != __read_bytes)
+		{
+			__input->set_wpos(__input->wpos() + __read_bytes);
 		}
 	}
 }
 
 void Server_Impl::_read_thread()
 {
-	transfer::Packet __packet_protobuf;
 	std::string 	 __string_packet;
-	static const easy_int32 __head_size = 4;
+	static const easy_int32 __head_size = sizeof(easy_uint16);
+	easy_char __read_buf[max_buffer_size_] = {};
 	while (true)
 	{
 		lock_.acquire_lock();
-#ifdef __DEBUG
-		struct timeval __start_timeval;
-		gettimeofday(&__start_timeval, NULL);
-		easy_long __start_time = __start_timeval.tv_usec;
-#endif //__DEBUG
 		for (std::vector<Buffer*>::iterator __it = connects_copy.begin(); __it != connects_copy.end(); ++__it)
 		{
 			if(*__it)
@@ -209,53 +188,37 @@ void Server_Impl::_read_thread()
 				{
 					continue;
 				}
-#ifdef __DEBUG
-				if(0 == (*__it)->fd_ % 1000)
-				{
-					printf("fd =%d,rpos = %d, wpos = %d\n",(*__it)->fd_,__input->rpos(),__input->wpos());
-				}
-#endif //__DEBUG
 				while (!__input->read_finish())
 				{
-					easy_int32 __packet_length = 0;
-					easy_int32 __log_level = 0;
-					easy_int32 __frame_number = 0;
-					easy_uint8 __packet_head[__head_size] = {};
-					easy_int32 __head = 0;
-					easy_uint32 __guid = 0;
-					if(!__input->pre_read(__packet_head,__head_size))
+					easy_uint16 __packet_length = 0;
+					if(__input->read_finish())
+					{
+						break;
+					}
+					if(!__input->peek((easy_uint8*)&__packet_length,__head_size))
 					{
 						//	not enough data for read
 						break;
 					}
-					__packet_length = (easy_int32)*__packet_head;
-					if(!__packet_length)
+					if(!__packet_length || __packet_length > __input->size())
 					{
-						printf("__packet_length error\n");
+						printf("__packet_length error %d\n",__packet_length);
 						break;
 					}
-#if 0
-					//	easy_bool read(easy_uint8* des,size_t len)
-					easy_char __read_buf[max_buffer_size_] = {};
-					if(__input->read((easy_uint8*)__read_buf,__packet_length + __head_size))
+					memset(__read_buf,0,max_buffer_size_);
+					if (__packet_length + __head_size > max_buffer_size_)
 					{
-						__string_packet = __read_buf + __head_size;
-						__packet_protobuf.ParseFromString(__string_packet);
-						__output->append((easy_uint8*)__read_buf,__packet_length + __head_size);
-#else
-					//	easy_bool read(std::string& des,size_t len)
-					__packet_protobuf.Clear();
+						printf("__packet_length + __head_size error %d\n",__packet_length);
+						break;
+					}
 					__string_packet.clear();
 					if(__input->read(__string_packet,__packet_length + __head_size))
 					{
-						__packet_protobuf.ParseFromString(__string_packet.c_str() + __head_size);
+#ifdef __TEST
 						__output->append((easy_uint8*)__string_packet.c_str(),__packet_length + __head_size);
-#endif
-#ifdef __DEBUG
-						printf("__packet_protobuf.head = %d\n",__packet_protobuf.head());
-						printf("__packet_protobuf.guid = %d\n",__packet_protobuf.guid());
-						printf("__packet_protobuf.content = %s\n",__packet_protobuf.content().c_str());
-#endif //__DEBUG
+#else
+						handle_packet((*__it)->fd_,__string_packet.c_str() + __head_size);
+#endif //__TEST
 					}
 					else
 					{
@@ -264,17 +227,8 @@ void Server_Impl::_read_thread()
 				}
 			}
 		}
-#ifdef __DEBUG
-		struct timeval __end_timeval;
-		gettimeofday(&__end_timeval, NULL);
-		easy_long __end_time = __end_timeval.tv_usec;
-		easy_long __time_read = __end_time - __start_time;
-		printf("start time = %ld, end time = %ld,server protobuf impl time read = %ld\n",__start_time,__end_time,__time_read);
-#endif //__DEBUG
 		lock_.release_lock();
-#ifdef __LINUX
-		usleep(max_sleep_time_);
-#endif // __LINUX
+		easy::Util::sleep(max_sleep_time_);
 	}
 }
 
@@ -304,36 +258,71 @@ void Server_Impl::_write_thread()
 					++__it;
 					continue;
 				}
+				easy_int32 __write_bytes = 0;
 				if(__output->wpos() > __output->rpos())
 				{
-					write(__fd,(const easy_char*)__output->buffer() + __output->rpos(),__output->wpos() - __output->rpos());
+					easy_int32 __read_left = __output->wpos() - __output->rpos();
+					__write_bytes = write(__fd,(const easy_char*)__output->buffer() + __output->rpos(),__read_left);
+					if (-1 != __write_bytes && 0 != __write_bytes)
+					{
+						__output->set_rpos(__output->wpos());
+					}
 				}
 				else if(__output->wpos() < __output->rpos())
 				{
-					write(__fd,(const easy_char*)__output->buffer() + __output->rpos(),__output->size() - __output->rpos());
-					write(__fd,(const easy_char*)__output->buffer(),__output->wpos());
+					easy_int32 __ring_buf_tail_left = __output->size() - __output->rpos();
+					__write_bytes = write(__fd,(const easy_char*)__output->buffer() + __output->rpos(),__ring_buf_tail_left);
+					if (-1 != __write_bytes && 0 != __write_bytes)
+					{
+						__output->set_rpos(__output->size());
+					}
+					easy_int32 __wpos = __output->wpos();
+					__write_bytes = write(__fd,(const easy_char*)__output->buffer(),__wpos);
+					if (-1 != __write_bytes && 0 != __write_bytes)
+					{
+						__output->set_rpos(__output->wpos());
+					}
 				}
-				__output->set_rpos(__output->wpos());
 				++__it;
 			}
 		}
 		lock_.release_lock();
-#ifdef __LINUX
-		usleep(max_sleep_time_);
-#endif // __LINUX
+		easy::Util::sleep(max_sleep_time_);
 	}
+}
+
+void Server_Impl::send_packet( easy_int32 __fd,const easy_char* __packet,easy_int32 __length )
+{
+#ifndef __HAVE_IOCP
+	if (connects_[__fd])
+	{
+		if (connects_[__fd]->output_)
+		{
+			connects_[__fd]->output_->append((easy_uint8*)__packet,__length);
+		}
+	}
+#else
+	write(__fd,__packet,__length);
+#endif // __HAVE_IOCP
 }
 
 void Server_Impl::on_disconnect( easy_int32 __fd )
 {
+#ifndef __HAVE_IOCP
 	map_buffer::iterator __it = connects_.find(__fd);
 	if (__it != connects_.end())
 	{
 		if (__it->second)
 		{
 			__it->second->invalid_fd_ = 0;
+			//	callback dis_connected
+			dis_connected(__fd);
 		}
 	}
+#else
+	//	callback dis_connected
+	dis_connected(__fd);
+#endif // __HAVE_IOCP
 }
 
 void Server_Impl::_disconnect( Buffer* __buffer)
