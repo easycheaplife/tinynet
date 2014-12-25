@@ -102,32 +102,22 @@ void Client_Impl::on_read( easy_int32 __fd )
 
 void Client_Impl::_read_thread()
 {
-	const easy_int32 __head_size = 12;
+	const easy_int32 __head_size = sizeof(easy_uint16);
 	const easy_int32 __recv_buffer_size = 1024*8;
 	easy_char __read_buf[__recv_buffer_size] = {};
 	while (true)
 	{
 		while (!ring_buf_->read_finish())
 		{
-			easy_int32 __packet_length = 0;
-			easy_int32 __log_level = 0;
-			easy_int32 __frame_number = 0;
-			easy_uint8 __packet_head[__head_size] = {};
-			easy_int32 __head = 0;
-			easy_uint32 __guid = 0;
-			if(!ring_buf_->peek((easy_uint8*)&__packet_head,__head_size))
+			easy_uint16 __packet_length = 0;
+			if(!ring_buf_->peek((easy_uint8*)&__packet_length,__head_size))
 			{
 				break;
 			}
-			memcpy(&__packet_length,__packet_head,4);
-			memcpy(&__head,__packet_head + 4,4);
-			memcpy(&__guid,__packet_head + 8,4);
 			if(!__packet_length)
 			{
 				break;
 			}
-			__log_level = (__head) & 0x000000ff;
-			__frame_number = (__head >> 8);
 			memset(__read_buf,0,__recv_buffer_size);
 			if(ring_buf_->read((unsigned char*)__read_buf,__packet_length + __head_size))
 			{
