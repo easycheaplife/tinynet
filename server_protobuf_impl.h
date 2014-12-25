@@ -18,14 +18,14 @@
  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
-  protobuf version:V2.5.0
-  general:
-	$export LD_LIBRARY_PATH=$LD_LIBRARY_PATH../easy/dep/protobuf/src/.libs
-	$../easy/dep/protobuf/src/.libs/protoc -I./ --cpp_out=. transfer.proto
-  compile:
-	$g++ -g -Wl,--no-as-needed -std=c++11 -pthread -D__LINUX -D__HAVE_EPOLL -o test reactor.h reactor.cc event_handle.h event_handle_srv.h event_handle_srv.cc reactor_impl.h reactor_impl_epoll.h reactor_impl_epoll.cc transfer.pb.h transfer.pb.cc server_protobuf_impl.h server_protobuf_impl.cc test.cc -I../easy/src/base -I../easy/dep/protobuf/src/ -L../easy/dep/protobuf/src/.libs -lprotobuf
-  run: 
-    $./test 192.168.22.61 9876
+ protobuf version:V2.5.0
+ general:
+ $export LD_LIBRARY_PATH=$LD_LIBRARY_PATH../easy/dep/protobuf/src/.libs
+ $../easy/dep/protobuf/src/.libs/protoc -I./ --cpp_out=. transfer.proto
+ compile:
+ $g++ -g -Wl,--no-as-needed -std=c++11 -pthread -D__LINUX -D__HAVE_EPOLL -D__TEST -o ./bin/srv_test reactor.h reactor.cc event_handle.h event_handle_srv.h event_handle_srv.cc reactor_impl.h reactor_impl_epoll.h reactor_impl_epoll.cc transfer.pb.h transfer.pb.cc server_impl.h server_protobuf_impl.cc ./srv_test/srv_test.h ./srv_test/srv_test.cc -I. -I../easy/src/base -I../easy/dep/protobuf/src/ -L../easy/dep/protobuf/src/.libs -lprotobuf 
+ run: 
+ $./test 192.168.22.61 9876
  ****************************************************************************/
 #ifndef server_protobuf_impl_h__
 #define server_protobuf_impl_h__
@@ -45,18 +45,24 @@ struct Buffer;
 
 struct Buffer
 {
-	typedef easy::EasyRingbuffer<easy_uint8,easy::alloc>	ring_buffer;
-	static const size_t MAX_POOL_SIZE = 50000;
-	typedef  easy_int32 _Key;
+	typedef easy::EasyRingbuffer<easy_uint8,easy::alloc,easy::mutex_lock>	ring_buffer;
 
-	ring_buffer*	input_;
-	ring_buffer*	output_;
-	easy_int32				fd_;
-	easy_int32				invalid_fd_;
+	static const size_t MAX_POOL_SIZE = 50000;
+
+	typedef  easy_int32 _Key;
+	//	for input buffer
+	ring_buffer*		input_;
+	//	for output buffer
+	ring_buffer*		output_;
+	//	incoming socket
+	easy_int32			fd_;
+	//	the status of incoming socket
+	easy_int32			invalid_fd_;
+
 	Buffer(easy_int32 __fd,easy_uint32 __max_buffer_size)
 	{
-		input_ = new easy::EasyRingbuffer<easy_uint8,easy::alloc>(__max_buffer_size);
-		output_ = new easy::EasyRingbuffer<easy_uint8,easy::alloc>(__max_buffer_size);
+		input_ = new easy::EasyRingbuffer<easy_uint8,easy::alloc,easy::mutex_lock>(__max_buffer_size);
+		output_ = new easy::EasyRingbuffer<easy_uint8,easy::alloc,easy::mutex_lock>(__max_buffer_size);
 		fd_ = __fd;
 		invalid_fd_ = 1;
 	}
@@ -86,40 +92,73 @@ struct Buffer
 class Server_Impl : public Event_Handle_Srv
 {
 public:
-	Server_Impl(Reactor* __reactor,const easy_char* __host = "0.0.0.0",easy_uint32 __port = 9876);
+	//	constructor function
+	Server_Impl(Reactor* __reactor,const easy_char* __host ,easy_uint32 __port);
 
-	~Server_Impl();
+	//	destructor function, add virtual qualifier to avoid memory leak
+	virtual ~Server_Impl();
 
+	//	a new connection coming
 	void on_connected(easy_int32 __fd);
 
+	//	a connection disconnect
 	void on_disconnect(easy_int32 __fd);
 
+	//	a read event trigger
 	void on_read(easy_int32 __fd);
 
+	//	time to handler packet
+	easy_int32 on_packet(easy_int32 __fd,const easy_char* __packet,easy_int32 __length){ return -1;}
+
+	easy_int32 on_packet(easy_int32 __fd,const std::string& __string_packet);
+
+public:
+	//	callback function, you should define this interface as follows
+	//	called at a packet to be handle
+	virtual easy_int32 handle_packet(easy_int32 __fd,const std::string& __string_packet) = 0;
+
+	//	called at a connection coming
+	virtual	void connected(easy_int32 __fd) = 0;
+
+	//	called at a connection leaving
+	virtual	void dis_connected(easy_int32 __fd) = 0;
+
+protected:
+	//	send packet to special connection
+	void send_packet(easy_int32 __fd,const easy_char* __packet,easy_int32 __length);
+
 private:
-	void _read(easy_int32 __fd);
-	
+	//	read completely from system cache,it design for EPOLL model
 	void _read_completely(easy_int32 __fd);
 
+	//	a thread work with read data
 	void _read_thread();
 
+	//	a thread work with write data
 	void _write_thread();
 
+	//	disconnect a connection
 	void _disconnect(Buffer* __buffer);
 
 private:
+	//	all connection 
 	typedef	std::map<easy_int32,Buffer*>	map_buffer;
 	std::map<easy_int32,Buffer*>			connects_;
 
+	//	a copy of all connections, whiych stores a point, it's quickly to travel all.
 	typedef	std::vector<Buffer*>	vector_buffer;
 	std::vector<Buffer*>			connects_copy;
 
+	//	the max size of read/write buffer
 	static const easy_uint32		max_buffer_size_;
 
+	//	the max time of read/write sleep time
 	static const easy_uint32		max_sleep_time_;
 
+	//	a lock for all connections
 	easy::mutex_lock				lock_;
 
+	//	buffer memory manager queue
 	easy::lock_queue<Buffer,easy::mutex_lock,std::list<Buffer*> >	buffer_queue_;
 };
 

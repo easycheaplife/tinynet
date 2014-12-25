@@ -20,14 +20,14 @@
  THE SOFTWARE.
  ****************************************************************************/
 /*
-protobuf version:V2.5.0
-general:
-$export LD_LIBRARY_PATH=$LD_LIBRARY_PATH../easy/dep/protobuf/src/.libs
-$../easy/dep/protobuf/src/.libs/protoc -I./ --cpp_out=. transfer.proto
-compile:
-$g++ -g -Wl,--no-as-needed -std=c++11 -pthread -D__LINUX -D__HAVE_EPOLL -o test reactor.h reactor.cc event_handle.h event_handle_srv.h event_handle_srv.cc reactor_impl.h reactor_impl_epoll.h reactor_impl_epoll.cc transfer.pb.h transfer.pb.cc server_framework_impl.h server_framework_impl.cc test.cc -I../easy/src/base -I../easy/dep/protobuf/src/ -L../easy/dep/protobuf/src/.libs -lprotobuf
-run: 
-$./test 192.168.22.61 9876
+  protobuf version:V2.5.0
+  general:
+	$export LD_LIBRARY_PATH=$LD_LIBRARY_PATH../easy/dep/protobuf/src/.libs
+	$../easy/dep/protobuf/src/.libs/protoc -I./ --cpp_out=. transfer.proto
+  compile:
+	$g++ -g -Wl,--no-as-needed -std=c++11 -pthread -D__LINUX -D__HAVE_EPOLL -D__TEST -o ./bin/srv_test reactor.h reactor.cc event_handle.h event_handle_srv.h event_handle_srv.cc reactor_impl.h reactor_impl_epoll.h reactor_impl_epoll.cc transfer.pb.h transfer.pb.cc server_impl.h server_framework_impl.cc ./srv_test/srv_test.h ./srv_test/srv_test.cc -I. -I../easy/src/base -I../easy/dep/protobuf/src/ -L../easy/dep/protobuf/src/.libs -lprotobuf 
+  run: 
+    $./test 192.168.22.61 9876
 */
 #include <stdio.h>
 #include <string.h>
@@ -73,6 +73,11 @@ void Server_Impl::on_connected( easy_int32 __fd )
 void Server_Impl::on_read( easy_int32 __fd )
 {
 	_read_completely(__fd);
+}
+
+easy_int32 Server_Impl::on_packet(easy_int32 __fd,const easy_char* __packet,easy_int32 __length)
+{
+	return -1;
 }
 
 easy_int32 Server_Impl::on_packet( easy_int32 __fd,const std::string& __string_packet)
@@ -209,14 +214,11 @@ void Server_Impl::_read_thread()
 					__string_packet.clear();
 					if(__input->read(__string_packet,__packet_length + __head_size))
 					{
-						if (0)
-						{
-							__output->append((easy_uint8*)__read_buf,__packet_length + __head_size);
-						}
-						else
-						{
-							handle_packet((*__it)->fd_,__string_packet.c_str() + __head_size);
-						}
+#ifdef __TEST
+						__output->append((easy_uint8*)__string_packet.c_str(),__packet_length + __head_size);
+#else
+						handle_packet((*__it)->fd_,__string_packet.c_str() + __head_size);
+#endif //__TEST
 					}
 					else
 					{
