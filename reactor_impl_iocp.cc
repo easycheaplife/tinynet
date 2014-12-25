@@ -1207,20 +1207,6 @@ BOOL Reactor_Impl_Iocp::post_recv( Client_Context* __client_context,Overlapped_P
 	return TRUE;
 }
 
-void Reactor_Impl_Iocp::process_packet2(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls)
-{
-	//	actually, it proves that error happened at process packet!
-	out_read_overlap_puls_lock_.acquire_lock();
-	Overlapped_Puls* __overlapped_puls_read = get_next_read_overlap_puls(__client_context,__overlapped_puls);
-	while(__overlapped_puls_read)
-	{
-		::InterlockedIncrement(&__client_context->cur_read_sequence_);
-		release_overlapped_puls(__overlapped_puls_read);
-		__overlapped_puls_read = get_next_read_overlap_puls(__client_context,NULL);
-	}
-	out_read_overlap_puls_lock_.release_lock();
-}
-
 void Reactor_Impl_Iocp::process_packet(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls)
 {
 	if(!__client_context)
@@ -1703,22 +1689,13 @@ Overlapped_Puls* Reactor_Impl_Iocp::get_next_read_overlap_puls( Client_Context* 
 
 easy_int32 Reactor_Impl_Iocp::read_packet( Client_Context* __client_context,Overlapped_Puls* __overlapped_puls )
 {
-	const easy_int32 __head_size = 12;
-	easy_uint8 __packet_head[__head_size] = {};
-	easy_int32 __head = 0;
-	easy_int32 __packet_length = 0;
-	easy_int32 __log_level = 0;
-	easy_int32 __frame_number = 0;
-	easy_uint32 __guid = 0;
+	const easy_int32 __head_size = sizeof(easy_uint16);
+	easy_uint16 __packet_length = 0;
 	BOOL __enough = __overlapped_puls->is_enough(__head_size);
 	while(__enough)
 	{
 		//	read packet head first
-		__overlapped_puls->read_data((easy_char*)__packet_head,__head_size);
-		memcpy(&__packet_length,__packet_head,4);
-		memcpy(&__head,__packet_head + 4,4);
-		memcpy(&__guid,__packet_head + 8,4);
-
+		__overlapped_puls->read_data((easy_char*)&__packet_length,__head_size);
 		//	continue read other context
 		__enough = __overlapped_puls->is_enough(__packet_length + __head_size);
 		if (__enough)

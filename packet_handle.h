@@ -32,7 +32,7 @@ public:
 
 	virtual ~Packet_Handle() { }
 
-	virtual int handle_packet(easy_int32 __fd,easy_int32 __packet_id,const std::string& __packet) = 0;
+	virtual int handle_packet(easy_int32 __fd,const std::string& __packet) = 0;
 
 protected:
 	Event_Handle*	event_handle_;

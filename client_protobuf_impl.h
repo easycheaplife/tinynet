@@ -24,6 +24,7 @@
 #include "event_handle_cli.h"
 #include "easy_ring_buffer.h"
 #include "easy_allocator.h"
+#include "easy_lock.h"
 
 class Client_Impl : public Event_Handle_Cli
 {
@@ -34,13 +35,13 @@ public:
 
 	void on_read(easy_int32 __fd);
 
-	virtual easy_int32 handle_packet(easy_int32 __fd,easy_uint32 __packet_id,const std::string& __string_packet) = 0;
+	virtual easy_int32 handle_packet(easy_int32 __fd,const std::string& __string_packet) = 0;
 
 private:
 	void	_read_thread();
 
 private:
-	easy::EasyRingbuffer<easy_uint8,easy::alloc>* ring_buf_;
+	easy::EasyRingbuffer<easy_uint8,easy::alloc,easy::mutex_lock>* ring_buf_;
 
 };
 

@@ -109,12 +109,20 @@ public:
 	void on_read(easy_int32 __fd);
 
 	//	time to handler packet
+	//	for byte stream, it is the  default way
 	easy_int32 on_packet(easy_int32 __fd,const easy_char* __packet,easy_int32 __length);
+
+	//	for protobuf
+	easy_int32 on_packet(easy_int32 __fd,const std::string& __string_packet);
 
 public:
 	//	callback function, you should define this interface as follows
 	//	called at a packet to be handle
+	//	for byte stream, it is the  default way
 	virtual easy_int32 handle_packet(easy_int32 __fd,const easy_char* __packet,easy_int32 __length) = 0;
+
+	//	for protobuf
+	virtual easy_int32 handle_packet(easy_int32 __fd,const std::string& __string_packet) = 0;
 
 	//	called at a connection coming
 	virtual	void connected(easy_int32 __fd) = 0;

@@ -23,6 +23,7 @@
 #include <netinet/in.h>		//	sockaddr_in
 #include <strings.h>		//	bzero
 #include <arpa/inet.h>		//	inet_addr
+#include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <string.h>
@@ -60,6 +61,7 @@ static std::string __random_string[] =
 
 static int __random_string_size = 22;
 static int __buf_size = 256;
+static int __sleep_time = 1000*100;
 
 void 	_set_noblock(int __fd)
 {
@@ -89,7 +91,6 @@ void output(const char* __fmt,...)
     printf("%s\n",__buf);
 #endif //__DEBUG
 }
-
 long get_time()
 {
 	struct timeval __timeval;
@@ -99,80 +100,101 @@ long get_time()
 
 void test_4_time_round_trip(int sock)
 {
-	/*
-	xx | xx | xx  | xx
-		length
-	xx        | xx | xx  | xx
-	log level | 	frame number(index)
-	*/
 	srand( (unsigned)time(NULL)); 
-	int __log_level = 1;
-	int __frame_number = 7;
-	int __guid = 15;
-	int __res_frane_number = 0;
-	int __res_log_level = 0;
-	int __head = 0;
-	//	set head
-	__head |= (__frame_number << 8);
-	__head |= (__log_level);
-	
-	//	get head
-	__res_frane_number = (__head ) >> 8;
-	__res_log_level = (__head) & 0x000000ff;
-
 	int __random_index = 0;
 	
 	char __send_buf[__buf_size];
 	char __recv_buf[__buf_size];
-	static const int __packet_head_size = 12;
-	unsigned char __packet_head[__packet_head_size] = {};
+	static const int __packet_head_size = sizeof(unsigned short);
 	for(int __i = 0; ; ++__i)
 	{
-		//	the first time must send the DeviceName
-		if(0 != __i)
-		{
-			__random_index = rand()%__random_string_size;
-		}
-		int __length = __random_string[__random_index].size();
+		__random_index = rand()%__random_string_size;
+		unsigned short __length = __random_string[__random_index].size();
 		memset(__send_buf,0,__buf_size);
-		memcpy(__send_buf,(void*)&__length,4);
-		memcpy(__send_buf + 4,(void*)&__head,4);
-		memcpy(__send_buf + 8,(void*)&__guid,4);
+		memcpy(__send_buf,(void*)&__length,__packet_head_size);
 		strcpy(__send_buf + __packet_head_size,__random_string[__random_index].c_str());
 		int send_bytes = send(sock,(void*)__send_buf,__packet_head_size + __length,0);
 		if(-1 != send_bytes)
 		{
 			output("%d bytes send: %s",send_bytes,__random_string[__random_index].c_str());
 		}
-		struct timeval __start_timeval;
+		else
+		{
+			printf("recv error,errno = %d\n",errno);
+			break;
+		}
+			struct timeval __start_timeval;
 		gettimeofday(&__start_timeval, NULL);
 		long __start_time = __start_timeval.tv_usec;
-		
 		//	receive data
-		int __length2 = 0;
-		int __head2 = 0;
-		int __guid2 = 0;
-		memset(__packet_head,0,__packet_head_size);
-		int recv_bytes = recv(sock,(void*)&__packet_head,__packet_head_size,0);
-		if(__packet_head_size != recv_bytes)
+		unsigned short __length2 = 0;
+		unsigned long __usable_size = 0;
+		if(ioctl(sock,FIONREAD,&__usable_size))
 		{
-			printf(" __packet_head error! %d bytes recv\n", recv_bytes);
+			perror("ioctl FIONREAD");
 		}
-		memcpy(&__length2,(void*)__packet_head,4);
-		memcpy(&__head2,(void*)(__packet_head + 4),4);
-		memcpy(&__guid2,(void*)(__packet_head + 8),4);
-		if(0)
+		if(__usable_size < __packet_head_size)
 		{
-			if(__length2 != __length)
+			//	not enough,continue;
+			usleep(__sleep_time*10);
+			output("#1,__usable_size %lu\n",__usable_size);
+			continue;
+		}
+		int recv_bytes = recv(sock,(void*)&__length2,__packet_head_size,0);
+		if(0 == recv_bytes)
+		{
+			printf("The return value will be 0 when the peer has performed an orderly shutdown \n");
+			break;
+		}
+		else if(-1 == recv_bytes)
+		{
+			if(EAGAIN == errno || EWOULDBLOCK == errno)
 			{
-				printf(" __length2 error! __length = %d,__length2 = %d\n", __length + __packet_head_size,__length2);
+				usleep(__sleep_time*10);
+				output("#2\n");
+				continue;
+			}
+			else
+			{
+				printf("recv error,errno = %d\n",errno);
+				break;
 			}
 		}
-		memset(__recv_buf,0,__buf_size);
-		recv_bytes = recv(sock,(void*)__recv_buf,__length2,0);
-		if(-1 != recv_bytes)
+		if(__packet_head_size != recv_bytes)
 		{
-			output("%d bytes recv: %s",recv_bytes + __packet_head_size,__recv_buf);
+			printf(" __packet_head_size error! %d bytes recv,sock %d\n", recv_bytes,sock);
+		}
+		memset(__recv_buf,0,__buf_size);
+		if(ioctl(sock,FIONREAD,&__usable_size))
+		{
+			perror("ioctl FIONREAD");
+		}
+		if(__usable_size < __length2)
+		{
+			//	not enough,continue;
+			usleep(__sleep_time*10);
+			output("#3\n");
+			continue;
+		}
+		recv_bytes = recv(sock,(void*)__recv_buf,__length2,0);
+		if(0 == recv_bytes)
+		{
+			printf("The return value will be 0 when the peer has performed an orderly shutdown \n");
+			break;
+		}
+		else if(-1 == recv_bytes)
+		{
+			if(EAGAIN == errno || EWOULDBLOCK == errno)
+			{
+				usleep(__sleep_time*10);
+				output("#4\n");
+				continue;
+			}
+			else
+			{
+				printf("recv error,errno = %d\n",errno);
+				break;
+			}
 		}
 		struct timeval __end_timeval;
 		gettimeofday(&__end_timeval, NULL);
@@ -180,7 +202,8 @@ void test_4_time_round_trip(int sock)
 		
 		long __time_round_trip = __end_time - __start_time;
 		printf("start time = %ld, end time = %ld,time round trip = %ld\n",__start_time,__end_time,__time_round_trip);
-		usleep(1000*1000);
+		output("%d bytes recv: %s",recv_bytes + __packet_head_size,__recv_buf);
+		usleep(__sleep_time);
 	}
 }
 int main(int __arg_num, char** __args)
