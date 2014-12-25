@@ -22,13 +22,14 @@
   compile:
 	$g++ -g -o echo_c_json echo_c_json.cc -I../easy/dep/jansson/src/ -L../easy/dep/jansson/src/.libs -ljansson
   run: 
-	$export LD_LIBRARY_PATH=$LD_LIBRARY_PATH../easy/dep/jansson/src/.libs
-    $./test 192.168.22.63 9876
+	$export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:../easy/dep/jansson/src/.libs
+    $./echo_c_json 192.168.22.63 9876
  ****************************************************************************/
 #include <stdlib.h>			//	exit
 #include <netinet/in.h>		//	sockaddr_in
 #include <strings.h>		//	bzero
 #include <arpa/inet.h>		//	inet_addr
+#include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <string.h>
@@ -66,6 +67,7 @@ static std::string __random_string[] =
 
 static int __random_string_size = 22;
 static int __buf_size = 256;
+static int __sleep_time = 1000*100;
 
 void 	_set_noblock(int __fd)
 {
@@ -98,95 +100,110 @@ void output(const char* __fmt,...)
 
 void test_4_transform_monitor(int sock)
 {
-	/*
-	xx | xx | xx  | xx
-		length
-	xx        | xx | xx  | xx
-	log level | 	frame number(index)
-	*/
 	srand( (unsigned)time(NULL)); 
-	int __log_level = 1;
-	int __frame_number = 7;
-	int __guid = 15;
-	int __res_frane_number = 0;
-	int __res_log_level = 0;
-	int __head = 0;
-	//	set head
-	__head |= (__frame_number << 8);
-	__head |= (__log_level);
-	
-	//	get head
-	__res_frane_number = (__head ) >> 8;
-	__res_log_level = (__head) & 0x000000ff;
-
 	int __random_index = 0;
 	
+	char __send_buf[__buf_size];
 	char __recv_buf[__buf_size];
-	static const int __packet_head_size = 4;
-	unsigned char __packet_head[__packet_head_size] = {};
+	static const int __packet_head_size = sizeof(unsigned short);
 	for(int __i = 0; ; ++__i)
 	{
-		//	the first time must send the DeviceName
-		if(0 != __i)
-		{
-			__random_index = rand()%__random_string_size;
-		}
+		__random_index = rand()%__random_string_size;
 		//	use jansson to format a json object
 		json_t* __json_msg = json_object();
-		json_t* __json_head = json_integer(__head);
-		json_t* __json_guid = json_integer(__guid);
 		json_t* __json_content = json_string(__random_string[__random_index].c_str());
-		json_object_set(__json_msg, "head", __json_head);
-		json_object_set(__json_msg, "guid", __json_guid);
 		json_object_set(__json_msg, "content", __json_content);
 		char* __json_dumps_string = json_dumps(__json_msg,0);
-		int __length = strlen(__json_dumps_string);
-		int send_bytes = send(sock,&__length,__packet_head_size,0);
-		if(-1 != send_bytes)
-		{
-			output("%d bytes send: %d",send_bytes,__length);
-		}
-		send_bytes = send(sock,(void*)__json_dumps_string,__length,0);
+		unsigned short __length = strlen(__json_dumps_string);
+		memset(__send_buf,0,__buf_size);
+		memcpy(__send_buf,(void*)&__length,__packet_head_size);
+		strcpy(__send_buf + __packet_head_size,__json_dumps_string);
+		int send_bytes = send(sock,(void*)__send_buf,__packet_head_size + __length,0);
 		if(-1 != send_bytes)
 		{
 			output("%d bytes send: %s",send_bytes,__random_string[__random_index].c_str());
 		}
+		else
+		{
+			printf("recv error,errno = %d\n",errno);
+			break;
+		}
 		free(__json_dumps_string);
-		json_decref(__json_head);
-		json_decref(__json_guid);
 		json_decref(__json_content);
 		json_decref(__json_msg);
 		//	receive data
-		int __length2 = 0;
-		int __head2 = 0;
-		int __guid2 = 0;
-		memset(__packet_head,0,__packet_head_size);
-		int recv_bytes = recv(sock,(void*)&__packet_head,__packet_head_size,0);
-		if(__packet_head_size != recv_bytes)
+		unsigned short __length2 = 0;
+		unsigned long __usable_size = 0;
+		if(ioctl(sock,FIONREAD,&__usable_size))
 		{
-			printf(" __packet_head error! %d bytes recv\n", recv_bytes);
+			perror("ioctl FIONREAD");
 		}
-		__length2 = (int)*__packet_head;
-		if(0)
+		if(__usable_size < __packet_head_size)
 		{
-			if(__length2 != __length)
+			//	not enough,continue;
+			usleep(__sleep_time*10);
+			continue;
+		}
+		int recv_bytes = recv(sock,(void*)&__length2,__packet_head_size,0);
+		if(0 == recv_bytes)
+		{
+			printf("The return value will be 0 when the peer has performed an orderly shutdown \n");
+			break;
+		}
+		else if(-1 == recv_bytes)
+		{
+			if(EAGAIN == errno || EWOULDBLOCK == errno)
 			{
-				printf(" __length2 error! __length = %d,__length2 = %d\n", __length,__length2);
+				usleep(__sleep_time*10);
+				continue;
+			}
+			else
+			{
+				printf("recv error,errno = %d\n",errno);
+				break;
 			}
 		}
+		if(__packet_head_size != recv_bytes)
+		{
+			printf(" __packet_head_size error! %d bytes recv,sock %d\n", recv_bytes,sock);
+		}
 		memset(__recv_buf,0,__buf_size);
+		if(ioctl(sock,FIONREAD,&__usable_size))
+		{
+			perror("ioctl FIONREAD");
+		}
+		if(__usable_size < __length2)
+		{
+			//	not enough,continue;
+			usleep(__sleep_time*10);
+			continue;
+		}
 		recv_bytes = recv(sock,(void*)__recv_buf,__length2,0);
+		if(0 == recv_bytes)
+		{
+			printf("The return value will be 0 when the peer has performed an orderly shutdown \n");
+			break;
+		}
+		else if(-1 == recv_bytes)
+		{
+			if(EAGAIN == errno || EWOULDBLOCK == errno)
+			{
+				usleep(__sleep_time*10);
+				continue;
+			}
+			else
+			{
+				printf("recv error,errno = %d\n",errno);
+				break;
+			}
+		}
 		//	load string to json
 		json_error_t* __json_error = NULL;
 		json_t* __json_loads = json_loads(__recv_buf,JSON_DECODE_ANY,__json_error);
 		json_t* __json_loads_content = json_object_get(__json_loads,"content");
-		if(-1 != recv_bytes)
-		{
-			//	recv_bytes include head and guid
-			output("%d bytes recv: %s",recv_bytes,json_string_value(__json_loads_content));
-		}
+		output("%d bytes recv: %s",recv_bytes,json_string_value(__json_loads_content));
 		json_decref(__json_loads);
-		usleep(1000*100);
+		usleep(__sleep_time);
 	}
 }
 int main(int __arg_num, char** __args)
