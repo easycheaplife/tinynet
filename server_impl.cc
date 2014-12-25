@@ -296,7 +296,6 @@ void Server_Impl::send_packet( easy_int32 __fd,const easy_char* __packet,easy_in
 #endif // __HAVE_IOCP
 }
 
-
 void Server_Impl::on_disconnect( easy_int32 __fd )
 {
 #ifndef __HAVE_IOCP
