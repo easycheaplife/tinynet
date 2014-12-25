@@ -115,8 +115,6 @@ public:
 	//	process packet
 	void process_packet(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls);
 
-	void process_packet2(Client_Context* __client_context,Overlapped_Puls* __overlapped_puls);
-
 	//	send a client pending
 	void send_pending_send(Client_Context* __client_context);
 

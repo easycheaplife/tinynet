@@ -61,7 +61,11 @@ public:
 
 	virtual void on_disconnect(easy_int32 __fd) = 0;
 
+	//	for byte stream
 	virtual easy_int32 on_packet(easy_int32 __fd,const easy_char* __packet,easy_int32 __length) = 0;
+
+	//	for protobuf
+	virtual easy_int32 on_packet(easy_int32 __fd,const std::string& __string_packet) = 0;
 
 protected:
 	void 	_init();

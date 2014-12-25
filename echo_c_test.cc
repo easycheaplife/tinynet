@@ -92,58 +92,32 @@ void output(const char* __fmt,...)
 
 void test_4_transform_monitor(int sock)
 {
-	/*
-	xx | xx | xx  | xx
-		length
-	xx        | xx | xx  | xx
-	log level | 	frame number(index)
-	*/
 	srand( (unsigned)time(NULL)); 
-	int __log_level = 1;
-	int __frame_number = 7;
-	int __guid = 15;
-	int __res_frane_number = 0;
-	int __res_log_level = 0;
-	int __head = 0;
-	//	set head
-	__head |= (__frame_number << 8);
-	__head |= (__log_level);
-	
-	//	get head
-	__res_frane_number = (__head ) >> 8;
-	__res_log_level = (__head) & 0x000000ff;
-
 	int __random_index = 0;
 	
 	char __send_buf[__buf_size];
 	char __recv_buf[__buf_size];
-	static const int __packet_head_size = 12;
-	unsigned char __packet_head[__packet_head_size] = {};
+	static const int __packet_head_size = sizeof(unsigned short);
 	for(int __i = 0; ; ++__i)
 	{
-		//	the first time must send the DeviceName
-		if(0 != __i)
-		{
-			__random_index = rand()%__random_string_size;
-		}
-		int __length = __random_string[__random_index].size();
+		__random_index = rand()%__random_string_size;
+		unsigned short __length = __random_string[__random_index].size();
 		memset(__send_buf,0,__buf_size);
-		memcpy(__send_buf,(void*)&__length,4);
-		memcpy(__send_buf + 4,(void*)&__head,4);
-		memcpy(__send_buf + 8,(void*)&__guid,4);
+		memcpy(__send_buf,(void*)&__length,__packet_head_size);
 		strcpy(__send_buf + __packet_head_size,__random_string[__random_index].c_str());
 		int send_bytes = send(sock,(void*)__send_buf,__packet_head_size + __length,0);
 		if(-1 != send_bytes)
 		{
 			output("%d bytes send: %s",send_bytes,__random_string[__random_index].c_str());
 		}
-		
+		else
+		{
+			printf("recv error,errno = %d\n",errno);
+			break;
+		}
 		//	receive data
-		int __length2 = 0;
-		int __head2 = 0;
-		int __guid2 = 0;
-		memset(__packet_head,0,__packet_head_size);
-		int recv_bytes = recv(sock,(void*)&__packet_head,__packet_head_size,0);
+		unsigned short __length2 = 0;
+		int recv_bytes = recv(sock,(void*)&__length2,__packet_head_size,0);
 		if(0 == recv_bytes)
 		{
 			printf("The return value will be 0 when the peer has performed an orderly shutdown \n");
@@ -164,19 +138,7 @@ void test_4_transform_monitor(int sock)
 		}
 		if(__packet_head_size != recv_bytes)
 		{
-			printf(" __packet_head error! %d bytes recv\n", recv_bytes);
-		}
-		memcpy(&__length2,(void*)__packet_head,4);
-#if 0
-		memcpy(&__head2,(void*)(__packet_head + 4),4);
-		memcpy(&__guid2,(void*)(__packet_head + 8),4);
-#endif
-		if(0)
-		{
-			if(__length2 != __length)
-			{
-				printf(" __length2 error! __length = %d,__length2 = %d\n", __length + __packet_head_size,__length2);
-			}
+			printf(" __packet_head_size error! %d bytes recv,sock %d\n", recv_bytes,sock);
 		}
 		memset(__recv_buf,0,__buf_size);
 		recv_bytes = recv(sock,(void*)__recv_buf,__length2,0);

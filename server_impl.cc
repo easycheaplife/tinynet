@@ -69,6 +69,12 @@ easy_int32 Server_Impl::on_packet( easy_int32 __fd,const easy_char* __packet,eas
 	return -1;
 }
 
+easy_int32 Server_Impl::on_packet(easy_int32 __fd,const std::string& __string_packet)
+{
+	//	no necessary implementation here
+	return -1;
+}
+
 void Server_Impl::_read_completely(easy_int32 __fd)
 {
 	//	the follow code is ring_buf's append function actually.
@@ -155,16 +161,11 @@ void Server_Impl::_read_completely(easy_int32 __fd)
 
 void Server_Impl::_read_thread()
 {
-	static const easy_int32 __head_size = 12;
+	static const easy_int32 __head_size = sizeof(easy_uint16);
 	easy_char __read_buf[max_buffer_size_] = {};
 	while (true)
 	{
 		lock_.acquire_lock();
-#ifdef __DEBUG_TIME
-		struct timeval __start_timeval;
-		gettimeofday(&__start_timeval, NULL);
-		easy_long __start_time = __start_timeval.tv_usec;
-#endif // __DEBUG_TIME
 		for (std::vector<Buffer*>::iterator __it = connects_copy.begin(); __it != connects_copy.end(); ++__it)
 		{
 			if(*__it)
@@ -175,45 +176,23 @@ void Server_Impl::_read_thread()
 				{
 					continue;
 				}
-#ifdef __DEBUG_TIME
-				if(0 == (*__it)->fd_ % 1000)
-				{
-					printf("fd =%d,rpos = %d, wpos = %d\n",(*__it)->fd_,__input->rpos(),__input->wpos());
-				}
-#endif // __DEBUG_TIME
 				while (!__input->read_finish())
 				{
-#if 0
-					easy_int32 __log_level = 0;
-					easy_int32 __frame_number = 0;
-					easy_int32 __head = 0;
-					easy_uint32 __guid = 0;
-#endif
-                    easy_int32 __packet_length = 0;
-                    easy_uint8 __packet_head[__head_size] = {};
+                    easy_uint16 __packet_length = 0;
 					if(__input->read_finish())
 					{
 						break;
 					}
-					if(!__input->peek((easy_uint8*)&__packet_head,__head_size))
+					if(!__input->peek((easy_uint8*)&__packet_length,__head_size))
 					{
 						//	not enough data for read
 						break;
 					}
-					memcpy(&__packet_length,__packet_head,4);
-#if 0
-					memcpy(&__head,__packet_head + 4,4);
-					memcpy(&__guid,__packet_head + 8,4);
-#endif
 					if(!__packet_length || __packet_length > __input->size())
 					{
 						printf("__packet_length error %d\n",__packet_length);
 						break;
 					}
-#if 0
-					__log_level = (__head) & 0x000000ff;
-					__frame_number = (__head >> 8);
-#endif
 					memset(__read_buf,0,max_buffer_size_);
 					if (__packet_length + __head_size > max_buffer_size_)
 					{
@@ -238,13 +217,6 @@ void Server_Impl::_read_thread()
 				}
 			}
 		}
-#ifdef __DEBUG_TIME
-		struct timeval __end_timeval;
-		gettimeofday(&__end_timeval, NULL);
-		easy_long __end_time = __end_timeval.tv_usec;
-		easy_long __time_read = __end_time - __start_time;
-		printf("start time = %ld, end time = %ld,server impl time read = %ld\n",__start_time,__end_time,__time_read);
-#endif // __DEBUG_TIME
 		lock_.release_lock();
 		easy::Util::sleep(max_sleep_time_);
 	}

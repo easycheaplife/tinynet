@@ -23,9 +23,10 @@
 #include "client_protobuf_impl.h"
 #include "easy_byte_buffer.h"
 
+
 Client_Impl::Client_Impl( Reactor* __reactor,const easy_char* __host,easy_uint32 __port /*= 9876*/ ) : Event_Handle_Cli(__reactor,__host,__port)
 {
-	ring_buf_ = new easy::EasyRingbuffer<unsigned char,easy::alloc>(1024*64*100);
+	ring_buf_ = new easy::EasyRingbuffer<unsigned char,easy::alloc,easy::mutex_lock>(1024*64*100);
 	//	start read thread
 	auto __thread_ = std::thread(CC_CALLBACK_0(Client_Impl::_read_thread,this));
 	__thread_.detach();
@@ -87,19 +88,15 @@ void Client_Impl::on_read( easy_int32 __fd )
 
 void Client_Impl::_read_thread()
 {
-	static const easy_int32 __head_size = sizeof(easy_uint32);
+	static const easy_int32 __head_size = sizeof(easy_int16);
 	std::string 	 __string_packet;
 	while (true)
 	{
-		easy_int32 __packet_length = 0;
-		easy_int32 __packet_id = 0;
-		easy_uint32 __packet_head = 0;
-		if(!ring_buf_->pre_read((unsigned char*)&__packet_head,__head_size))
+		easy_int16 __packet_length = 0;
+		if(!ring_buf_->peek((unsigned char*)&__packet_length,__head_size))
 		{
 			continue;
 		}
-		__packet_id = (__packet_head & 0xffff0000) >> 16;
-		__packet_length = __packet_head & 0x0000ffff;
 		if(!__packet_length)
 		{
 			printf("__packet_length error\n");
@@ -108,7 +105,7 @@ void Client_Impl::_read_thread()
 		__string_packet.clear();
 		if(ring_buf_->read(__string_packet,__packet_length + __head_size))
 		{
-			handle_packet(get_handle(),__packet_id,__string_packet.c_str() + __head_size);
+			handle_packet(get_handle(),__string_packet.c_str() + __head_size);
 		}
 		else
 		{
