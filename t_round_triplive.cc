@@ -120,7 +120,7 @@ void test_4_time_round_trip(int sock)
 		}
 		else
 		{
-			printf("recv error,errno = %d\n",errno);
+			printf("send error,errno = %d,sock %d\n",errno,sock);
 			break;
 		}
 			struct timeval __start_timeval;
@@ -143,7 +143,7 @@ void test_4_time_round_trip(int sock)
 		int recv_bytes = recv(sock,(void*)&__length2,__packet_head_size,0);
 		if(0 == recv_bytes)
 		{
-			printf("The return value will be 0 when the peer has performed an orderly shutdown \n");
+			printf("The return value will be 0 when the peer has performed an orderly shutdown,sock %d \n",sock);
 			break;
 		}
 		else if(-1 == recv_bytes)
@@ -156,7 +156,7 @@ void test_4_time_round_trip(int sock)
 			}
 			else
 			{
-				printf("recv error,errno = %d\n",errno);
+				printf("recv error,errno = %d,sock %d\n",errno,sock);
 				break;
 			}
 		}
@@ -179,7 +179,7 @@ void test_4_time_round_trip(int sock)
 		recv_bytes = recv(sock,(void*)__recv_buf,__length2,0);
 		if(0 == recv_bytes)
 		{
-			printf("The return value will be 0 when the peer has performed an orderly shutdown \n");
+			printf("The return value will be 0 when the peer has performed an orderly shutdown,sock %d \n",sock);
 			break;
 		}
 		else if(-1 == recv_bytes)
@@ -192,7 +192,7 @@ void test_4_time_round_trip(int sock)
 			}
 			else
 			{
-				printf("recv error,errno = %d\n",errno);
+				printf("recv error,errno = %d,sock %d\n",errno,sock);
 				break;
 			}
 		}
