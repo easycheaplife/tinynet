@@ -61,10 +61,14 @@ Server_Impl::Server_Impl( Reactor* __reactor,const easy_char* __host,easy_uint32
 void Server_Impl::on_connected( easy_int32 __fd )
 {
 #ifndef __HAVE_IOCP
-	lock_.acquire_lock();
-	connects_[__fd] = buffer_queue_.allocate(__fd,max_buffer_size_);
-	connects_copy.push_back(connects_[__fd]);
-	lock_.release_lock();
+	//	proxy server do not need manager connection information
+	if (!is_proxy())
+	{
+		lock_.acquire_lock();
+		connects_[__fd] = buffer_queue_.allocate(__fd,max_buffer_size_);
+		connects_copy.push_back(connects_[__fd]);
+		lock_.release_lock();
+	}
 #endif // __HAVE_IOCP
 	//	callback connected 
 	connected(__fd);
@@ -72,7 +76,14 @@ void Server_Impl::on_connected( easy_int32 __fd )
 
 void Server_Impl::on_read( easy_int32 __fd )
 {
-	_read_completely(__fd);
+	if(is_proxy())
+	{
+		_read_directly(__fd);
+	}
+	else
+	{
+		_read_completely(__fd);
+	}
 }
 
 easy_int32 Server_Impl::on_packet(easy_int32 __fd,const easy_char* __packet,easy_int32 __length)
@@ -168,6 +179,11 @@ void Server_Impl::_read_completely(easy_int32 __fd)
 			__input->set_wpos(__input->wpos() + __read_bytes);
 		}
 	}
+}
+
+void Server_Impl::_read_directly(easy_int32 __fd)
+{
+	
 }
 
 void Server_Impl::_read_thread()
@@ -309,14 +325,18 @@ void Server_Impl::send_packet( easy_int32 __fd,const easy_char* __packet,easy_in
 void Server_Impl::on_disconnect( easy_int32 __fd )
 {
 #ifndef __HAVE_IOCP
-	map_buffer::iterator __it = connects_.find(__fd);
-	if (__it != connects_.end())
+	//	proxy server do not need manager connection information
+	if (!is_proxy())
 	{
-		if (__it->second)
+		map_buffer::iterator __it = connects_.find(__fd);
+		if (__it != connects_.end())
 		{
-			__it->second->invalid_fd_ = 0;
-			//	callback dis_connected
-			dis_connected(__fd);
+			if (__it->second)
+			{
+				__it->second->invalid_fd_ = 0;
+				//	callback dis_connected
+				dis_connected(__fd);
+			}
 		}
 	}
 #else

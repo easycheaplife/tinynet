@@ -59,7 +59,7 @@ static std::string __random_string[] =
 
 static int __random_string_size = 22;
 static int __buf_size = 256;
-static int __sleep_time = 1000*100;
+static int __sleep_time = 1000*1000;
 
 void 	_set_noblock(int __fd)
 {
@@ -190,4 +190,6 @@ int main(int __arg_num, char** __args)
 		exit(1);
 	}
 	test_4_transform_monitor(sock);
+	printf("process exit,sock %d\n",sock);
+	close(sock);
 }
