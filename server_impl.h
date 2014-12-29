@@ -130,6 +130,9 @@ public:
 	//	called at a connection leaving
 	virtual	void dis_connected(easy_int32 __fd) = 0;
 
+	//	is proxy server
+	virtual easy_bool is_proxy() { return false; }
+
 protected:
 	//	send packet to special connection
 	void send_packet(easy_int32 __fd,const easy_char* __packet,easy_int32 __length);
@@ -137,6 +140,9 @@ protected:
 private:
 	//	read completely from system cache,it design for EPOLL model
 	void _read_completely(easy_int32 __fd);
+
+	//	do not process the date and read directly,use mmap replace recv/read,usually it use as proxy server
+	void _read_directly(easy_int32 __fd);
 
 	//	a thread work with read data
 	void _read_thread();
