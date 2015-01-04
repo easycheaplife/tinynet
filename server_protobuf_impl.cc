@@ -186,7 +186,10 @@ void Server_Impl::_read_directly(easy_int32 __fd)
 	//	tmp code
 	easy_char __read_buf[max_buffer_size_] = {};
 	easy_int32 __read_bytes = read_zero_copy(__fd,__read_buf,max_buffer_size_);
-	handle_packet(__fd,__read_buf,__read_bytes);
+	if (-1 != __read_bytes)
+	{
+		handle_packet(__fd,__read_buf,__read_bytes);
+	}
 }
 
 void Server_Impl::_read_thread()

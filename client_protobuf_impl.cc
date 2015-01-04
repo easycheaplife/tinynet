@@ -22,6 +22,7 @@
 #include <thread>
 #include "client_protobuf_impl.h"
 #include "easy_byte_buffer.h"
+#include "easy_util.h"
 
 
 Client_Impl::Client_Impl( Reactor* __reactor,const easy_char* __host,easy_uint32 __port /*= 9876*/ ) : Event_Handle_Cli(__reactor,__host,__port)
@@ -88,6 +89,7 @@ void Client_Impl::on_read( easy_int32 __fd )
 
 void Client_Impl::_read_thread()
 {
+	static const easy_int32 __sleep_time = 1000*100;
 	static const easy_int32 __head_size = sizeof(easy_int16);
 	std::string 	 __string_packet;
 	while (true)
@@ -95,6 +97,7 @@ void Client_Impl::_read_thread()
 		easy_int16 __packet_length = 0;
 		if(!ring_buf_->peek((unsigned char*)&__packet_length,__head_size))
 		{
+			easy::Util::sleep(__sleep_time);
 			continue;
 		}
 		if(!__packet_length)
@@ -109,7 +112,9 @@ void Client_Impl::_read_thread()
 		}
 		else
 		{
+			easy::Util::sleep(__sleep_time);
 			continue;
 		}
+		easy::Util::sleep(__sleep_time);
 	}
 }
