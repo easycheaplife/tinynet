@@ -31,7 +31,9 @@
 #include "reactor_impl_poll.h"
 #endif 
 
+#ifdef __REACTOR_SINGLETON
 Reactor* Reactor::reactor_ = 0;
+#endif // __REACTOR_SINGLETON
 
 Reactor::Reactor()
 {
@@ -54,7 +56,7 @@ Reactor::~Reactor()
 		reactor_impl_ = NULL;
 	}
 }
-
+#ifdef __REACTOR_SINGLETON
 Reactor* Reactor::instance()
 {
 	if( 0 ==  Reactor::reactor_)
@@ -63,6 +65,16 @@ Reactor* Reactor::instance()
 	}
 	return Reactor::reactor_;
 }
+
+void Reactor::destory()
+{
+	if(reactor_)
+	{
+		delete reactor_;
+		reactor_ = NULL;
+	}
+}
+#endif // __REACTOR_SINGLETON
 
 easy_int32 Reactor::register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask)
 {
@@ -87,11 +99,3 @@ easy_int32 Reactor::event_loop(easy_ulong __millisecond)
 	return -1;
 }
 
-void Reactor::destory()
-{
-	if(reactor_)
-	{
-		delete reactor_;
-		reactor_ = NULL;
-	}
-}

@@ -82,7 +82,11 @@ int main(int argc, char* argv[])
 	}
 	char* __host = argv[1];
 	unsigned int __port = atoi(argv[2]);
+#ifdef __REACTOR_SINGLETON
 	Reactor* __reactor = Reactor::instance();
+#else
+	Reactor* __reactor = new Reactor();
+#endif // __REACTOR_SINGLETON
 	Cli_Test* __cli_test = new Cli_Test(__reactor,__host,__port);
 	
 	srand(easy::EasyTime::get_cur_sys_time());
@@ -107,6 +111,10 @@ int main(int argc, char* argv[])
 	{
 		easy::Util::sleep(__sleep_time);
 	}
+#ifdef __REACTOR_SINGLETON
+	delete __reactor;
+	__reactor = NULL;
+#endif // __REACTOR_SINGLETON
 	return 0;
 }
 

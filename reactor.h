@@ -19,9 +19,6 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
  ****************************************************************************/
-#ifndef reactor_h__
-#define reactor_h__
-
 #include "easy_base_type.h"
 class Event_Handle;
 class Reactor_Impl;
@@ -29,29 +26,31 @@ class Reactor
 {
 public:
 	Reactor();
-
+	
 	~Reactor();
-
+#ifdef __REACTOR_SINGLETON
 	static Reactor* instance();
 
 	static void destory();
-
+#endif // __REACTOR_SINGLETON
 	easy_int32 register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask);
-
+	
 	easy_int32 remove_handle(Event_Handle* __handle,easy_int32 __mask);
-
+	
 	easy_int32 handle_event(easy_ulong __millisecond);
-
+	
 	easy_int32 event_loop(easy_ulong __millisecond);
-
+	
 	Reactor_Impl* reactor_impl() const { return reactor_impl_; }
 private:
 	Reactor(const Reactor&);
-
+	
 	Reactor operator = (const Reactor&);
 
+#ifdef __REACTOR_SINGLETON
 	static Reactor* 				reactor_;
+#endif // __REACTOR_SINGLETON
 
 	Reactor_Impl*					reactor_impl_;
+	
 };
-#endif // reactor_h__
