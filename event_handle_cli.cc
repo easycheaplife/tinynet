@@ -58,26 +58,22 @@ easy_int32 Event_Handle_Cli::handle_input(easy_int32 __fd)
 
 easy_int32 Event_Handle_Cli::handle_output(easy_int32 __fd)
 {
-	printf("handle_outputd\n");
 	reactor()->reactor_impl()->register_handle(this,__fd,kMaskRead);
 	return -1;
 }
 
 easy_int32 Event_Handle_Cli::handle_exception(easy_int32 __fd)
 {
-	printf("handle_exception\n");
 	return -1;
 }
 
 easy_int32 Event_Handle_Cli::handle_close(easy_int32 __fd)
 {
-	printf("handle_close\n");
 	return -1;
 }
 
 easy_int32 Event_Handle_Cli::handle_timeout(easy_int32 __fd)
 {
-	printf("handle_timeout\n");
 	return -1;
 }
 
