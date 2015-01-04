@@ -50,6 +50,9 @@ public:
 	//	read data from network cache
 	easy_int32 read(easy_int32 __fd,easy_char* __buf, easy_int32 __length,easy_int32 __flags = 0); 
 
+	//	read data from network hardware device
+	easy_int32 read_zero_copy(easy_int32 __fd,easy_char* __buf, easy_int32 __length,easy_int32 __flags = 0);
+
 	//	write data to peer 
 	easy_int32 write(easy_int32 __fd,const easy_char* __data, easy_int32 __length);
 
