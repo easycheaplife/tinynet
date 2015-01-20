@@ -37,6 +37,8 @@
  *  up-regulation the value of PRE_POST_RECV_NUM will remission the problem. concurrent ability will be improved.
  *  #5	2014-11-21
  *  client can not recv any message but there is some data not be sent.
+ *  #6	2015-1-20
+ *  error code 10038 will happed when getsockopt called at listen_thread.
  */
 /************************************************************************/
 #ifdef WIN32
