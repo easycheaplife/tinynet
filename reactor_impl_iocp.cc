@@ -24,11 +24,12 @@
 #include <stdio.h>
 #include "reactor_impl_iocp.h"
 #include "event_handle.h"
+#include "easy_util.h"
 
 #define TIME_OVERTIME					60*1000
 //	fix #4							
-#define PRE_POST_RECV_NUM				50
-#define PRE_POST_ACCEPT_NUM				50
+#define PRE_POST_RECV_NUM				5
+#define PRE_POST_ACCEPT_NUM				5
 #define MAX_FREE_OVERLAPPED_PLUS_NUM	5000
 #define MAX_FREE_CLIENT_CONTEXT_NUM		5000
 #define MAX_CONNECT_NUM					50000
@@ -244,7 +245,7 @@ Reactor_Impl_Iocp::Reactor_Impl_Iocp()
 	cur_connection_ = 0;
 	max_connection_ = MAX_CONNECT_NUM;
 	penging_accept_overlap_puls_ = NULL;
-	pending_accept_count_ = NULL;
+	pending_accept_count_ = 0;
 	work_thread_cur_ = 0;
 }
 
@@ -278,74 +279,11 @@ easy_int32 Reactor_Impl_Iocp::handle_event(easy_ulong __millisecond)
 
 easy_int32 Reactor_Impl_Iocp::event_loop(easy_ulong __millisecond)
 {
-	//	do not do this, a mast of time will running at lock & unlock
+	easy_int32 __sleep_time = 1000*1000*30;
 	while(true)
 	{
-		if(0)
-		{
-			active_clienk_context_lock_.acquire_lock();
-			Client_Context* __first_client_context = active_cleint_context_;
-			while(__first_client_context)
-			{
-				out_read_overlap_puls_lock_.acquire_lock();
-				BOOL __to_be_release = FALSE;
-				while(NULL != __first_client_context->out_order_reads_)
-				{
-					__to_be_release = FALSE;
-					Overlapped_Puls* __temp_overlap_plus = __first_client_context->out_order_reads_;
-					if(__first_client_context->cur_read_sequence_ == __temp_overlap_plus->sequence_num_)
-					{
-						easy_int32 __read_less_size = read_packet(__first_client_context,__temp_overlap_plus);
-						if (0 == __read_less_size)
-						{
-							//add the sequence of the data to read
-							::InterlockedIncrement(&__first_client_context->cur_read_sequence_);
-							__first_client_context->out_order_reads_ = __first_client_context->out_order_reads_->next_;	
-							release_overlapped_puls(__temp_overlap_plus);
-							continue;
-						}
-						else
-						{
-							Overlapped_Puls* __temp_next_overlap_puls_read = __temp_overlap_plus->next_;
-							if (__temp_next_overlap_puls_read 
-								&& __temp_next_overlap_puls_read->sequence_num_ == (__first_client_context->cur_read_sequence_ + 1))
-							{
-								//	flush buffer,remove __read_less_size from __temp_next_overlap_puls_read and add to current __temp_overlap_plus
-								if(__temp_overlap_plus->flush_buffer(__temp_next_overlap_puls_read,__read_less_size))
-								{
-									continue;
-								}
-								else
-								{
-									//	fix #3
-									//	__temp_overlap_plus is no useless, you need recyle the object.
-									__to_be_release = TRUE;
-									::InterlockedIncrement(&__first_client_context->cur_read_sequence_);
-								}
-							}
-							else
-							{
-								break;
-							}
-						}
-						__first_client_context->out_order_reads_ = __first_client_context->out_order_reads_->next_;	
-						if(__to_be_release)
-						{
-							release_overlapped_puls(__temp_overlap_plus);
-						}
-					}
-					else
-					{
-						break;
-					}
-				}
-				out_read_overlap_puls_lock_.release_lock();
-				__first_client_context = __first_client_context->next_;
-			}
-			active_clienk_context_lock_.release_lock();
-		}
 		send_all_pending_send();
-		::Sleep(1000);
+		easy::Util::sleep(__sleep_time);
 	}
 	return -1;
 }
@@ -543,11 +481,11 @@ easy_int32 Reactor_Impl_Iocp::handle_packet( easy_int32 __fd,const easy_char* __
 
 easy_uint32 __stdcall Reactor_Impl_Iocp::listen_thread( void* __pv )
 {
-	Overlapped_Puls* __overlapped_puls = NULL;
 	easy_int32 __error = 0;
 	Reactor_Impl_Iocp* __this = (Reactor_Impl_Iocp*)__pv;
 	while(TRUE)
 	{
+		Overlapped_Puls* __overlapped_puls = NULL;
 		easy_ulong __events = 0;
 		// Wait for one of the sockets to receive I/O notification and 
 		if (((__events = WSAWaitForMultipleEvents(__this->event_total_, __this->event_array_, FALSE,
@@ -561,9 +499,16 @@ easy_uint32 __stdcall Reactor_Impl_Iocp::listen_thread( void* __pv )
 		{
 			__this->check_all_connection_timeout();
 			//	if the client connect server for a long time but not recv or send any data,disconnect it
+			__this->pending_accept_lock_.acquire_lock();
 			__overlapped_puls = __this->penging_accept_overlap_puls_;
 			while(NULL != __overlapped_puls)
 			{
+				//	fix 6, clear the data which __overlapped_puls->sock_client_ is 0
+				if (0 == __overlapped_puls->sock_client_)
+				{
+					__this->remove_pending_accept(__overlapped_puls);
+					break;
+				}
 				easy_int32 __seconds = 0;
 				easy_int32 __bytes = sizeof(__seconds);
 				//	check all AcceptEx is timeout
@@ -578,6 +523,7 @@ easy_uint32 __stdcall Reactor_Impl_Iocp::listen_thread( void* __pv )
 				}
 				__overlapped_puls = __overlapped_puls->next_;
 			}
+			__this->pending_accept_lock_.release_lock();
 		}
 		else
 		{
@@ -781,7 +727,6 @@ void Reactor_Impl_Iocp::release_client_context( Client_Context* __client_context
 		}
 	}
 	on_connection_closing(__client_context, NULL);	
-	printf("connection closed,cur_connection_ = %d\n",cur_connection_);
 	client_context_lock_.release_lock();
 	//	to be continue ...
 }
@@ -902,7 +847,7 @@ BOOL Reactor_Impl_Iocp::remove_pending_accept( Overlapped_Puls* __overlapped_pul
 	BOOL __res = FALSE;
 	pending_accept_lock_.acquire_lock();
 	Overlapped_Puls* __temp_overLap_plus = penging_accept_overlap_puls_;
-	//	if the next overlapp plus just we want to find
+	//	if the next overlapped plus just we want to find
 	if(__overlapped_puls == __temp_overLap_plus)
 	{
 		penging_accept_overlap_puls_ = __overlapped_puls->next_;
@@ -920,6 +865,14 @@ BOOL Reactor_Impl_Iocp::remove_pending_accept( Overlapped_Puls* __overlapped_pul
 		{
 			__temp_overLap_plus->next_ = __overlapped_puls->next_;
 			__res = TRUE;
+		}
+		else
+		{
+			/*	
+				if the the __overlapped_puls have not add to pending accept and accept event have trigged. that will cause 
+				__overlapped_puls will not found at penging_accept_overlap_puls_.error code 10038 will happed when getsockopt 
+				called at listen_thread.
+			*/
 		}
 	}
 	if(__res)
@@ -1181,7 +1134,6 @@ BOOL Reactor_Impl_Iocp::add_connection( Client_Context* __client_context )
 void Reactor_Impl_Iocp::on_connection_established( Client_Context* __client_context,Overlapped_Puls* __overlapped_puls )
 {
 	handle_->handle_input(__client_context->socket_);
-	printf("new connection,cur_connection_ = %d\n",cur_connection_);
 }
 
 BOOL Reactor_Impl_Iocp::post_recv( Client_Context* __client_context,Overlapped_Puls* __overlapped_puls )

@@ -31,6 +31,8 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <sys/types.h>		//	getpid
+
 static std::string __random_string[] = 
 {
 	"[0x000085e4][T]AdvertisingIndentitifer: '', IdentifierForVendor: '', DeviceName: 'PC', ModelName: 'x86', SystemName: '', SystemVersion: '', HardwareID: '74d435046509'",
@@ -112,7 +114,7 @@ void test_4_transform_monitor(int sock)
 		}
 		else
 		{
-			printf("send error,errno = %d,sock %d\n",errno,sock);
+			printf("send error,errno = %d,sock %d pid %d\n",errno,sock,getpid());
 			break;
 		}
 		//	receive data
@@ -120,7 +122,7 @@ void test_4_transform_monitor(int sock)
 		int recv_bytes = recv(sock,(void*)&__length2,__packet_head_size,0);
 		if(0 == recv_bytes)
 		{
-			printf("The return value will be 0 when the peer has performed an orderly shutdown,sock %d \n",sock);
+			printf("The return value will be 0 when the peer has performed an orderly shutdown,sock %d pid %d\n",sock,getpid());
 			break;
 		}
 		else if(-1 == recv_bytes)
@@ -132,19 +134,19 @@ void test_4_transform_monitor(int sock)
 			}
 			else
 			{
-				printf("recv error,errno = %d,sock %d\n",errno,sock);
+				printf("recv error,errno = %d,sock %d pid %d\n",errno,sock,getpid());
 				break;
 			}
 		}
 		if(__packet_head_size != recv_bytes)
 		{
-			printf(" __packet_head_size error! %d bytes recv,sock %d\n", recv_bytes,sock);
+			printf(" __packet_head_size error! %d bytes recv,sock %d pid %d\n", recv_bytes,sock,getpid());
 		}
 		memset(__recv_buf,0,__buf_size);
 		recv_bytes = recv(sock,(void*)__recv_buf,__length2,0);
 		if(0 == recv_bytes)
 		{
-			printf("The return value will be 0 when the peer has performed an orderly shutdown,sock %d \n",sock);
+			printf("The return value will be 0 when the peer has performed an orderly shutdown,sock %d pid %d\n",sock,getpid());
 			break;
 		}
 		else if(-1 == recv_bytes)
@@ -156,7 +158,7 @@ void test_4_transform_monitor(int sock)
 			}
 			else
 			{
-				printf("recv error,errno = %d,sock %d\n",errno,sock);
+				printf("recv error,errno = %d,sock %d pid %d\n",errno,sock,getpid());
 				break;
 			}
 		}
@@ -176,7 +178,7 @@ int main(int __arg_num, char** __args)
 	int sock = socket(AF_INET,SOCK_STREAM,0);
 	if(-1 == sock)
 	{
-		printf("error at socket,errno = %d\n",errno);
+		printf("error at socket,errno = %d pid %d\n",sock,getpid());
 		exit(1);
 	}
 	struct sockaddr_in clientaddr;
@@ -190,6 +192,6 @@ int main(int __arg_num, char** __args)
 		exit(1);
 	}
 	test_4_transform_monitor(sock);
-	printf("process exit,sock %d\n",sock);
+	printf("process exit,sock %d pid %d\n",sock,getpid());
 	close(sock);
 }
