@@ -128,8 +128,8 @@ easy_int32 Event_Handle_Srv::handle_close(easy_int32 __fd)
 	//	This __strings is malloc(3)ed by backtrace_symbols(), and must be freed here
 	free (__strings);
 #endif // __LINUX
-#endif // __DEBUG
 	printf("socket close %d,errno %d\n",__fd,errno);
+#endif // __DEBUG
 #endif // __HAVE_IOCP
 	on_disconnect(__fd);
 	return -1;
@@ -318,7 +318,7 @@ easy_int32 Event_Handle_Srv::read( easy_int32 __fd,easy_char* __buf, easy_int32 
 
 easy_int32 Event_Handle_Srv::read_zero_copy(easy_int32 __fd,easy_char* __buf, easy_int32 __length,easy_int32 __flags /*= 0*/)
 {
-	return read(fd_,__buf,__length,__flags);
+	return read(__fd,__buf,__length,__flags);
 }
 
 easy_int32 Event_Handle_Srv::write( easy_int32 __fd,const easy_char* __data, easy_int32 __length )

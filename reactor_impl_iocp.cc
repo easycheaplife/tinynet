@@ -1252,7 +1252,11 @@ void Reactor_Impl_Iocp::process_packet(Client_Context* __client_context,Overlapp
 
 void Reactor_Impl_Iocp::on_connection_closing( Client_Context* __client_context,Overlapped_Puls* __overlapped_puls )
 {
-	handle_->handle_close(fd_);
+	//	this will call many times for multi thread, and some system function will detected the error
+	if(INVALID_SOCKET != __client_context->socket_)
+	{
+		handle_->handle_close(__client_context->socket_);
+	}
 }
 
 BOOL Reactor_Impl_Iocp::post_send( Client_Context* __client_context,Overlapped_Puls* __overlapped_puls )

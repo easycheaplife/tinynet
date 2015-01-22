@@ -27,7 +27,7 @@
 
 Client_Impl::Client_Impl( Reactor* __reactor,const easy_char* __host,easy_uint32 __port /*= 9876*/ ) : Event_Handle_Cli(__reactor,__host,__port)
 {
-	ring_buf_ = new easy::EasyRingbuffer<unsigned char,easy::alloc,easy::mutex_lock>(1024*64*100);
+	ring_buf_ = new easy::EasyRingbuffer<unsigned char,easy::alloc,easy::mutex_lock>(1024*8);
 	//	start read thread
 	auto __thread_ = std::thread(CC_CALLBACK_0(Client_Impl::_read_thread,this));
 	__thread_.detach();

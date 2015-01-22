@@ -46,7 +46,7 @@
 
 Event_Handle_Cli::Event_Handle_Cli(Reactor* __reactor,const easy_char* __host,easy_uint32 __port) : Event_Handle(__reactor),host_(__host),port_(__port)
 {
-	_init();
+	_init(__port);
 	reactor()->reactor_impl()->register_handle(this,get_handle(),kMaskConnect);
 };
 
