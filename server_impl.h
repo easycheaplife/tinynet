@@ -133,7 +133,10 @@ public:
 	//	is proxy server
 	virtual easy_bool is_proxy() { return false; }
 
-protected:
+	//	is login server,just for test
+	virtual easy_bool is_login() { return false; }
+
+//protected:
 	//	send packet to special connection
 	void send_packet(easy_int32 __fd,const easy_char* __packet,easy_int32 __length);
 

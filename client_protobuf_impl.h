@@ -35,6 +35,8 @@ public:
 
 	void on_read(easy_int32 __fd);
 
+	virtual easy_bool is_proxy_client() { return false; }
+
 	virtual easy_int32 handle_packet(easy_int32 __fd,const std::string& __string_packet) = 0;
 
 private:

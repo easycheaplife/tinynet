@@ -90,25 +90,34 @@ void Client_Impl::on_read( easy_int32 __fd )
 void Client_Impl::_read_thread()
 {
 	static const easy_int32 __sleep_time = 1000*100;
-	static const easy_int32 __head_size = sizeof(easy_int16);
+	static const easy_int32 __head_size = sizeof(easy_uint32);
 	std::string 	 __string_packet;
 	while (true)
 	{
-		easy_int16 __packet_length = 0;
+		easy_uint32 __packet_length = 0;
 		if(!ring_buf_->peek((unsigned char*)&__packet_length,__head_size))
 		{
 			easy::Util::sleep(__sleep_time);
 			continue;
 		}
-		if(!__packet_length)
+		easy_uint16 __real_packet_length = __packet_length & 0x0000ffff;
+		easy_uint16 __real_fd = __packet_length >> 16;
+		if(!__real_packet_length)
 		{
 			printf("__packet_length error\n");
 			continue;
 		}
 		__string_packet.clear();
-		if(ring_buf_->read(__string_packet,__packet_length + __head_size))
+		if(ring_buf_->read(__string_packet,__real_packet_length + __head_size))
 		{
-			handle_packet(get_handle(),__string_packet.c_str() + __head_size);
+			if(is_proxy_client())
+			{
+				handle_packet(__real_fd,__string_packet.c_str() + __head_size);
+			}
+			else
+			{
+				handle_packet(get_handle(),__string_packet.c_str() + __head_size);
+			}
 		}
 		else
 		{
