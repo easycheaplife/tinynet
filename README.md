@@ -38,6 +38,32 @@ usage:
 
 		~Srv_Test();
 	};
+	Srv_Test::Srv_Test(Reactor* __reactor,const easy_char* __host /*= "0.0.0.0"*/,easy_uint32 __port/* = 9876*/)
+		: Server_Impl(__reactor,__host,__port) 
+	{
+
+	}
+
+	Srv_Test::~Srv_Test()
+	{
+
+	}
+
+	easy_int32 Srv_Test::handle_packet( easy_int32 __fd,const easy_char* __packet,easy_int32 __length )
+	{
+		send_packet(__fd,__packet,__length);
+		return -1;
+	}
+
+	void Srv_Test::connected( easy_int32 __fd )
+	{
+		printf("connected __fd = %d \n",__fd);
+	}
+
+	void Srv_Test::dis_connected( easy_int32 __fd )
+	{
+		printf("dis_connected __fd = %d \n",__fd);
+	}
 	easy_int32 main(easy_int32 __arg_num,easy_char** args)
 	{
 		if(3 != __arg_num)
@@ -63,6 +89,24 @@ usage:
 
 		~Cli_Test();
 	};
+	
+	Cli_Test::Cli_Test( Reactor* __reactor,const easy_char* __host,easy_uint32 __port /*= 9876*/ )
+		: Client_Impl(__reactor,__host,__port)
+	{
+
+	}
+
+	easy_int32 Cli_Test::handle_packet( const easy_char* __packet,easy_int32 __length )
+	{
+		Event_Handle_Cli::write(__packet,__length);
+		return -1;
+	}
+
+	Cli_Test::~Cli_Test()
+	{
+
+	}
+
 	int main(int argc, char* argv[])
 	{
 		/*
