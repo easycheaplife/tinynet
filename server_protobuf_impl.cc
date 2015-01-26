@@ -39,7 +39,6 @@
 #endif // __LINUX
 #include "server_impl.h"
 #include "easy_util.h"
-#include "transfer.pb.h"
 #include "packet_handle.h"
 
 #define CC_CALLBACK_0(__selector__,__target__, ...) std::bind(&__selector__,__target__, ##__VA_ARGS__)
@@ -62,7 +61,9 @@ void Server_Impl::on_connected( easy_int32 __fd )
 {
 #ifndef __HAVE_IOCP
 	//	proxy server do not need manager connection information
+#if 0
 	if (!is_proxy())
+#endif
 	{
 		lock_.acquire_lock();
 		connects_[__fd] = buffer_queue_.allocate(__fd,max_buffer_size_);
@@ -76,7 +77,7 @@ void Server_Impl::on_connected( easy_int32 __fd )
 
 void Server_Impl::on_read( easy_int32 __fd )
 {
-	if(is_proxy())
+	if(/*is_proxy()*/false)
 	{
 		_read_directly(__fd);
 	}
@@ -195,7 +196,7 @@ void Server_Impl::_read_directly(easy_int32 __fd)
 void Server_Impl::_read_thread()
 {
 	std::string 	 __string_packet;
-	static const easy_int32 __head_size = sizeof(easy_uint16);
+	static const easy_int32 __head_size = sizeof(easy_uint32);
 	easy_char __read_buf[max_buffer_size_] = {};
 	while (true)
 	{
@@ -212,7 +213,7 @@ void Server_Impl::_read_thread()
 				}
 				while (!__input->read_finish())
 				{
-					easy_uint16 __packet_length = 0;
+					easy_uint32 __packet_length = 0;
 					if(__input->read_finish())
 					{
 						break;
@@ -222,22 +223,31 @@ void Server_Impl::_read_thread()
 						//	not enough data for read
 						break;
 					}
-					if(!__packet_length || __packet_length > __input->size())
+					easy_uint16 __real_packet_length = __packet_length & 0x0000ffff;
+					if(!__real_packet_length || __real_packet_length > __input->size())
 					{
-						printf("__packet_length error %d\n",__packet_length);
+						printf("__packet_length error %d\n",__real_packet_length);
 						break;
 					}
 					memset(__read_buf,0,max_buffer_size_);
-					if (__packet_length + __head_size > max_buffer_size_)
+					if (__real_packet_length + __head_size > max_buffer_size_)
 					{
-						printf("__packet_length + __head_size error %d\n",__packet_length);
+						printf("__packet_length + __head_size error %d\n",__real_packet_length);
 						break;
 					}
 					__string_packet.clear();
-					if(__input->read(__string_packet,__packet_length + __head_size))
+					if(__input->read(__string_packet,__real_packet_length + __head_size))
 					{
 #ifdef __TEST
-						__output->append((easy_uint8*)__string_packet.c_str(),__packet_length + __head_size);
+						if(is_login() || is_proxy())
+						{
+							handle_packet((*__it)->fd_,__string_packet.c_str() + __head_size);
+						}
+						else
+						{
+							//	return intact
+							__output->append((easy_uint8*)__string_packet.c_str(),__real_packet_length + __head_size);
+						}
 #else
 						handle_packet((*__it)->fd_,__string_packet.c_str() + __head_size);
 #endif //__TEST
