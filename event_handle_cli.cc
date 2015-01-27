@@ -213,7 +213,7 @@ void Event_Handle_Cli::_get_usable( easy_int32 __fd, easy_ulong& __usable_size)
 #endif //__WINDOWS
 }
 
-easy_int32 Event_Handle_Cli::read( easy_int32 __fd,easy_char* __buf, easy_int32 __length )
+easy_int32 Event_Handle_Cli::read( easy_int32 __fd,easy_char* __buf, easy_int32 __length,easy_int32 __flags/* = 0*/ )
 {
 	easy_int32 __recv_size = recv(__fd,__buf,__length,0);
 	if(0 == __recv_size)

@@ -50,7 +50,7 @@ public:
 	void write(std::string& __data);
 
 	//	read data from network cache
-	easy_int32	read(easy_int32 __fd,easy_char* __buf, easy_int32 __length); 
+	easy_int32	read(easy_int32 __fd,easy_char* __buf, easy_int32 __length,easy_int32 __flags = 0); 
 
 public:
 	//	pure virtual function, subclass must define it.
