@@ -32,7 +32,7 @@ public:
 	easy_int32 handle_packet(easy_int32 __fd,const easy_char* __packet,easy_int32 __length);
 
 	//	for protobuf,just return
-	easy_int32 handle_packet(easy_int32 __fd,const std::string& __string_packet) { return -1;}
+	easy_int32 handle_packet(easy_int32 __fd,const std::string& __string_packet,void* __user_data) { return -1;}
 
 	void connected(easy_int32 __fd);
 
