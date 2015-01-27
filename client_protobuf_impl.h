@@ -37,7 +37,7 @@ public:
 
 	virtual easy_bool is_proxy_client() { return false; }
 
-	virtual easy_int32 handle_packet(easy_int32 __fd,const std::string& __string_packet) = 0;
+	virtual easy_int32 handle_packet(easy_int32 __fd,const std::string& __string_packet,void* __user_data) = 0;
 
 private:
 	void	_read_thread();

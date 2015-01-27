@@ -122,7 +122,7 @@ public:
 	virtual easy_int32 handle_packet(easy_int32 __fd,const easy_char* __packet,easy_int32 __length) = 0;
 
 	//	for protobuf
-	virtual easy_int32 handle_packet(easy_int32 __fd,const std::string& __string_packet) = 0;
+	virtual easy_int32 handle_packet(easy_int32 __fd,const std::string& __string_packet,void* __user_data) = 0;
 
 	//	called at a connection coming
 	virtual	void connected(easy_int32 __fd) = 0;
