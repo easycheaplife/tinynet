@@ -80,9 +80,6 @@ easy_int32 Event_Handle_Srv::handle_input(easy_int32 __fd)
 
 easy_int32 Event_Handle_Srv::handle_output(easy_int32 __fd)
 {
-#ifdef __DEBUG
-	printf("handle_outputd\n");
-#endif //__DEBUG
 	//	test data, if open it, it will cause something wrong
 #if 0
 	static easy_int32 __data = 0;
