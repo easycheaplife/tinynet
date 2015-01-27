@@ -112,11 +112,11 @@ void Client_Impl::_read_thread()
 		{
 			if(is_proxy_client())
 			{
-				handle_packet(__real_fd,__string_packet.c_str() + __head_size);
+				handle_packet(__real_fd,__string_packet.c_str() + __head_size,easy_null);
 			}
 			else
 			{
-				handle_packet(get_handle(),__string_packet.c_str() + __head_size);
+				handle_packet(get_handle(),__string_packet.c_str() + __head_size,easy_null);
 			}
 		}
 		else

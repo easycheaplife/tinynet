@@ -94,7 +94,7 @@ easy_int32 Server_Impl::on_packet(easy_int32 __fd,const easy_char* __packet,easy
 
 easy_int32 Server_Impl::on_packet( easy_int32 __fd,const std::string& __string_packet)
 {
-	handle_packet(__fd,__string_packet);
+	handle_packet(__fd,__string_packet,easy_null);
 	return -1;
 }
 
@@ -224,6 +224,7 @@ void Server_Impl::_read_thread()
 						break;
 					}
 					easy_uint16 __real_packet_length = __packet_length & 0x0000ffff;
+					easy_uint16 __real_fd = __packet_length >> 16;
 					if(!__real_packet_length || __real_packet_length > __input->size())
 					{
 						printf("__packet_length error %d\n",__real_packet_length);
@@ -241,7 +242,7 @@ void Server_Impl::_read_thread()
 #ifdef __TEST
 						if(is_login() || is_proxy())
 						{
-							handle_packet((*__it)->fd_,__string_packet.c_str() + __head_size);
+							handle_packet((*__it)->fd_,__string_packet.c_str() + __head_size,&__real_fd);
 						}
 						else
 						{
@@ -249,7 +250,7 @@ void Server_Impl::_read_thread()
 							__output->append((easy_uint8*)__string_packet.c_str(),__real_packet_length + __head_size);
 						}
 #else
-						handle_packet((*__it)->fd_,__string_packet.c_str() + __head_size);
+						handle_packet((*__it)->fd_,__string_packet.c_str() + __head_size,&__real_fd);
 #endif //__TEST
 					}
 					else
