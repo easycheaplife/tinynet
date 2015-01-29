@@ -112,6 +112,7 @@ void Event_Handle_Cli::_init(easy_uint32 __port)
 		perror("error at connect");
 		exit(1);
 	}
+	_set_noblock(fd_);
 }
 
 void Event_Handle_Cli::_set_noblock(easy_int32 __fd)
@@ -215,27 +216,36 @@ void Event_Handle_Cli::_get_usable( easy_int32 __fd, easy_ulong& __usable_size)
 
 easy_int32 Event_Handle_Cli::read( easy_int32 __fd,easy_char* __buf, easy_int32 __length,easy_int32 __flags/* = 0*/ )
 {
-	easy_int32 __recv_size = recv(__fd,__buf,__length,0);
+	if (0 == __length)
+	{
+		return 0;
+	}
+	easy_int32 __recv_size = recv(__fd,__buf,__length,__flags);
+	//	These calls return the number of bytes received, or -1 if an error occurred.  
+	//	The return value will be 0 when the peer has performed an orderly shutdown
 	if(0 == __recv_size)
 	{
-		
+		//	socket close *,errno 11
+		reactor()->reactor_impl()->handle_close(__fd);
 	}
 	else if (-1 == __recv_size)
 	{
 #if defined __WINDOWS || defined WIN32
-		easy_ulong __last_error = ::GetLastError();
+		DWORD __last_error = ::GetLastError();
 		if(WSAEWOULDBLOCK  == __last_error)
 		{
-			//	close peer socket
+			printf("recv error at %d\n",__last_error);
 		}
-		closesocket(fd_);
 #elif defined __LINUX || defined __MACX
 		if(EAGAIN == errno || EWOULDBLOCK == errno)
 		{
-
+			printf("recv errno %d\n",errno);
 		}
-		close(fd_);
-#endif //__LINUX
+#endif //__WINDOWS
+		else
+		{
+			reactor()->reactor_impl()->handle_close(__fd);
+		}
 	}
 	return __recv_size;
 }

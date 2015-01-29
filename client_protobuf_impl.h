@@ -42,8 +42,16 @@ public:
 private:
 	void	_read_thread();
 
+	void	_read_directly(easy_int32 __fd);
+
 private:
 	easy::EasyRingbuffer<easy_uint8,easy::alloc,easy::mutex_lock>* ring_buf_;
+
+	//	the max size of read/write buffer
+	static const easy_uint32		max_buffer_size_;
+
+	//	the max time of read/write sleep time
+	static const easy_uint32		max_sleep_time_;
 
 };
 
