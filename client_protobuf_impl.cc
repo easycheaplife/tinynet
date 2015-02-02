@@ -19,6 +19,10 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
  ****************************************************************************/
+#if defined __LINUX || defined __MACX
+#include <sys/socket.h>
+#include <unistd.h>
+#endif // __LINUX
 #include <thread>
 #include "client_protobuf_impl.h"
 #include "easy_byte_buffer.h"
