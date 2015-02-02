@@ -80,7 +80,7 @@ void Client_Impl::on_read( easy_int32 __fd )
 			__read_bytes = Event_Handle_Cli::read(__fd,(easy_char*)ring_buf_->buffer(),__ring_buf_head_left);
 			if(-1 != __read_bytes && 0 != __read_bytes)
 			{
-				ring_buf_->set_wpos(__ring_buf_head_left);
+				ring_buf_->set_wpos(__read_bytes);
 			}
 			//	not read completely from system cache, read next read event.
 		}
