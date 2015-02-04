@@ -298,7 +298,9 @@ void Server_Impl::_write_thread()
 					__write_bytes = write(__fd,(const easy_char*)__output->buffer() + __output->rpos(),__read_left);
 					if (-1 != __write_bytes && 0 != __write_bytes)
 					{
-						__output->set_rpos(__output->wpos());
+						//	fix #20005,old version:__output->set_rpos(__output->wpos()); 
+						//	__output->wpos() may be change when __output->set_rpos called.
+						__output->set_rpos(__output->rpos() + __write_bytes);
 					}
 				}
 				else if(__output->wpos() < __output->rpos())
@@ -313,7 +315,8 @@ void Server_Impl::_write_thread()
 					__write_bytes = write(__fd,(const easy_char*)__output->buffer(),__wpos);
 					if (-1 != __write_bytes && 0 != __write_bytes)
 					{
-						__output->set_rpos(__output->wpos());
+						//	fix #20005,old version:__output->set_rpos(__output->wpos());
+						__output->set_rpos(__write_bytes);
 					}
 				}
 				++__it;
