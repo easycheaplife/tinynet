@@ -33,7 +33,7 @@
 #define CC_CALLBACK_0(__selector__,__target__, ...) std::bind(&__selector__,__target__, ##__VA_ARGS__)
 
 const easy_uint32 Server_Impl::max_buffer_size_ = 1024*8;
-const easy_uint32 Server_Impl::max_sleep_time_ = 1000*500;
+const easy_uint32 Server_Impl::max_sleep_time_ = 1000*100;
 
 Server_Impl::Server_Impl( Reactor* __reactor,const easy_char* __host ,easy_uint32 __port  )
 	: Event_Handle_Srv(__reactor,__host,__port) 
@@ -255,7 +255,7 @@ void Server_Impl::_write_thread()
 					__write_bytes = write(__fd,(const easy_char*)__output->buffer() + __output->rpos(),__read_left);
 					if (-1 != __write_bytes && 0 != __write_bytes)
 					{
-						__output->set_rpos(__output->wpos());
+						__output->set_rpos(__output->rpos() + __write_bytes);
 					}
 				}
 				else if(__output->wpos() < __output->rpos())
@@ -270,7 +270,7 @@ void Server_Impl::_write_thread()
 					__write_bytes = write(__fd,(const easy_char*)__output->buffer(),__wpos);
 					if (-1 != __write_bytes && 0 != __write_bytes)
 					{
-						__output->set_rpos(__output->wpos());
+						__output->set_rpos(__write_bytes);
 					}
 				}
 				++__it;

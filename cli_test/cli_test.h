@@ -30,6 +30,8 @@ public:
 
 	easy_int32 handle_packet(const easy_char* __packet,easy_int32 __length);
 
+	void send_test_msg();
+
 	~Cli_Test();
 };
 
