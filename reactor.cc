@@ -35,8 +35,14 @@
 Reactor* Reactor::reactor_ = 0;
 #endif // __REACTOR_SINGLETON
 
-Reactor::Reactor()
+Reactor::Reactor(easy_bool __is_client)
 {
+	//	special usage for client
+	if (__is_client)
+	{
+		reactor_impl_ = new Reactor_Impl_Select();
+		return;
+	}
 #if defined   __HAVE_IOCP
 	reactor_impl_ = new Reactor_Impl_Iocp();
 #elif defined  __HAVE_SELECT || defined WIN32
