@@ -23,13 +23,12 @@
 
 #if  defined __HAVE_IOCP
 #include "reactor_impl_iocp.h"
-#elif defined  __HAVE_SELECT || defined WIN32 || defined __LINUX || defined __MAC
-#include "reactor_impl_select.h"
 #elif defined __HAVE_EPOLL
 #include "reactor_impl_epoll.h"
 #elif defined __HAVE_POLL
 #include "reactor_impl_poll.h"
 #endif 
+#include "reactor_impl_select.h"
 
 #ifdef __REACTOR_SINGLETON
 Reactor* Reactor::reactor_ = 0;
