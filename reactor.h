@@ -25,7 +25,7 @@ class Reactor_Impl;
 class Reactor
 {
 public:
-	Reactor();
+	Reactor(easy_bool __is_client = false);
 	
 	~Reactor();
 #ifdef __REACTOR_SINGLETON
