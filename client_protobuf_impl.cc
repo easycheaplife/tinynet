@@ -48,7 +48,7 @@ Client_Impl::~Client_Impl()
 
 void Client_Impl::on_read( easy_int32 __fd )
 {
-#if 1
+#if 0
 	//	the follow code is ring_buf's append function actually.
 	easy_ulong __usable_size = 0;
 	_get_usable(__fd,__usable_size);
@@ -70,7 +70,7 @@ void Client_Impl::on_read( easy_int32 __fd )
 			ring_buf_->set_wpos(ring_buf_->wpos() + __read_bytes);
 		}
 		easy_int32 __ring_buf_head_left = ring_buf_->rpos();
-		easy_int32 __read_left = __usable_size - __ring_buf_tail_left;
+		easy_int32 __read_left = __usable_size - __read_bytes;
 		if(__ring_buf_head_left > __read_left)
 		{
 			__read_bytes = Event_Handle_Cli::read(__fd,(easy_char*)ring_buf_->buffer(),__read_left);
@@ -96,6 +96,9 @@ void Client_Impl::on_read( easy_int32 __fd )
 
 void Client_Impl::_read_thread()
 {
+#if 1;
+	return;
+#endif
 	static const easy_int32 __head_size = sizeof(easy_uint32);
 	std::string 	 __string_packet;
 	while (true)
@@ -124,11 +127,6 @@ void Client_Impl::_read_thread()
 			{
 				handle_packet(get_handle(),__string_packet.c_str() + __head_size,easy_null);
 			}
-		}
-		else
-		{
-			easy::Util::sleep(max_sleep_time_);
-			continue;
 		}
 		easy::Util::sleep(max_sleep_time_);
 	}
