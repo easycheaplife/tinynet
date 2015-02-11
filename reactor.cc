@@ -23,12 +23,13 @@
 
 #if  defined __HAVE_IOCP
 #include "reactor_impl_iocp.h"
+#elif defined  __HAVE_SELECT || defined WIN32
+#include "reactor_impl_select.h"
 #elif defined __HAVE_EPOLL
 #include "reactor_impl_epoll.h"
 #elif defined __HAVE_POLL
 #include "reactor_impl_poll.h"
 #endif 
-#include "reactor_impl_select.h"
 
 #ifdef __REACTOR_SINGLETON
 Reactor* Reactor::reactor_ = 0;
@@ -36,12 +37,6 @@ Reactor* Reactor::reactor_ = 0;
 
 Reactor::Reactor(easy_bool __is_client)
 {
-	//	special usage for client
-	if (__is_client)
-	{
-		reactor_impl_ = new Reactor_Impl_Select();
-		return;
-	}
 #if defined   __HAVE_IOCP
 	reactor_impl_ = new Reactor_Impl_Iocp();
 #elif defined  __HAVE_SELECT || defined WIN32
