@@ -96,7 +96,7 @@ void Client_Impl::on_read( easy_int32 __fd )
 
 void Client_Impl::_read_thread()
 {
-#if 1;
+#if 1
 	return;
 #endif
 	static const easy_int32 __head_size = sizeof(easy_uint32);
