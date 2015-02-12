@@ -1,6 +1,7 @@
 #include "socket_ex.h"
-#if defined __WINDOWS || defined WIN32
 #include <stdio.h>
+#include <stdlib.h>
+#if defined __WINDOWS || defined WIN32
 #include <WinSock2.h>
 #elif defined __LINUX || defined __MACX
 #include <sys/socket.h>
