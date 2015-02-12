@@ -27,7 +27,7 @@
 #elif defined __LINUX || defined __MACX
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <fcntl.h>
+
 #include <strings.h>
 #include <string.h>
 #include <errno.h>
@@ -39,8 +39,9 @@
 #endif //   __WINDOWS
 
 #include "event_handle_srv.h"
-#include "reactor_impl_select.h"
+#include "reactor_impl.h"
 #include "reactor.h"
+#include "socket_ex.h"
 
 Event_Handle_Srv::Event_Handle_Srv(Reactor* __reactor,const easy_char* __host,easy_uint32 __port) : Event_Handle(__reactor),host_(__host),port_(__port)
 {
@@ -210,65 +211,23 @@ void Event_Handle_Srv::_init()
 
 void Event_Handle_Srv::_set_noblock(easy_int32 __fd)
 {
-#if defined __WINDOWS || defined WIN32
-	unsigned long __non_block = 1;
-	if (SOCKET_ERROR == ioctlsocket(__fd, FIONBIO, &__non_block))
-	{
-		printf("_set_noblock() error at ioctlsocket,error code = %d\n", WSAGetLastError());
-	}
-#elif defined __LINUX || defined __MACX
-	easy_int32 __opts = fcntl(__fd,F_GETFL);  
-	if(0 > __opts)  
-    	{  
-      		perror("error at fcntl(sock,F_GETFL)");  
-       		exit(1);  
-    	}  
-	 __opts = __opts | O_NONBLOCK;  
-	if( 0 > fcntl(__fd,F_SETFL,__opts) )  
-	{  
-       		perror("error at fcntl(sock,F_SETFL)");  
-       		exit(1);  
-   	}  
-#endif //__WINDOWS
+	Socket_Ex::set_noblock(__fd);
 }
 
 
 void Event_Handle_Srv::_set_reuse_addr(easy_int32 __fd)
 {
-	easy_int32 __option_name = 1;
-	if(setsockopt(__fd, SOL_SOCKET, SO_REUSEADDR, (easy_char*)&__option_name, sizeof(easy_int32)) == -1)  
-	{  
-		perror("setsockopt SO_REUSEADDR");  
-		exit(1);  
-	}  
+	Socket_Ex::set_reuse_addr(__fd);
 }
 
 void Event_Handle_Srv::_set_no_delay(easy_int32 __fd)
 {
-#if defined __WINDOWS || defined WIN32
-	//	The Nagle algorithm is disabled if the TCP_NODELAY option is enabled 
-	easy_int32 __no_delay = TRUE;
-	if(SOCKET_ERROR == setsockopt( __fd, IPPROTO_TCP, TCP_NODELAY, (easy_char*)&__no_delay, sizeof(int)))
-	{
-		perror("setsockopt TCP_NODELAY ");  
-		exit(1);  
-	}
-#endif //__WINDOWS
+	Socket_Ex::set_no_delay(__fd);
 }
 
 void Event_Handle_Srv::_get_usable( easy_int32 __fd, easy_ulong& __usable_size)
 {
-#if defined __WINDOWS || defined WIN32
-	if(SOCKET_ERROR == ioctlsocket(__fd, FIONREAD, &__usable_size))
-	{
-		printf("ioctlsocket failed with error %d\n", WSAGetLastError());
-	}
-#elif defined __LINUX || defined __MACX
-	if(ioctl(__fd,FIONREAD,&__usable_size))
-	{
-		perror("ioctl FIONREAD");
-	}
-#endif //__LINUX
+	Socket_Ex::get_usable(__fd,__usable_size);
 }
 
 
@@ -279,80 +238,17 @@ void Event_Handle_Srv::broadcast(easy_int32 __fd,const easy_char* __data,easy_ui
 
 easy_int32 Event_Handle_Srv::read( easy_int32 __fd,easy_char* __buf, easy_int32 __length, easy_int32 __flags/* = 0*/ )
 {
-	if (0 == __length)
-	{
-		return 0;
-	}
-	easy_int32 __recv_size = recv(__fd,__buf,__length,__flags);
-	//	These calls return the number of bytes received, or -1 if an error occurred.  
-	//	The return value will be 0 when the peer has performed an orderly shutdown
-	if(0 == __recv_size)
-	{
-		//	socket close *,errno 11
-		reactor()->reactor_impl()->handle_close(__fd);
-	}
-	else if (-1 == __recv_size)
-	{
-#if defined __WINDOWS || defined WIN32
-		DWORD __last_error = ::GetLastError();
-		if(WSAEWOULDBLOCK  == __last_error)
-		{
-			printf("recv error at %d\n",__last_error);
-		}
-#elif defined __LINUX || defined __MACX
-		if(EAGAIN == errno || EWOULDBLOCK == errno)
-		{
-			printf("recv errno %d\n",errno);
-		}
-#endif //__WINDOWS
-		else
-		{
-			reactor()->reactor_impl()->handle_close(__fd);
-		}
-	}
-	return __recv_size;
+	return Event_Handle::read(__fd,__buf,__length,__flags);
 }
 
 easy_int32 Event_Handle_Srv::read_zero_copy(easy_int32 __fd,easy_char* __buf, easy_int32 __length,easy_int32 __flags /*= 0*/)
 {
-	return read(__fd,__buf,__length,__flags);
+	return Event_Handle::read(__fd,__buf,__length,__flags);
 }
 
 easy_int32 Event_Handle_Srv::write( easy_int32 __fd,const easy_char* __data, easy_int32 __length )
 {
-#ifndef __HAVE_IOCP
-	if (0 == __length)
-	{
-		return 0;
-	}
-	easy_int32 __send_bytes = send(__fd,__data,__length,0);
-	if(-1 == __send_bytes)
-	{
-#if defined __WINDOWS || defined WIN32
-		DWORD __last_error = ::GetLastError();
-		if(WSAEWOULDBLOCK  == __last_error)
-		{	
-			printf("send error at %d\n",__last_error);
-		}
-#elif defined __LINUX || defined __MACX
-		//error happend but EAGAIN and EWOULDBLOCK meams that peer socket have been close
-		//EWOULDBLOCK means messages are available at the socket and O_NONBLOCK  is set on the socket's file descriptor
-		// ECONNRESET means an existing connection was forcibly closed by the remote host
-		if((EAGAIN == errno && EWOULDBLOCK == errno))
-		{
-			printf("send errno %d\n",errno);
-		}
-#endif // __WINDOWS
-		else
-		{
-		//	close peer socket
-			reactor()->reactor_impl()->handle_close(__fd);
-		}
-	}
-	return __send_bytes;
-#else
-	return reactor()->reactor_impl()->handle_packet(__fd,__data,__length);
-#endif // __HAVE_IOCP
+	return Event_Handle::write(__fd,__data,__length);
 }
 
 

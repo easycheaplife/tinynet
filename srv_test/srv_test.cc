@@ -74,18 +74,10 @@ easy_int32 main(easy_int32 __arg_num,easy_char** args)
 #endif // __LINUX
 	easy_char* __host = args[1];
 	easy_uint32 __port = atoi(args[2]);
-#ifdef __REACTOR_SINGLETON
-	Reactor* __reactor = Reactor::instance();
-#else
 	Reactor* __reactor = new Reactor();
-#endif // __REACTOR_SINGLETON
 	Srv_Test __srv_test(__reactor,__host,__port);
 	static const easy_int32 __max_time_out = 5000*1000;
 	__reactor->event_loop(__max_time_out);
-#ifdef __REACTOR_SINGLETON
-	delete __reactor;
-	__reactor = NULL;
-#endif // __REACTOR_SINGLETON
 	return 0;
 }
 

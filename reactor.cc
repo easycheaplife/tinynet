@@ -31,10 +31,6 @@
 #include "reactor_impl_poll.h"
 #endif 
 
-#ifdef __REACTOR_SINGLETON
-Reactor* Reactor::reactor_ = 0;
-#endif // __REACTOR_SINGLETON
-
 Reactor::Reactor(easy_bool __is_client)
 {
 #if defined   __HAVE_IOCP
@@ -56,25 +52,6 @@ Reactor::~Reactor()
 		reactor_impl_ = NULL;
 	}
 }
-#ifdef __REACTOR_SINGLETON
-Reactor* Reactor::instance()
-{
-	if( 0 ==  Reactor::reactor_)
-	{
-		Reactor::reactor_ = new Reactor();
-	}
-	return Reactor::reactor_;
-}
-
-void Reactor::destory()
-{
-	if(reactor_)
-	{
-		delete reactor_;
-		reactor_ = NULL;
-	}
-}
-#endif // __REACTOR_SINGLETON
 
 easy_int32 Reactor::register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask)
 {
