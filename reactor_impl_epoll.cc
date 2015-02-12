@@ -83,29 +83,29 @@ easy_int32 Reactor_Impl_Epoll::event_loop(easy_ulong __millisecond)
 		if( -1 == __nfds )
 		{
 			  //	for gdb
-			  if(EINTR == errno)
-			  {
-					 perror("signal EINTR received,ignore it!");
-					continue;
-			  }
-		      perror("epoll_wait error");
-			  printf("errno=%d\n",errno);
-		      exit(EXIT_FAILURE);
+			if(EINTR == errno)
+			{
+				perror("signal EINTR received,ignore it!");
+				continue;
+			}
+		    perror("epoll_wait error");
+			printf("errno=%d\n",errno);
+		    exit(EXIT_FAILURE);
 		}
 		for(easy_int32 __i = 0; __i < __nfds; ++__i)
 		{
-		      if (events_[__i].data.fd == fd_) 
-		      {
+			if (events_[__i].data.fd == fd_) 
+		    {
 			    handle_->handle_input(fd_);
-		      }
-		      else if(events_[__i].events&EPOLLIN)  
-		      {
-			  handle_->handle_input(events_[__i].data.fd);
-		      }
-		      else if(events_[__i].events&EPOLLOUT)  
-		      {
-			  handle_->handle_output(events_[__i].data.fd);
-		      }
+		    }
+		    else if(events_[__i].events&EPOLLIN)  
+		    {
+				handle_->handle_input(events_[__i].data.fd);
+		    }
+		    else if(events_[__i].events&EPOLLOUT)  
+		    {
+				handle_->handle_output(events_[__i].data.fd);
+		    }
 		}
 	}	
 	return -1;
