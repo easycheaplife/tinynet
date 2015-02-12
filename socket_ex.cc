@@ -5,7 +5,7 @@
 #elif defined __LINUX || defined __MACX
 #include <sys/socket.h>
 #include <netinet/in.h>
-
+#include <fcntl.h>
 #include <strings.h>
 #include <string.h>
 #include <errno.h>
