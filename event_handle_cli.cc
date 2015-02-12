@@ -32,6 +32,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <fcntl.h>
+#include <stdio.h>
 #include <strings.h>
 #include <string.h>
 #include <arpa/inet.h>
