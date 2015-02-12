@@ -181,29 +181,7 @@ easy_int32 Reactor_Impl_Select::event_loop(easy_ulong __millisecond)
 
 void Reactor_Impl_Select::broadcast(easy_int32 __fd,const easy_char* __data,easy_uint32 __length)
 {
-	for (std::vector<Event_Handle_Data*>::iterator __it = events_.begin(); __it != events_.end(); ++__it)
-	{
-		if(*__it)
-		{
-			if (0)
-			{
-				//	except me
-				if(__fd == (*__it)->fd_)
-				{
-					continue;
-				}
-				else
-				{
-					(*__it)->event_handle_->write((*__it)->fd_,__data,__length);
-				}
-			}
-			else
-			{
-				//	all
-				(*__it)->event_handle_->write((*__it)->fd_,__data,__length);
-			}
-		}
-	}
+
 }
 
 easy_int32 Reactor_Impl_Select::handle_close( easy_int32 __fd )

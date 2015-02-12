@@ -28,11 +28,7 @@ public:
 	Reactor(easy_bool __is_client = false);
 	
 	~Reactor();
-#ifdef __REACTOR_SINGLETON
-	static Reactor* instance();
 
-	static void destory();
-#endif // __REACTOR_SINGLETON
 	easy_int32 register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask);
 	
 	easy_int32 remove_handle(Event_Handle* __handle,easy_int32 __mask);
@@ -46,10 +42,6 @@ private:
 	Reactor(const Reactor&);
 	
 	Reactor operator = (const Reactor&);
-
-#ifdef __REACTOR_SINGLETON
-	static Reactor* 				reactor_;
-#endif // __REACTOR_SINGLETON
 
 	Reactor_Impl*					reactor_impl_;
 	

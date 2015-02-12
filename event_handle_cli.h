@@ -45,9 +45,9 @@ public:
 
 	virtual easy_int32 get_handle() const { return fd_;}
 
-	void write(const easy_char* __data,easy_uint32 __length);
+	easy_int32 write(const easy_char* __data,easy_uint32 __length);
 
-	void write(std::string& __data);
+	easy_int32 write(std::string& __data);
 
 	//	read data from network cache
 	easy_int32	read(easy_int32 __fd,easy_char* __buf, easy_int32 __length,easy_int32 __flags = 0); 
