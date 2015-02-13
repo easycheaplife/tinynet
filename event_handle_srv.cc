@@ -23,6 +23,9 @@
 #include <stdlib.h>
 
 #if defined __WINDOWS || defined WIN32
+#ifndef FD_SETSIZE
+#define FD_SETSIZE      1024
+#endif /* FD_SETSIZE */
 #include <WinSock2.h>
 #elif defined __LINUX || defined __MACX
 #include <sys/socket.h>
