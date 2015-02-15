@@ -56,7 +56,9 @@ easy_int32 Reactor_Impl_Select::register_handle(Event_Handle* __handle,easy_int3
 	{
 		if(1 == __connect)
 		{
+			events_lock_.acquire_lock();
 			events_.push_back(new Event_Handle_Data(__fd,__handle));
+			events_lock_.release_lock();
 		}
 	}
 	if(max_fd_ < __fd)
@@ -91,7 +93,7 @@ easy_int32 Reactor_Impl_Select::event_loop(easy_ulong __millisecond)
         __tv.tv_sec = __millisecond/1000/1000;
         __tv.tv_usec = 0;
 #endif //__MACX
-
+		events_lock_.acquire_lock();
 		for (std::vector<Event_Handle_Data*>::iterator __it = events_.begin(); __it != events_.end(); )
 		{
 			if(*__it)
@@ -119,7 +121,7 @@ easy_int32 Reactor_Impl_Select::event_loop(easy_ulong __millisecond)
 				}
 			}
 		}
-
+		events_lock_.release_lock();
 		//	you must set max_fd_ is max use fd under unix/linux system, if not,part of fd will not be detected.
 		//	if write_set_ is not null, that means the write status will be watched to see. 
 		//	FD_SETSIZE = 64 at windows,so the max number of fd is FD_SETSIZE.if you want change it value, define before winsock.h.
@@ -147,7 +149,7 @@ easy_int32 Reactor_Impl_Select::event_loop(easy_ulong __millisecond)
 			handle_->handle_input(fd_);
 			continue;
 		}
-
+		events_lock_.acquire_lock();
 		for (std::vector<Event_Handle_Data*>::iterator __it = events_.begin(); __it != events_.end(); ++__it)
 		{
 			if (*__it)
@@ -173,6 +175,7 @@ easy_int32 Reactor_Impl_Select::event_loop(easy_ulong __millisecond)
 				}
 			}
 		}
+		events_lock_.release_lock();
 		//	fix bug #20003
 		easy::Util::sleep(max_sleep_time_);
 	}
@@ -186,6 +189,7 @@ void Reactor_Impl_Select::broadcast(easy_int32 __fd,const easy_char* __data,easy
 
 easy_int32 Reactor_Impl_Select::handle_close( easy_int32 __fd )
 {
+	events_lock_.acquire_lock();
 	for (std::vector<Event_Handle_Data*>::iterator __it = events_.begin(); __it != events_.end(); ++__it)
 	{
 		if(*__it)
@@ -197,5 +201,6 @@ easy_int32 Reactor_Impl_Select::handle_close( easy_int32 __fd )
 			}
 		}
 	}
+	events_lock_.release_lock();
 	return -1;
 }
