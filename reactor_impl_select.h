@@ -25,7 +25,8 @@
  *  bugs:
  *  #20003	2014-12-08 
  *  if client request very fast, it will occupy all of resource, other thread will get no resource.
- *
+ *	#20006	2015-2-15
+ *	access exception when mulit thread access events_
  */
 /************************************************************************/
 #if defined __WINDOWS || defined WIN32
@@ -43,6 +44,7 @@
 #include <map>
 #include <vector>
 #include "reactor_impl.h"
+#include "easy_lock.h"
 
 //	struct forward declaration 
 struct Event_Handle_Data;
@@ -83,4 +85,7 @@ private:
 	static const easy_uint32		max_sleep_time_;
 
 	std::vector<Event_Handle_Data*>	events_;
+
+	//	fix bugs #20006
+	easy::mutex_lock				events_lock_;
 };

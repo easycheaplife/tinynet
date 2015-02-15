@@ -28,3 +28,11 @@ V 2.0.0
 8 add a sub class srv_test/cli_test from server_impl/client_impl for test,more convenient for using you game server.
 9 adaptive the iocp model at windows,unification api for all model,you do not care about how to implement the model,just use it for everyone. 
 
+2015/2/15
+V 2.1.0
+1 add mac plantform support for using select model.
+2 optimize code, remove repeat code.
+3 fix bug #20005 data lose at write thread.
+4 change the packet head from 16 bits to 32 bits for testing protobuf way.
+5 providing a way to read data from system cache directly replace for using a buffer to cache at application layer.
+6 add a lock for select event_, to avoid event_ accessed by multi thread.

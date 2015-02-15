@@ -152,6 +152,11 @@ void Client_Impl::_read_directly(easy_int32 __fd)
 			printf("__packet_length error\n");
 			break;
 		}
+		if(__real_packet_length > max_buffer_size_)
+		{
+			printf("__packet_length error\n");
+			break;
+		}
 		__read_bytes = Event_Handle_Cli::read(__fd,(easy_char*)__buf,__real_packet_length,MSG_PEEK);
 		if (__read_bytes < __real_packet_length)
 		{
