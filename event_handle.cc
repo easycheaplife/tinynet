@@ -63,7 +63,7 @@ easy_int32 Event_Handle::read( easy_int32 __fd,easy_char* __buf, easy_int32 __le
 	{
 #if defined __WINDOWS || defined WIN32
 		DWORD __last_error = ::GetLastError();
-		if(WSAEWOULDBLOCK  != __last_error)
+		if(WSAEWOULDBLOCK  == __last_error)
 		{
 			//	do nothing
 		}
