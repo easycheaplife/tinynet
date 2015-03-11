@@ -346,7 +346,9 @@ void Server_Impl::on_disconnect( easy_int32 __fd )
 {
 #ifndef __HAVE_IOCP
 	//	proxy server do not need manager connection information
+#if 0
 	if (!is_proxy())
+#endif
 	{
 		map_buffer::iterator __it = connects_.find(__fd);
 		if (__it != connects_.end())
