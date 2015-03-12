@@ -85,7 +85,4 @@ private:
 	static const easy_uint32		max_sleep_time_;
 
 	std::vector<Event_Handle_Data*>	events_;
-
-	//	fix bugs #20006
-	easy::mutex_lock				events_lock_;
 };
