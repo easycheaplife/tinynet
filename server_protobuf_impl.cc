@@ -330,6 +330,8 @@ void Server_Impl::_write_thread()
 void Server_Impl::send_packet( easy_int32 __fd,const easy_char* __packet,easy_int32 __length )
 {
 #ifndef __HAVE_IOCP
+#if 0
+	//	some wrong! data dirty
 	if (connects_[__fd])
 	{
 		if (connects_[__fd]->output_)
@@ -337,6 +339,9 @@ void Server_Impl::send_packet( easy_int32 __fd,const easy_char* __packet,easy_in
 			connects_[__fd]->output_->append((easy_uint8*)__packet,__length);
 		}
 	}
+#else
+	write(__fd,__packet,__length);
+#endif
 #else
 	write(__fd,__packet,__length);
 #endif // __HAVE_IOCP
