@@ -44,7 +44,7 @@
 #define CC_CALLBACK_0(__selector__,__target__, ...) std::bind(&__selector__,__target__, ##__VA_ARGS__)
 
 const easy_uint32 Server_Impl::max_buffer_size_ = 1024*8;
-const easy_uint32 Server_Impl::max_sleep_time_ = 1000*100;
+const easy_uint32 Server_Impl::max_sleep_time_ = 1000*10;
 
 Server_Impl::Server_Impl( Reactor* __reactor,const easy_char* __host,easy_uint32 __port )
 	: Event_Handle_Srv(__reactor,__host,__port) 
