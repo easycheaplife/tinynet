@@ -132,6 +132,11 @@ easy_int32 Reactor_Impl_Select::event_loop(easy_ulong __millisecond)
 				printf("error at select, error code = %d\n",__last_error);
 			}
 #elif defined __LINUX || defined __MACX
+			//	reference from: http://blog.chinaunix.net/uid-25885064-id-3071372.html
+			if (errno == EINTER)
+			{
+				continue;
+			}
 			printf("error at select, error code = %d\n",errno);
 #endif // __WINDOWS
 			exit(1);
