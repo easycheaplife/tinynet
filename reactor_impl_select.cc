@@ -124,14 +124,15 @@ easy_int32 Reactor_Impl_Select::event_loop(easy_ulong __millisecond)
 		easy_int32 __ret = select(max_fd_ + 1,&read_set_,/*&write_set_*/NULL,&excepion_set_,&__tv);
 		if ( -1 == __ret )
 		{
-			perror("error at select");
 #if defined __WINDOWS || defined WIN32
 			DWORD __last_error = ::WSAGetLastError();
 			//	usually some socket is closed, such as closesocket called. it maybe exist a invalid socket.
 			if(WSAENOTSOCK == __last_error)
 			{
-				
+				printf("error at select, error code = %d\n",__last_error);
 			}
+#elif defined __LINUX || defined __MACX
+			printf("error at select, error code = %d\n",errno);
 #endif // __WINDOWS
 			exit(1);
 		}
