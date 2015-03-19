@@ -134,7 +134,7 @@ easy_int32 Reactor_Impl_Select::event_loop(easy_ulong __millisecond)
 			}
 #elif defined __LINUX || defined __MACX
 			//	reference from: http://blog.chinaunix.net/uid-25885064-id-3071372.html
-			if (errno == EINTER)
+			if (errno == EINTR)
 			{
 				continue;
 			}
