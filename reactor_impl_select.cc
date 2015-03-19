@@ -27,7 +27,7 @@
 #include "easy_util.h"
 #include <errno.h>
 
-const easy_uint32 Reactor_Impl_Select::max_sleep_time_ = 1000*100;
+const easy_uint32 Reactor_Impl_Select::max_sleep_time_ = 1000*10;
 
 struct Event_Handle_Data : public easy::my_alloc
 {
