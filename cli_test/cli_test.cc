@@ -33,6 +33,9 @@ Cli_Test::Cli_Test( Reactor* __reactor,const easy_char* __host,easy_uint32 __por
 
 easy_int32 Cli_Test::handle_packet( const easy_char* __packet,easy_int32 __length )
 {
+#ifdef __DEBUG
+	printf("data read: %s\n",__packet);
+#endif // __DEBUG
 	if (0)
 	{
 		Event_Handle_Cli::write(__packet,__length);
@@ -95,6 +98,9 @@ void Cli_Test::send_test_msg()
 	__byte_buffer << __context;
 	write((char*)__byte_buffer.contents(),__byte_buffer.size());
 #endif
+#ifdef __DEBUG
+	printf("data write: %s\n",__context.c_str());
+#endif // __DEBUG
 }
 
 int main(int argc, char* argv[])

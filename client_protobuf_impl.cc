@@ -32,7 +32,7 @@ const easy_uint32 Client_Impl::max_buffer_size_ = 1024*8;
 const easy_uint32 Client_Impl::max_sleep_time_ = 1000*1;
 Client_Impl::Client_Impl( Reactor* __reactor,const easy_char* __host,easy_uint32 __port /*= 9876*/ ) : Event_Handle_Cli(__reactor,__host,__port)
 {
-	ring_buf_ = new easy::EasyRingbuffer<unsigned char,easy::alloc,easy::mutex_lock>(max_buffer_size_);
+	ring_buf_ = new easy::EasyRingbuffer<easy_uint8,easy::alloc,easy::mutex_lock>(max_buffer_size_);
 	//	start read thread
 	auto __thread_ = std::thread(CC_CALLBACK_0(Client_Impl::_read_thread,this));
 	__thread_.detach();
@@ -48,7 +48,7 @@ Client_Impl::~Client_Impl()
 
 void Client_Impl::on_read( easy_int32 __fd )
 {
-#if 0
+#if 1
 	//	the follow code is ring_buf's append function actually.
 	easy_ulong __usable_size = 0;
 	_get_usable(__fd,__usable_size);
@@ -96,9 +96,6 @@ void Client_Impl::on_read( easy_int32 __fd )
 
 void Client_Impl::_read_thread()
 {
-#if 1
-	return;
-#endif
 	static const easy_int32 __head_size = sizeof(easy_uint32);
 	std::string 	 __string_packet;
 	while (true)
