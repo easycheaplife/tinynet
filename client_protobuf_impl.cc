@@ -48,7 +48,7 @@ Client_Impl::~Client_Impl()
 
 void Client_Impl::on_read( easy_int32 __fd )
 {
-#if 1
+#if 0
 	//	the follow code is ring_buf's append function actually.
 	easy_ulong __usable_size = 0;
 	_get_usable(__fd,__usable_size);
@@ -96,6 +96,7 @@ void Client_Impl::on_read( easy_int32 __fd )
 
 void Client_Impl::_read_thread()
 {
+	return;
 	static const easy_int32 __head_size = sizeof(easy_uint32);
 	std::string 	 __string_packet;
 	while (true)
@@ -109,6 +110,11 @@ void Client_Impl::_read_thread()
 		easy_uint16 __real_packet_length = __packet_length & 0x0000ffff;
 		easy_uint16 __real_fd = __packet_length >> 16;
 		if(!__real_packet_length)
+		{
+			printf("__packet_length error\n");
+			continue;
+		}
+		if(__real_packet_length > max_buffer_size_)
 		{
 			printf("__packet_length error\n");
 			continue;
