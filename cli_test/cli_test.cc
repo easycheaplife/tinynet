@@ -34,7 +34,7 @@ Cli_Test::Cli_Test( Reactor* __reactor,const easy_char* __host,easy_uint32 __por
 easy_int32 Cli_Test::handle_packet( const easy_char* __packet,easy_int32 __length )
 {
 #ifdef __DEBUG
-	printf("data read: %s\n",__packet);
+	printf("data read: %s\n",__packet +  sizeof(easy_uint16));
 #endif // __DEBUG
 	if (0)
 	{

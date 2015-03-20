@@ -121,7 +121,6 @@ void Client_Impl::_read_thread()
 			memset(__read_buf,0,__recv_buffer_size);
 			if(ring_buf_->read((unsigned char*)__read_buf,__packet_length + __head_size))
 			{
-				printf("data send: %s\n",__read_buf + __head_size);
 				if (0)
 				{
 					Event_Handle_Cli::write(__read_buf,__packet_length + __head_size);
