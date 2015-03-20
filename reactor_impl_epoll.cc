@@ -41,7 +41,7 @@ Reactor_Impl_Epoll::Reactor_Impl_Epoll()
 
 easy_int32 Reactor_Impl_Epoll::register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask,easy_int32 __connect)
 {
-	if(kMaskAccept ==__mask)
+	if(kMaskAccept ==__mask || kMaskConnect == __mask)
 	{
 		fd_ = __fd;
 		handle_ = __handle;
