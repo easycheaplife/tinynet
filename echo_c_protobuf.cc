@@ -100,38 +100,48 @@ void output(const char* __fmt,...)
 #endif //__DEBUG
 }
 
+bool test_4_send_message(int __sock)
+{
+	int __random_index = 0;
+	char __send_buf[__buf_size];
+	static const int __packet_head_size = sizeof(unsigned int);
+	static transfer::Packet __packet_protobuf;
+	static std::string __string_packet;
+	__random_index = rand()%__random_string_size;
+	//	serialize
+	__packet_protobuf.Clear();
+	__string_packet.clear();
+	__packet_protobuf.set_msg_id(/*MSG_C2S2C_TEST*/65536);
+	__packet_protobuf.set_content(__random_string[__random_index]);
+	__packet_protobuf.SerializeToString(&__string_packet);
+	unsigned short __length = __string_packet.length();
+	memset(__send_buf,0,__buf_size);
+	memcpy(__send_buf,(void*)&__length,__packet_head_size);
+	strcpy(__send_buf + __packet_head_size,__string_packet.c_str());
+	int send_bytes = send(__sock,(void*)__send_buf,__packet_head_size + __length,0);
+	if(-1 != send_bytes)
+	{
+		output("%d bytes send: %s",send_bytes,__random_string[__random_index].c_str());
+		return true;
+	}
+	else
+	{
+		printf("send error,errno = %d,sock %d\n",errno,__sock);
+	}
+	return false;
+}
+
 void test_4_transform_monitor(int sock)
 {
 	srand( (unsigned)time(NULL)); 
-	int __random_index = 0;
-	
-	char __send_buf[__buf_size];
 	char __recv_buf[__buf_size];
-	static const int __packet_head_size = sizeof(unsigned short);
-	transfer::Packet __packet_protobuf;
-	std::string __string_packet;
+	static const int __packet_head_size = sizeof(unsigned int);
+	static transfer::Packet __packet_protobuf;
+	static std::string __string_packet;
+	//	send first message
+	test_4_send_message(sock);
 	for(int __i = 0; ; ++__i)
 	{
-		__random_index = rand()%__random_string_size;
-		//	serialize
-		__packet_protobuf.Clear();
-		__string_packet.clear();
-		__packet_protobuf.set_content(__random_string[__random_index]);
-		__packet_protobuf.SerializeToString(&__string_packet);
-		unsigned short __length = __string_packet.length();
-		memset(__send_buf,0,__buf_size);
-		memcpy(__send_buf,(void*)&__length,__packet_head_size);
-		strcpy(__send_buf + __packet_head_size,__string_packet.c_str());
-		int send_bytes = send(sock,(void*)__send_buf,__packet_head_size + __length,0);
-		if(-1 != send_bytes)
-		{
-			output("%d bytes send: %s",send_bytes,__random_string[__random_index].c_str());
-		}
-		else
-		{
-			printf("send error,errno = %d,sock %d\n",errno,sock);
-			break;
-		}
 		//	receive data
 		unsigned short __length2 = 0;
 		unsigned long __usable_size = 0;
@@ -145,7 +155,7 @@ void test_4_transform_monitor(int sock)
 			usleep(__sleep_time*10);
 			continue;
 		}
-		int recv_bytes = recv(sock,(void*)&__length2,__packet_head_size,0);
+		int recv_bytes = recv(sock,(void*)&__length2,__packet_head_size,MSG_PEEK);
 		if(0 == recv_bytes)
 		{
 			printf("The return value will be 0 when the peer has performed an orderly shutdown,sock %d \n",sock);
@@ -173,13 +183,13 @@ void test_4_transform_monitor(int sock)
 		{
 			perror("ioctl FIONREAD");
 		}
-		if(__usable_size < __length2)
+		if(__usable_size < __length2 + __packet_head_size)
 		{
 			//	not enough,continue;
 			usleep(__sleep_time*10);
 			continue;
 		}
-		recv_bytes = recv(sock,(void*)__recv_buf,__length2,0);
+		recv_bytes = recv(sock,(void*)__recv_buf,__length2 + __packet_head_size,0);
 		if(0 == recv_bytes)
 		{
 			printf("The return value will be 0 when the peer has performed an orderly shutdown,sock %d \n",sock);
@@ -190,7 +200,6 @@ void test_4_transform_monitor(int sock)
 			if(EAGAIN == errno || EWOULDBLOCK == errno)
 			{
 				usleep(__sleep_time*10);
-				output("#4\n");
 				continue;
 			}
 			else
@@ -199,10 +208,15 @@ void test_4_transform_monitor(int sock)
 				break;
 			}
 		}
-		__string_packet = __recv_buf;
+		__string_packet = __recv_buf + __packet_head_size;
 		__packet_protobuf.Clear();
 		__packet_protobuf.ParseFromString(__string_packet);
 		output("%d bytes recv: %s",recv_bytes,__packet_protobuf.content().c_str());
+		//	receive message completely from server,send again!
+		if(!test_4_send_message(sock))
+		{
+			break;
+		}
 		usleep(__sleep_time);
 	}
 }
