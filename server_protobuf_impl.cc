@@ -317,7 +317,7 @@ void Server_Impl::_write_thread()
 			}
 		}
 		lock_.release_lock();
-		easy::Util::sleep(max_sleep_time_);
+		easy::Util::sleep(max_sleep_time_*10);
 	}
 }
 
