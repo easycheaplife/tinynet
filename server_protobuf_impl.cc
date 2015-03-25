@@ -324,8 +324,8 @@ void Server_Impl::_write_thread()
 void Server_Impl::send_packet( easy_int32 __fd,const easy_char* __packet,easy_int32 __length )
 {
 #ifndef __HAVE_IOCP
-#if 1
-	//	some wrong! data dirty
+#if 0
+	//	actually, this solution is bad for write directly(3200+ < 4200+ kbytes) 
 	if (connects_[__fd])
 	{
 		if (connects_[__fd]->output_)
