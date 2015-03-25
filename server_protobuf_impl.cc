@@ -25,7 +25,7 @@
 	$export LD_LIBRARY_PATH=$LD_LIBRARY_PATH../easy/dep/protobuf/src/.libs
 	$../easy/dep/protobuf/src/.libs/protoc -I./ --cpp_out=. transfer.proto
   compile:
-	$g++ -g -Wl,--no-as-needed -std=c++11 -pthread -D__LINUX -D__HAVE_EPOLL -D__TEST -o ./bin/srv_test reactor.h reactor.cc event_handle.h event_handle_srv.h event_handle_srv.cc reactor_impl.h reactor_impl_epoll.h reactor_impl_epoll.cc transfer.pb.h transfer.pb.cc server_impl.h server_protobuf_impl.cc ./srv_test/srv_test.h ./srv_test/srv_test.cc -I. -I../easy/src/base -I../easy/dep/protobuf/src/ -L../easy/dep/protobuf/src/.libs -lprotobuf 
+	$g++ -g -Wl,--no-as-needed -std=c++11 -pthread -D__LINUX -D__HAVE_EPOLL -D__TEST -o ./bin/srv_test reactor.h reactor.cc socket_ex.h socket_ex.cc event_handle.h event_handle.cc event_handle_srv.h event_handle_srv.cc reactor_impl.h reactor_impl_epoll.h reactor_impl_epoll.cc transfer.pb.h transfer.pb.cc server_impl.h server_protobuf_impl.cc ./srv_test/srv_test.h ./srv_test/srv_test.cc -I. -I../easy/src/base -I../easy/dep/protobuf/src/ -L../easy/dep/protobuf/src/.libs -lprotobuf 
   run: 
     $./bin/srv_test 192.168.22.61 9876
 */
@@ -240,15 +240,9 @@ void Server_Impl::_read_thread()
 					if(__input->read(__string_packet,__real_packet_length + __head_size))
 					{
 #ifdef __TEST
-						if(is_login() || is_proxy())
-						{
-							handle_packet((*__it)->fd_,__string_packet.c_str() + __head_size,&__real_fd);
-						}
-						else
-						{
-							//	return intact
-							__output->append((easy_uint8*)__string_packet.c_str(),__real_packet_length + __head_size);
-						}
+						//	return intact
+						__output->append((easy_uint8*)__string_packet.c_str(),__real_packet_length + __head_size);
+
 #else
 						handle_packet((*__it)->fd_,__string_packet.c_str() + __head_size,&__real_fd);
 #endif //__TEST
