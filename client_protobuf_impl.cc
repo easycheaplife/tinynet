@@ -160,8 +160,9 @@ void Client_Impl::_read_directly(easy_int32 __fd)
 			printf("__packet_length error\n");
 			break;
 		}
-		__read_bytes = Event_Handle_Cli::read(__fd,(easy_char*)__buf,__real_packet_length,MSG_PEEK);
-		if (__read_bytes < __real_packet_length)
+		//	fix the problem data dirty
+		__read_bytes = Event_Handle_Cli::read(__fd,(easy_char*)__buf,(__real_packet_length + __head_size),MSG_PEEK);
+		if (__read_bytes < (__real_packet_length + __head_size))
 		{
 			break;
 		}
