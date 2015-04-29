@@ -36,6 +36,8 @@ public:
 	easy_int32 handle_event(easy_ulong __millisecond);
 	
 	easy_int32 event_loop(easy_ulong __millisecond);
+
+	void	stop();
 	
 	Reactor_Impl* reactor_impl() const { return reactor_impl_; }
 private:

@@ -69,6 +69,14 @@ public:
 	void broadcast(easy_int32 __fd,const easy_char* __data,easy_uint32 __length);
 	
 	void write(easy_int32 __fd,const easy_char* __data, easy_int32 __length);
+
+	//	stop running
+	void stop() { set_running_status(false); }
+
+public:
+	void set_running_status(easy_bool __running_status) { running_status_ = __running_status; }
+
+	easy_bool running_status () const { return running_status_; }
 private:
 	fd_set 							read_set_;
 	
@@ -85,4 +93,7 @@ private:
 	static const easy_uint32		max_sleep_time_;
 
 	std::vector<Event_Handle_Data*>	events_;
+
+	//	the status of the running
+	easy_bool						running_status_;
 };

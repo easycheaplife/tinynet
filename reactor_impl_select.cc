@@ -45,6 +45,8 @@ Reactor_Impl_Select::Reactor_Impl_Select()
 	handle_ = NULL;
 	fd_ = -1;
 	max_fd_ = -1;
+	//	default status is running
+	running_status_ = true;
 }
 easy_int32 Reactor_Impl_Select::register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask,easy_int32 __connect)
 {
@@ -76,7 +78,7 @@ easy_int32 Reactor_Impl_Select::handle_event(easy_ulong __millisecond)
 }
 easy_int32 Reactor_Impl_Select::event_loop(easy_ulong __millisecond)
 {
-	while(true)
+	while(running_status_)
 	{
 		FD_ZERO(&read_set_);  
 		FD_ZERO(&write_set_);  

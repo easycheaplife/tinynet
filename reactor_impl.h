@@ -55,4 +55,7 @@ public:
 
 	//	__fd is the broadcaster
 	virtual void broadcast(easy_int32 __fd,const easy_char* __data,easy_uint32 __length) = 0;
+
+	//	stop running, for select specially when it's as a client
+	virtual void stop() {};
 };

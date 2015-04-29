@@ -28,6 +28,10 @@
 #include "easy_byte_buffer.h"
 #include "easy_util.h"
 
+#ifndef __READ_DIRECTLY
+#define __READ_DIRECTLY
+#endif //__READ_DIRECTLY
+
 const easy_uint32 Client_Impl::max_buffer_size_ = 1024*8;
 const easy_uint32 Client_Impl::max_sleep_time_ = 1000*1;
 Client_Impl::Client_Impl( Reactor* __reactor,const easy_char* __host,easy_uint32 __port /*= 9876*/ ) : Event_Handle_Cli(__reactor,__host,__port)
@@ -48,7 +52,7 @@ Client_Impl::~Client_Impl()
 
 void Client_Impl::on_read( easy_int32 __fd )
 {
-#if 0
+#ifndef __READ_DIRECTLY
 	//	the follow code is ring_buf's append function actually.
 	easy_ulong __usable_size = 0;
 	_get_usable(__fd,__usable_size);
@@ -96,7 +100,7 @@ void Client_Impl::on_read( easy_int32 __fd )
 
 void Client_Impl::_read_thread()
 {
-	return;
+#ifndef __READ_DIRECTLY
 	static const easy_int32 __head_size = sizeof(easy_uint32);
 	std::string 	 __string_packet;
 	while (true)
@@ -133,6 +137,7 @@ void Client_Impl::_read_thread()
 		}
 		easy::Util::sleep(max_sleep_time_);
 	}
+#endif //__READ_DIRECTLY
 }
 
 void Client_Impl::_read_directly(easy_int32 __fd)

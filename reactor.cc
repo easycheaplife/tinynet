@@ -76,3 +76,8 @@ easy_int32 Reactor::event_loop(easy_ulong __millisecond)
 	return -1;
 }
 
+void Reactor::stop()
+{
+	reactor_impl_->stop();
+}
+
