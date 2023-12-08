@@ -22,40 +22,38 @@
 #include "easy_base_type.h"
 class Event_Handle;
 
-enum Mask
-{
-	kMaskAccept = 1,
-	kMaskRead ,
-	kMaskWrite,
-	//	for client socket
-	kMaskConnect
+enum Mask {
+    kMaskAccept = 1,
+    kMaskRead ,
+    kMaskWrite,
+    //	for client socket
+    kMaskConnect
 };
 
 
-class Reactor_Impl
-{
-public:
-	virtual ~Reactor_Impl() {}
-	
-	/*
-	 *	__connect: is coming connection
-	 */
-	virtual easy_int32 register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask,easy_int32 __connect = 0) = 0;
-	
-	virtual easy_int32 remove_handle(Event_Handle* __handle,easy_int32 __mask) = 0;
-	
-	virtual easy_int32 handle_event(easy_ulong __time) = 0;
-	
-	virtual easy_int32 event_loop(easy_ulong __time) = 0;
+class Reactor_Impl {
+  public:
+    virtual ~Reactor_Impl() {}
 
-	virtual easy_int32 handle_close(easy_int32 __fd) = 0;
+    /*
+     *	__connect: is coming connection
+     */
+    virtual easy_int32 register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask,easy_int32 __connect = 0) = 0;
+
+    virtual easy_int32 remove_handle(Event_Handle* __handle,easy_int32 __mask) = 0;
+
+    virtual easy_int32 handle_event(easy_ulong __time) = 0;
+
+    virtual easy_int32 event_loop(easy_ulong __time) = 0;
+
+    virtual easy_int32 handle_close(easy_int32 __fd) = 0;
 #ifdef __HAVE_IOCP
-	virtual easy_int32 handle_packet(easy_int32 __fd,const easy_char* __packet,easy_uint32 __length) = 0;
+    virtual easy_int32 handle_packet(easy_int32 __fd,const easy_char* __packet,easy_uint32 __length) = 0;
 #endif // __HAVE_IOCP
 
-	//	__fd is the broadcaster
-	virtual void broadcast(easy_int32 __fd,const easy_char* __data,easy_uint32 __length) = 0;
+    //	__fd is the broadcaster
+    virtual void broadcast(easy_int32 __fd,const easy_char* __data,easy_uint32 __length) = 0;
 
-	//	stop running, for select specially when it's as a client
-	virtual void stop() {};
+    //	stop running, for select specially when it's as a client
+    virtual void stop() {};
 };

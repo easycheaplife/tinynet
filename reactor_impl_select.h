@@ -20,25 +20,25 @@
  THE SOFTWARE.
  ****************************************************************************/
 /************************************************************************/
-/*  
- *  a ring buffer to work with network buffer cache 
+/*
+ *  a ring buffer to work with network buffer cache
  *  bugs:
- *  #20003	2014-12-08 
+ *  #20003	2014-12-08
  *  if client request very fast, it will occupy all of resource, other thread will get no resource.
  *	#20006	2015-2-15
  *	access exception when mulit thread access events_
  */
 /************************************************************************/
 #if defined __WINDOWS || defined WIN32
-    #ifndef FD_SETSIZE
-    #define FD_SETSIZE      1024
-    #endif /* FD_SETSIZE */
-    #include <WinSock.h>
+#ifndef FD_SETSIZE
+#define FD_SETSIZE      1024
+#endif /* FD_SETSIZE */
+#include <WinSock.h>
 #elif defined __LINUX || defined __MACX
-    #include <sys/select.h>
-    #include <sys/socket.h>
-    #include <errno.h>
-    #include <unistd.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <errno.h>
+#include <unistd.h>
 #endif //   __WINDOWS
 
 #include <map>
@@ -46,54 +46,59 @@
 #include "reactor_impl.h"
 #include "easy_lock.h"
 
-//	struct forward declaration 
+//	struct forward declaration
 struct Event_Handle_Data;
 
-class Reactor_Impl_Select : public Reactor_Impl
-{
-public:
-	Reactor_Impl_Select();
-	
-	~Reactor_Impl_Select() {}
-	
-	easy_int32 register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask,easy_int32 __connect);
-	
-	easy_int32 remove_handle(Event_Handle* __handle,easy_int32 __mask);
-	
-	easy_int32 handle_event(easy_ulong __millisecond);
+class Reactor_Impl_Select : public Reactor_Impl {
+  public:
+    Reactor_Impl_Select();
 
-	easy_int32 handle_close(easy_int32 __fd);
-	
-	easy_int32 event_loop(easy_ulong __millisecond);
+    ~Reactor_Impl_Select() {}
 
-	void broadcast(easy_int32 __fd,const easy_char* __data,easy_uint32 __length);
-	
-	void write(easy_int32 __fd,const easy_char* __data, easy_int32 __length);
+    easy_int32 register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask,easy_int32 __connect);
 
-	//	stop running
-	void stop() { set_running_status(false); }
+    easy_int32 remove_handle(Event_Handle* __handle,easy_int32 __mask);
 
-public:
-	void set_running_status(easy_bool __running_status) { running_status_ = __running_status; }
+    easy_int32 handle_event(easy_ulong __millisecond);
 
-	easy_bool running_status () const { return running_status_; }
-private:
-	fd_set 							read_set_;
-	
-	fd_set 							write_set_;
-	
-	fd_set 							excepion_set_;
-	
-	easy_int32						fd_;
-	
-	easy_int32						max_fd_;
-	
-	Event_Handle* 					handle_;
+    easy_int32 handle_close(easy_int32 __fd);
 
-	static const easy_uint32		max_sleep_time_;
+    easy_int32 event_loop(easy_ulong __millisecond);
 
-	std::vector<Event_Handle_Data*>	events_;
+    void broadcast(easy_int32 __fd,const easy_char* __data,easy_uint32 __length);
 
-	//	the status of the running
-	easy_bool						running_status_;
+    void write(easy_int32 __fd,const easy_char* __data, easy_int32 __length);
+
+    //	stop running
+    void stop() {
+        set_running_status(false);
+    }
+
+  public:
+    void set_running_status(easy_bool __running_status) {
+        running_status_ = __running_status;
+    }
+
+    easy_bool running_status () const {
+        return running_status_;
+    }
+  private:
+    fd_set 							read_set_;
+
+    fd_set 							write_set_;
+
+    fd_set 							excepion_set_;
+
+    easy_int32						fd_;
+
+    easy_int32						max_fd_;
+
+    Event_Handle* 					handle_;
+
+    static const easy_uint32		max_sleep_time_;
+
+    std::vector<Event_Handle_Data*>	events_;
+
+    //	the status of the running
+    easy_bool						running_status_;
 };

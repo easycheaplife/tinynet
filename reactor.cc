@@ -29,55 +29,47 @@
 #include "reactor_impl_epoll.h"
 #elif defined __HAVE_POLL
 #include "reactor_impl_poll.h"
-#endif 
+#endif
 
-Reactor::Reactor(easy_bool __is_client)
-{
+Reactor::Reactor(easy_bool __is_client) {
 #if defined   __HAVE_IOCP
-	reactor_impl_ = new Reactor_Impl_Iocp();
+    reactor_impl_ = new Reactor_Impl_Iocp();
 #elif defined  __HAVE_SELECT || defined WIN32
-	reactor_impl_ = new Reactor_Impl_Select();
+    reactor_impl_ = new Reactor_Impl_Select();
 #elif defined  __HAVE_EPOLL
-	reactor_impl_ = new Reactor_Impl_Epoll();
+    reactor_impl_ = new Reactor_Impl_Epoll();
 #elif defined  __HAVE_POLL
-	reactor_impl_ = new Reactor_Impl_Poll();
-#endif 
+    reactor_impl_ = new Reactor_Impl_Poll();
+#endif
 }
 
-Reactor::~Reactor() 
-{
-	if(reactor_impl_)
-	{
-		delete reactor_impl_;
-		reactor_impl_ = NULL;
-	}
+Reactor::~Reactor() {
+    if(reactor_impl_) {
+        delete reactor_impl_;
+        reactor_impl_ = NULL;
+    }
 }
 
-easy_int32 Reactor::register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask)
-{
+easy_int32 Reactor::register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask) {
 
-	return -1;
+    return -1;
 }
 
-easy_int32 Reactor::remove_handle(Event_Handle* __handle,easy_int32 __mask)
-{
-	return -1;
+easy_int32 Reactor::remove_handle(Event_Handle* __handle,easy_int32 __mask) {
+    return -1;
 }
 
-easy_int32 Reactor::handle_event(easy_ulong __millisecond)
-{
-	
-	return -1;
+easy_int32 Reactor::handle_event(easy_ulong __millisecond) {
+
+    return -1;
 }
 
-easy_int32 Reactor::event_loop(easy_ulong __millisecond)
-{
-	reactor_impl_->event_loop(__millisecond);
-	return -1;
+easy_int32 Reactor::event_loop(easy_ulong __millisecond) {
+    reactor_impl_->event_loop(__millisecond);
+    return -1;
 }
 
-void Reactor::stop()
-{
-	reactor_impl_->stop();
+void Reactor::stop() {
+    reactor_impl_->stop();
 }
 

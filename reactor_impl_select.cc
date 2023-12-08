@@ -29,179 +29,145 @@
 
 const easy_uint32 Reactor_Impl_Select::max_sleep_time_ = 1000*1;
 
-struct Event_Handle_Data : public easy::my_alloc
-{
-	Event_Handle_Data(easy_int32 __fd,Event_Handle* __event_handle):invalid_fd_(-1),fd_(__fd),event_handle_(__event_handle) {}
-	easy_int32		invalid_fd_;
-	easy_int32		fd_;
-	Event_Handle*	event_handle_;
+struct Event_Handle_Data : public easy::my_alloc {
+    Event_Handle_Data(easy_int32 __fd,Event_Handle* __event_handle):invalid_fd_(-1),fd_(__fd),event_handle_(__event_handle) {}
+    easy_int32		invalid_fd_;
+    easy_int32		fd_;
+    Event_Handle*	event_handle_;
 };
 
-Reactor_Impl_Select::Reactor_Impl_Select()
-{
-	FD_ZERO(&read_set_);  
-	FD_ZERO(&write_set_);  
-	FD_ZERO(&excepion_set_); 
-	handle_ = NULL;
-	fd_ = -1;
-	max_fd_ = -1;
-	//	default status is running
-	running_status_ = true;
+Reactor_Impl_Select::Reactor_Impl_Select() {
+    FD_ZERO(&read_set_);
+    FD_ZERO(&write_set_);
+    FD_ZERO(&excepion_set_);
+    handle_ = NULL;
+    fd_ = -1;
+    max_fd_ = -1;
+    //	default status is running
+    running_status_ = true;
 }
-easy_int32 Reactor_Impl_Select::register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask,easy_int32 __connect)
-{
-	if(kMaskAccept ==__mask || kMaskConnect == __mask)
-	{
-		fd_ = __fd;
-		handle_ = __handle;
-	}
-	else
-	{
-		if(1 == __connect)
-		{
-			events_.push_back(new Event_Handle_Data(__fd,__handle));
-		}
-	}
-	if(max_fd_ < __fd)
-	{
-		max_fd_ = __fd;
-	}
-	return -1;
+easy_int32 Reactor_Impl_Select::register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask,easy_int32 __connect) {
+    if(kMaskAccept ==__mask || kMaskConnect == __mask) {
+        fd_ = __fd;
+        handle_ = __handle;
+    } else {
+        if(1 == __connect) {
+            events_.push_back(new Event_Handle_Data(__fd,__handle));
+        }
+    }
+    if(max_fd_ < __fd) {
+        max_fd_ = __fd;
+    }
+    return -1;
 }
-easy_int32 Reactor_Impl_Select::remove_handle(Event_Handle* __handle,easy_int32 __mask)
-{
-	return -1;
+easy_int32 Reactor_Impl_Select::remove_handle(Event_Handle* __handle,easy_int32 __mask) {
+    return -1;
 }
-easy_int32 Reactor_Impl_Select::handle_event(easy_ulong __millisecond)
-{
-	return -1;
+easy_int32 Reactor_Impl_Select::handle_event(easy_ulong __millisecond) {
+    return -1;
 }
-easy_int32 Reactor_Impl_Select::event_loop(easy_ulong __millisecond)
-{
-	while(running_status_)
-	{
-		FD_ZERO(&read_set_);  
-		FD_ZERO(&write_set_);  
-		FD_ZERO(&excepion_set_); 
-		FD_SET(fd_,&read_set_); 
-		FD_SET(fd_,&write_set_); 
-		FD_SET(fd_,&excepion_set_);
+easy_int32 Reactor_Impl_Select::event_loop(easy_ulong __millisecond) {
+    while(running_status_) {
+        FD_ZERO(&read_set_);
+        FD_ZERO(&write_set_);
+        FD_ZERO(&excepion_set_);
+        FD_SET(fd_,&read_set_);
+        FD_SET(fd_,&write_set_);
+        FD_SET(fd_,&excepion_set_);
         struct timeval __tv;
 #ifndef __MACX
-		__tv.tv_sec = 0;  
-		__tv.tv_usec = __millisecond;
+        __tv.tv_sec = 0;
+        __tv.tv_usec = __millisecond;
 #else
         __tv.tv_sec = __millisecond/1000/1000;
         __tv.tv_usec = 0;
 #endif //__MACX
-		for (std::vector<Event_Handle_Data*>::iterator __it = events_.begin(); __it != events_.end(); )
-		{
-			if(*__it)
-			{
-				if((*__it)->invalid_fd_)
-				{
-					FD_SET((*__it)->fd_,&read_set_);  
-					FD_SET((*__it)->fd_,&write_set_);  
-					FD_SET((*__it)->fd_,&excepion_set_);  
-					++__it;
-				}
-				else
-				{
-					//	socket is to be closed,release all resource
+        for (std::vector<Event_Handle_Data*>::iterator __it = events_.begin(); __it != events_.end(); ) {
+            if(*__it) {
+                if((*__it)->invalid_fd_) {
+                    FD_SET((*__it)->fd_,&read_set_);
+                    FD_SET((*__it)->fd_,&write_set_);
+                    FD_SET((*__it)->fd_,&excepion_set_);
+                    ++__it;
+                } else {
+                    //	socket is to be closed,release all resource
 #if defined __LINUX || defined __MACX
-					close((*__it)->fd_);
+                    close((*__it)->fd_);
 #else
-					closesocket((*__it)->fd_);
+                    closesocket((*__it)->fd_);
 #endif //__LINUX
-					(*__it)->event_handle_->handle_close((*__it)->fd_);
-					
-					delete (*__it);
-					(*__it) = NULL;
-					__it = events_.erase(__it);
-				}
-			}
-		}
-		//	you must set max_fd_ is max use fd under unix/linux system, if not,part of fd will not be detected.
-		//	if write_set_ is not null, that means the write status will be watched to see. 
-		//	FD_SETSIZE = 64 at windows,so the max number of fd is FD_SETSIZE.if you want change it value, define before winsock.h.
-		easy_int32 __ret = select(max_fd_ + 1,&read_set_,/*&write_set_*/NULL,&excepion_set_,&__tv);
-		if ( -1 == __ret )
-		{
+                    (*__it)->event_handle_->handle_close((*__it)->fd_);
+
+                    delete (*__it);
+                    (*__it) = NULL;
+                    __it = events_.erase(__it);
+                }
+            }
+        }
+        //	you must set max_fd_ is max use fd under unix/linux system, if not,part of fd will not be detected.
+        //	if write_set_ is not null, that means the write status will be watched to see.
+        //	FD_SETSIZE = 64 at windows,so the max number of fd is FD_SETSIZE.if you want change it value, define before winsock.h.
+        easy_int32 __ret = select(max_fd_ + 1,&read_set_,/*&write_set_*/NULL,&excepion_set_,&__tv);
+        if ( -1 == __ret ) {
 #if defined __WINDOWS || defined WIN32
-			DWORD __last_error = ::WSAGetLastError();
-			//	usually some socket is closed, such as closesocket called. it maybe exist a invalid socket.
-			if(WSAENOTSOCK == __last_error)
-			{
-				printf("error at select, error code = %d\n",__last_error);
-			}
+            DWORD __last_error = ::WSAGetLastError();
+            //	usually some socket is closed, such as closesocket called. it maybe exist a invalid socket.
+            if(WSAENOTSOCK == __last_error) {
+                printf("error at select, error code = %d\n",__last_error);
+            }
 #elif defined __LINUX || defined __MACX
-			//	reference from: http://blog.chinaunix.net/uid-25885064-id-3071372.html
-			if (errno == EINTR)
-			{
-				continue;
-			}
-			printf("error at select, error code = %d\n",errno);
+            //	reference from: http://blog.chinaunix.net/uid-25885064-id-3071372.html
+            if (errno == EINTR) {
+                continue;
+            }
+            printf("error at select, error code = %d\n",errno);
 #endif // __WINDOWS
-			exit(1);
-		}
-		else if ( 0 == __ret )
-		{
-			handle_->handle_timeout(fd_);
-			continue;
-		}
-		if(FD_ISSET(fd_,&read_set_))
-		{
-			handle_->handle_input(fd_);
-			continue;
-		}
-		for (std::vector<Event_Handle_Data*>::iterator __it = events_.begin(); __it != events_.end(); ++__it)
-		{
-			if (*__it)
-			{
-				//	something to be read
-				if(FD_ISSET((*__it)->fd_,&read_set_))
-				{
-					if((*__it)->event_handle_->handle_input((*__it)->fd_))
-					{
-						//	error happened, disconnect the socket
-						(*__it)->invalid_fd_ = 0;
-					}
-				}
-				//	something to be write
-				else if(FD_ISSET((*__it)->fd_,&write_set_))
-				{
-					(*__it)->event_handle_->handle_output((*__it)->fd_);
-				}
-				//	exception happened
-				else if(FD_ISSET((*__it)->fd_,&excepion_set_))
-				{
-					(*__it)->event_handle_->handle_exception((*__it)->fd_);
-				}
-			}
-		}
-		//	fix bug #20003
-		easy::Util::sleep(max_sleep_time_);
-	}
-	return -1;
+            exit(1);
+        } else if ( 0 == __ret ) {
+            handle_->handle_timeout(fd_);
+            continue;
+        }
+        if(FD_ISSET(fd_,&read_set_)) {
+            handle_->handle_input(fd_);
+            continue;
+        }
+        for (std::vector<Event_Handle_Data*>::iterator __it = events_.begin(); __it != events_.end(); ++__it) {
+            if (*__it) {
+                //	something to be read
+                if(FD_ISSET((*__it)->fd_,&read_set_)) {
+                    if((*__it)->event_handle_->handle_input((*__it)->fd_)) {
+                        //	error happened, disconnect the socket
+                        (*__it)->invalid_fd_ = 0;
+                    }
+                }
+                //	something to be write
+                else if(FD_ISSET((*__it)->fd_,&write_set_)) {
+                    (*__it)->event_handle_->handle_output((*__it)->fd_);
+                }
+                //	exception happened
+                else if(FD_ISSET((*__it)->fd_,&excepion_set_)) {
+                    (*__it)->event_handle_->handle_exception((*__it)->fd_);
+                }
+            }
+        }
+        //	fix bug #20003
+        easy::Util::sleep(max_sleep_time_);
+    }
+    return -1;
 }
 
-void Reactor_Impl_Select::broadcast(easy_int32 __fd,const easy_char* __data,easy_uint32 __length)
-{
+void Reactor_Impl_Select::broadcast(easy_int32 __fd,const easy_char* __data,easy_uint32 __length) {
 
 }
 
-easy_int32 Reactor_Impl_Select::handle_close( easy_int32 __fd )
-{
-	for (std::vector<Event_Handle_Data*>::iterator __it = events_.begin(); __it != events_.end(); ++__it)
-	{
-		if(*__it)
-		{
-			if(__fd == (*__it)->fd_)
-			{
-				(*__it)->invalid_fd_ = 0;
-				break;
-			}
-		}
-	}
-	return -1;
+easy_int32 Reactor_Impl_Select::handle_close( easy_int32 __fd ) {
+    for (std::vector<Event_Handle_Data*>::iterator __it = events_.begin(); __it != events_.end(); ++__it) {
+        if(*__it) {
+            if(__fd == (*__it)->fd_) {
+                (*__it)->invalid_fd_ = 0;
+                break;
+            }
+        }
+    }
+    return -1;
 }

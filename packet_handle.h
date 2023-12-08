@@ -25,16 +25,17 @@
 #include "easy_base_type.h"
 
 class Event_Handle;
-class Packet_Handle
-{
-public:
-	Packet_Handle(Event_Handle* __event_handle){ event_handle_ = __event_handle;}
+class Packet_Handle {
+  public:
+    Packet_Handle(Event_Handle* __event_handle) {
+        event_handle_ = __event_handle;
+    }
 
-	virtual ~Packet_Handle() { }
+    virtual ~Packet_Handle() { }
 
-	virtual int handle_packet(easy_int32 __fd,const std::string& __packet,void* __user_data) = 0;
+    virtual int handle_packet(easy_int32 __fd,const std::string& __packet,void* __user_data) = 0;
 
-protected:
-	Event_Handle*	event_handle_;
+  protected:
+    Event_Handle*	event_handle_;
 };
 #endif // packet_handle_h__

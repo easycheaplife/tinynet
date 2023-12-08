@@ -23,22 +23,23 @@
 #define srv_test_h__
 #include "server_impl.h"
 
-class Srv_Test : public Server_Impl
-{
-public:
-	Srv_Test(Reactor* __reactor,const easy_char* __host = "0.0.0.0",easy_uint32 __port = 9876);
+class Srv_Test : public Server_Impl {
+  public:
+    Srv_Test(Reactor* __reactor,const easy_char* __host = "0.0.0.0",easy_uint32 __port = 9876);
 
-	//	for byte stream, it is the  default way
-	easy_int32 handle_packet(easy_int32 __fd,const easy_char* __packet,easy_int32 __length);
+    //	for byte stream, it is the  default way
+    easy_int32 handle_packet(easy_int32 __fd,const easy_char* __packet,easy_int32 __length);
 
-	//	for protobuf,just return
-	easy_int32 handle_packet(easy_int32 __fd,const std::string& __string_packet,void* __user_data) { return -1;}
+    //	for protobuf,just return
+    easy_int32 handle_packet(easy_int32 __fd,const std::string& __string_packet,void* __user_data) {
+        return -1;
+    }
 
-	void connected(easy_int32 __fd);
+    void connected(easy_int32 __fd);
 
-	void dis_connected(easy_int32 __fd);
+    void dis_connected(easy_int32 __fd);
 
-	~Srv_Test();
+    ~Srv_Test();
 };
 
 

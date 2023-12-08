@@ -25,34 +25,33 @@
 
 #define MAX_POLL_FD 10
 
-class Reactor_Impl_Poll : public Reactor_Impl
-{
-public:
-	Reactor_Impl_Poll();
-	
-	~Reactor_Impl_Poll() {}
-	
-	easy_int32 register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask,easy_int32 __connect);
-	
-	easy_int32 remove_handle(Event_Handle* __handle,easy_int32 __mask);
-	
-	easy_int32 handle_event(easy_ulong __millisecond);
+class Reactor_Impl_Poll : public Reactor_Impl {
+  public:
+    Reactor_Impl_Poll();
 
-	easy_int32 handle_close(easy_int32 __fd);
-	
-	easy_int32 event_loop(easy_ulong __millisecond);
+    ~Reactor_Impl_Poll() {}
 
-	//	__fd is the broadcaster
-	void broadcast(easy_int32 __fd,const easy_char* __data,easy_uint32 __length) {}
-private:
+    easy_int32 register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask,easy_int32 __connect);
 
-	void _add_event(easy_int32 __fd);
-	
-	easy_int32						fd_;
-	
-	easy_int32						cur_poll_fd_num_;
+    easy_int32 remove_handle(Event_Handle* __handle,easy_int32 __mask);
 
-	struct pollfd 					fd_poll_[MAX_POLL_FD];  
-	
-	Event_Handle* 					handle_;
+    easy_int32 handle_event(easy_ulong __millisecond);
+
+    easy_int32 handle_close(easy_int32 __fd);
+
+    easy_int32 event_loop(easy_ulong __millisecond);
+
+    //	__fd is the broadcaster
+    void broadcast(easy_int32 __fd,const easy_char* __data,easy_uint32 __length) {}
+  private:
+
+    void _add_event(easy_int32 __fd);
+
+    easy_int32						fd_;
+
+    easy_int32						cur_poll_fd_num_;
+
+    struct pollfd 					fd_poll_[MAX_POLL_FD];
+
+    Event_Handle* 					handle_;
 };

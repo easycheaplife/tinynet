@@ -22,29 +22,30 @@
 #include "easy_base_type.h"
 class Event_Handle;
 class Reactor_Impl;
-class Reactor
-{
-public:
-	Reactor(easy_bool __is_client = false);
-	
-	~Reactor();
+class Reactor {
+  public:
+    Reactor(easy_bool __is_client = false);
 
-	easy_int32 register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask);
-	
-	easy_int32 remove_handle(Event_Handle* __handle,easy_int32 __mask);
-	
-	easy_int32 handle_event(easy_ulong __millisecond);
-	
-	easy_int32 event_loop(easy_ulong __millisecond);
+    ~Reactor();
 
-	void	stop();
-	
-	Reactor_Impl* reactor_impl() const { return reactor_impl_; }
-private:
-	Reactor(const Reactor&);
-	
-	Reactor operator = (const Reactor&);
+    easy_int32 register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask);
 
-	Reactor_Impl*					reactor_impl_;
-	
+    easy_int32 remove_handle(Event_Handle* __handle,easy_int32 __mask);
+
+    easy_int32 handle_event(easy_ulong __millisecond);
+
+    easy_int32 event_loop(easy_ulong __millisecond);
+
+    void	stop();
+
+    Reactor_Impl* reactor_impl() const {
+        return reactor_impl_;
+    }
+  private:
+    Reactor(const Reactor&);
+
+    Reactor operator = (const Reactor&);
+
+    Reactor_Impl*					reactor_impl_;
+
 };

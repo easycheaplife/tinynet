@@ -34,158 +34,126 @@
 
 const easy_uint32 Client_Impl::max_buffer_size_ = 1024*8;
 const easy_uint32 Client_Impl::max_sleep_time_ = 1000*1;
-Client_Impl::Client_Impl( Reactor* __reactor,const easy_char* __host,easy_uint32 __port /*= 9876*/ ) : Event_Handle_Cli(__reactor,__host,__port)
-{
-	ring_buf_ = new easy::EasyRingbuffer<easy_uint8,easy::alloc,easy::mutex_lock>(max_buffer_size_);
-	//	start read thread
-	auto __thread_ = std::thread(CC_CALLBACK_0(Client_Impl::_read_thread,this));
-	__thread_.detach();
+Client_Impl::Client_Impl( Reactor* __reactor,const easy_char* __host,easy_uint32 __port /*= 9876*/ ) : Event_Handle_Cli(__reactor,__host,__port) {
+    ring_buf_ = new easy::EasyRingbuffer<easy_uint8,easy::alloc,easy::mutex_lock>(max_buffer_size_);
+    //	start read thread
+    auto __thread_ = std::thread(CC_CALLBACK_0(Client_Impl::_read_thread,this));
+    __thread_.detach();
 
-	//	work thread can work now
-	star_work_thread();
+    //	work thread can work now
+    star_work_thread();
 }
 
-Client_Impl::~Client_Impl()
-{
+Client_Impl::~Client_Impl() {
 
 }
 
-void Client_Impl::on_read( easy_int32 __fd )
-{
+void Client_Impl::on_read( easy_int32 __fd ) {
 #ifndef __READ_DIRECTLY
-	//	the follow code is ring_buf's append function actually.
-	easy_ulong __usable_size = 0;
-	_get_usable(__fd,__usable_size);
-	easy_int32 __ring_buf_tail_left = ring_buf_->size() - ring_buf_->wpos();
-	easy_int32 __read_bytes = 0;
-	if(__usable_size <= __ring_buf_tail_left)
-	{
-		__read_bytes = Event_Handle_Cli::read(__fd,(easy_char*)ring_buf_->buffer() + ring_buf_->wpos(),__usable_size);
-		if(-1 != __read_bytes && 0 != __read_bytes)
-		{
-			ring_buf_->set_wpos(ring_buf_->wpos() + __read_bytes);
-		}
-	}
-	else
-	{
-		__read_bytes = Event_Handle_Cli::read(__fd,(char*)ring_buf_->buffer() +  ring_buf_->wpos(),__ring_buf_tail_left);
-		if(-1 != __read_bytes && 0 != __read_bytes)
-		{
-			ring_buf_->set_wpos(ring_buf_->wpos() + __read_bytes);
-		}
-		easy_int32 __ring_buf_head_left = ring_buf_->rpos();
-		easy_int32 __read_left = __usable_size - __read_bytes;
-		if(__ring_buf_head_left > __read_left)
-		{
-			__read_bytes = Event_Handle_Cli::read(__fd,(easy_char*)ring_buf_->buffer(),__read_left);
-			if(-1 != __read_bytes && 0 != __read_bytes)
-			{
-				ring_buf_->set_wpos(__read_bytes);
-			}
-		}
-		else
-		{
-			__read_bytes = Event_Handle_Cli::read(__fd,(easy_char*)ring_buf_->buffer(),__ring_buf_head_left);
-			if(-1 != __read_bytes && 0 != __read_bytes)
-			{
-				ring_buf_->set_wpos(__read_bytes);
-			}
-			//	not read completely from system cache, read next read event.
-		}
-	}
+    //	the follow code is ring_buf's append function actually.
+    easy_ulong __usable_size = 0;
+    _get_usable(__fd,__usable_size);
+    easy_int32 __ring_buf_tail_left = ring_buf_->size() - ring_buf_->wpos();
+    easy_int32 __read_bytes = 0;
+    if(__usable_size <= __ring_buf_tail_left) {
+        __read_bytes = Event_Handle_Cli::read(__fd,(easy_char*)ring_buf_->buffer() + ring_buf_->wpos(),__usable_size);
+        if(-1 != __read_bytes && 0 != __read_bytes) {
+            ring_buf_->set_wpos(ring_buf_->wpos() + __read_bytes);
+        }
+    } else {
+        __read_bytes = Event_Handle_Cli::read(__fd,(char*)ring_buf_->buffer() +  ring_buf_->wpos(),__ring_buf_tail_left);
+        if(-1 != __read_bytes && 0 != __read_bytes) {
+            ring_buf_->set_wpos(ring_buf_->wpos() + __read_bytes);
+        }
+        easy_int32 __ring_buf_head_left = ring_buf_->rpos();
+        easy_int32 __read_left = __usable_size - __read_bytes;
+        if(__ring_buf_head_left > __read_left) {
+            __read_bytes = Event_Handle_Cli::read(__fd,(easy_char*)ring_buf_->buffer(),__read_left);
+            if(-1 != __read_bytes && 0 != __read_bytes) {
+                ring_buf_->set_wpos(__read_bytes);
+            }
+        } else {
+            __read_bytes = Event_Handle_Cli::read(__fd,(easy_char*)ring_buf_->buffer(),__ring_buf_head_left);
+            if(-1 != __read_bytes && 0 != __read_bytes) {
+                ring_buf_->set_wpos(__read_bytes);
+            }
+            //	not read completely from system cache, read next read event.
+        }
+    }
 #else
-	_read_directly(__fd);
+    _read_directly(__fd);
 #endif
 }
 
-void Client_Impl::_read_thread()
-{
+void Client_Impl::_read_thread() {
 #ifndef __READ_DIRECTLY
-	static const easy_int32 __head_size = sizeof(easy_uint32);
-	std::string 	 __string_packet;
-	while (true)
-	{
-		easy_uint32 __packet_length = 0;
-		if(!ring_buf_->peek((unsigned char*)&__packet_length,__head_size))
-		{
-			easy::Util::sleep(max_sleep_time_);
-			continue;
-		}
-		easy_uint16 __real_packet_length = __packet_length & 0x0000ffff;
-		easy_uint16 __real_fd = __packet_length >> 16;
-		if(!__real_packet_length)
-		{
-			printf("__packet_length error\n");
-			continue;
-		}
-		if(__real_packet_length > max_buffer_size_)
-		{
-			printf("__packet_length error\n");
-			continue;
-		}
-		__string_packet.clear();
-		if(ring_buf_->read(__string_packet,__real_packet_length + __head_size))
-		{
-			if(is_proxy_client())
-			{
-				handle_packet(__real_fd,__string_packet.c_str() + __head_size,easy_null);
-			}
-			else
-			{
-				handle_packet(get_handle(),__string_packet.c_str() + __head_size,easy_null);
-			}
-		}
-		easy::Util::sleep(max_sleep_time_);
-	}
+    static const easy_int32 __head_size = sizeof(easy_uint32);
+    std::string 	 __string_packet;
+    while (true) {
+        easy_uint32 __packet_length = 0;
+        if(!ring_buf_->peek((unsigned char*)&__packet_length,__head_size)) {
+            easy::Util::sleep(max_sleep_time_);
+            continue;
+        }
+        easy_uint16 __real_packet_length = __packet_length & 0x0000ffff;
+        easy_uint16 __real_fd = __packet_length >> 16;
+        if(!__real_packet_length) {
+            printf("__packet_length error\n");
+            continue;
+        }
+        if(__real_packet_length > max_buffer_size_) {
+            printf("__packet_length error\n");
+            continue;
+        }
+        __string_packet.clear();
+        if(ring_buf_->read(__string_packet,__real_packet_length + __head_size)) {
+            if(is_proxy_client()) {
+                handle_packet(__real_fd,__string_packet.c_str() + __head_size,easy_null);
+            } else {
+                handle_packet(get_handle(),__string_packet.c_str() + __head_size,easy_null);
+            }
+        }
+        easy::Util::sleep(max_sleep_time_);
+    }
 #endif //__READ_DIRECTLY
 }
 
-void Client_Impl::_read_directly(easy_int32 __fd)
-{
-	easy_uint32 __packet_length = 0;
-	easy_uint8  __buf[max_buffer_size_] = {};
-	static const easy_int32 __head_size = sizeof(easy_uint32);
-	while (true)
-	{
-		__packet_length = 0;
-		easy_int32 __read_bytes = Event_Handle_Cli::read(__fd,(easy_char*)&__packet_length,__head_size,MSG_PEEK);
-		if( __head_size != __read_bytes)
-		{
-			break;
-		}
-		easy_uint16 __real_packet_length = __packet_length & 0x0000ffff;
-		easy_uint16 __real_fd = __packet_length >> 16;
-		if(!__real_packet_length)
-		{
-			printf("__packet_length error\n");
-			break;
-		}
-		if(__real_packet_length > max_buffer_size_)
-		{
-			printf("__packet_length error\n");
-			break;
-		}
-		//	fix the problem data dirty
-		__read_bytes = Event_Handle_Cli::read(__fd,(easy_char*)__buf,(__real_packet_length + __head_size),MSG_PEEK);
-		if (__read_bytes < (__real_packet_length + __head_size))
-		{
-			break;
-		}
-		memset(__buf,0,max_buffer_size_);
-		std::string __string_packet;
-		__read_bytes = Event_Handle_Cli::read(__fd,(easy_char*)__buf,__real_packet_length + __head_size);
-		if(-1 != __read_bytes && 0 != __read_bytes)
-		{
-			__string_packet.insert(0,(const char*)__buf,__real_packet_length + __head_size);
-			if(is_proxy_client())
-			{
-				handle_packet(__real_fd,__string_packet.c_str() + __head_size,easy_null);
-			}
-			else
-			{
-				handle_packet(get_handle(),__string_packet.c_str() + __head_size,easy_null);
-			}
-		}
-		easy::Util::sleep(max_sleep_time_);
-	}
+void Client_Impl::_read_directly(easy_int32 __fd) {
+    easy_uint32 __packet_length = 0;
+    easy_uint8  __buf[max_buffer_size_] = {};
+    static const easy_int32 __head_size = sizeof(easy_uint32);
+    while (true) {
+        __packet_length = 0;
+        easy_int32 __read_bytes = Event_Handle_Cli::read(__fd,(easy_char*)&__packet_length,__head_size,MSG_PEEK);
+        if( __head_size != __read_bytes) {
+            break;
+        }
+        easy_uint16 __real_packet_length = __packet_length & 0x0000ffff;
+        easy_uint16 __real_fd = __packet_length >> 16;
+        if(!__real_packet_length) {
+            printf("__packet_length error\n");
+            break;
+        }
+        if(__real_packet_length > max_buffer_size_) {
+            printf("__packet_length error\n");
+            break;
+        }
+        //	fix the problem data dirty
+        __read_bytes = Event_Handle_Cli::read(__fd,(easy_char*)__buf,(__real_packet_length + __head_size),MSG_PEEK);
+        if (__read_bytes < (__real_packet_length + __head_size)) {
+            break;
+        }
+        memset(__buf,0,max_buffer_size_);
+        std::string __string_packet;
+        __read_bytes = Event_Handle_Cli::read(__fd,(easy_char*)__buf,__real_packet_length + __head_size);
+        if(-1 != __read_bytes && 0 != __read_bytes) {
+            __string_packet.insert(0,(const char*)__buf,__real_packet_length + __head_size);
+            if(is_proxy_client()) {
+                handle_packet(__real_fd,__string_packet.c_str() + __head_size,easy_null);
+            } else {
+                handle_packet(get_handle(),__string_packet.c_str() + __head_size,easy_null);
+            }
+        }
+        easy::Util::sleep(max_sleep_time_);
+    }
 }

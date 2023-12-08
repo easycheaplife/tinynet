@@ -25,42 +25,41 @@
 
 #define MAX_EVENTS 1024
 
-class Reactor_Impl_Epoll : public Reactor_Impl
-{
-public:
-	Reactor_Impl_Epoll();
-	
-	~Reactor_Impl_Epoll() {}
-	
-	easy_int32 register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask,easy_int32 __connect);
-	
-	easy_int32 remove_handle(Event_Handle* __handle,easy_int32 __mask);
-	
-	easy_int32 handle_event(easy_ulong __millisecond);
+class Reactor_Impl_Epoll : public Reactor_Impl {
+  public:
+    Reactor_Impl_Epoll();
 
-	easy_int32 handle_close(easy_int32 __fd);
-	
-	easy_int32 event_loop(easy_ulong __millisecond);
+    ~Reactor_Impl_Epoll() {}
 
-	//	__fd is the broadcaster
-	void broadcast(easy_int32 __fd,const easy_char* __data,easy_uint32 __length);
+    easy_int32 register_handle(Event_Handle* __handle,easy_int32 __fd,easy_int32 __mask,easy_int32 __connect);
 
-	void write(easy_int32 __fd,const easy_char* __data, easy_int32 __length);
+    easy_int32 remove_handle(Event_Handle* __handle,easy_int32 __mask);
 
-private:
-	void _init();
-	
-	void _add_event(easy_int32 __fd,uint32_t __event);
-	
-	void _mod_event(easy_int32 __fd,uint32_t __event);
-	
-	easy_int32						fd_;
+    easy_int32 handle_event(easy_ulong __millisecond);
 
-	easy_int32						fd_epoll_;
-	
-	struct epoll_event 				ev_;
-	
-	struct epoll_event				events_[MAX_EVENTS];
-	
-	Event_Handle* 					handle_;
+    easy_int32 handle_close(easy_int32 __fd);
+
+    easy_int32 event_loop(easy_ulong __millisecond);
+
+    //	__fd is the broadcaster
+    void broadcast(easy_int32 __fd,const easy_char* __data,easy_uint32 __length);
+
+    void write(easy_int32 __fd,const easy_char* __data, easy_int32 __length);
+
+  private:
+    void _init();
+
+    void _add_event(easy_int32 __fd,uint32_t __event);
+
+    void _mod_event(easy_int32 __fd,uint32_t __event);
+
+    easy_int32						fd_;
+
+    easy_int32						fd_epoll_;
+
+    struct epoll_event 				ev_;
+
+    struct epoll_event				events_[MAX_EVENTS];
+
+    Event_Handle* 					handle_;
 };

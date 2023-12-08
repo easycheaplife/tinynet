@@ -26,23 +26,22 @@
 #include "easy_allocator.h"
 #include "easy_lock.h"
 
-class Client_Impl : public Event_Handle_Cli
-{
-public:
-	Client_Impl(Reactor* __reactor,const easy_char* __host,easy_uint32 __port);
+class Client_Impl : public Event_Handle_Cli {
+  public:
+    Client_Impl(Reactor* __reactor,const easy_char* __host,easy_uint32 __port);
 
-	virtual ~Client_Impl();
+    virtual ~Client_Impl();
 
-	void on_read(easy_int32 __fd);
+    void on_read(easy_int32 __fd);
 
-protected:
-	virtual easy_int32 handle_packet(const easy_char* __packet,easy_int32 __length) = 0;
+  protected:
+    virtual easy_int32 handle_packet(const easy_char* __packet,easy_int32 __length) = 0;
 
-private:
-	void	_read_thread();
+  private:
+    void	_read_thread();
 
-private:
-	easy::EasyRingbuffer<easy_uint8,easy::alloc,easy::mutex_lock>* ring_buf_;
+  private:
+    easy::EasyRingbuffer<easy_uint8,easy::alloc,easy::mutex_lock>* ring_buf_;
 
 };
 

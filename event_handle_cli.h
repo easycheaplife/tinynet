@@ -26,58 +26,59 @@
 
 #define CC_CALLBACK_0(__selector__,__target__, ...) std::bind(&__selector__,__target__, ##__VA_ARGS__)
 
-class Event_Handle_Cli : public  Event_Handle
-{
-public:
-	Event_Handle_Cli(Reactor* __reactor,const easy_char* __host,easy_uint32 __port);
+class Event_Handle_Cli : public  Event_Handle {
+  public:
+    Event_Handle_Cli(Reactor* __reactor,const easy_char* __host,easy_uint32 __port);
 
-	virtual ~Event_Handle_Cli() {}
+    virtual ~Event_Handle_Cli() {}
 
-	virtual easy_int32 handle_input(easy_int32 __fd);
+    virtual easy_int32 handle_input(easy_int32 __fd);
 
-	virtual easy_int32 handle_output(easy_int32 __fd);
+    virtual easy_int32 handle_output(easy_int32 __fd);
 
-	virtual easy_int32 handle_exception(easy_int32 __fd);
+    virtual easy_int32 handle_exception(easy_int32 __fd);
 
-	virtual easy_int32 handle_close(easy_int32 __fd);
+    virtual easy_int32 handle_close(easy_int32 __fd);
 
-	virtual easy_int32 handle_timeout(easy_int32 __fd);
+    virtual easy_int32 handle_timeout(easy_int32 __fd);
 
-	virtual easy_int32 get_handle() const { return fd_;}
+    virtual easy_int32 get_handle() const {
+        return fd_;
+    }
 
-	easy_int32 write(const easy_char* __data,easy_uint32 __length);
+    easy_int32 write(const easy_char* __data,easy_uint32 __length);
 
-	easy_int32 write(std::string& __data);
+    easy_int32 write(std::string& __data);
 
-	//	read data from network cache
-	easy_int32	read(easy_int32 __fd,easy_char* __buf, easy_int32 __length,easy_int32 __flags = 0); 
+    //	read data from network cache
+    easy_int32	read(easy_int32 __fd,easy_char* __buf, easy_int32 __length,easy_int32 __flags = 0);
 
-public:
-	//	pure virtual function, subclass must define it.
-	virtual void on_read(easy_int32 __fd) = 0;
+  public:
+    //	pure virtual function, subclass must define it.
+    virtual void on_read(easy_int32 __fd) = 0;
 
-protected:
-	void star_work_thread();
+  protected:
+    void star_work_thread();
 
-	void 	_set_noblock(easy_int32 __fd);
+    void 	_set_noblock(easy_int32 __fd);
 
-	void	_set_reuse_addr(easy_int32 __fd);
+    void	_set_reuse_addr(easy_int32 __fd);
 
-	void	_set_no_delay(easy_int32 __fd);
+    void	_set_no_delay(easy_int32 __fd);
 
-	void	_get_usable(easy_int32 __fd,easy_ulong& __usable_size);
+    void	_get_usable(easy_int32 __fd,easy_ulong& __usable_size);
 
-	void	_work_thread();
+    void	_work_thread();
 
-private:
-	void 	_init(easy_uint32 __port = 9876);
+  private:
+    void 	_init(easy_uint32 __port = 9876);
 
-private:
-	easy_int32  	fd_;
+  private:
+    easy_int32  	fd_;
 
-	std::string		host_;
+    std::string		host_;
 
-	easy_uint32		port_;
+    easy_uint32		port_;
 };
 
 #endif // event_handle_cli_h__

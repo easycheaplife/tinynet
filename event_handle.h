@@ -23,38 +23,53 @@
 #define event_handle_h__
 #include "easy_base_type.h"
 class Reactor;
-class Event_Handle
-{
-public:
+class Event_Handle {
+  public:
 
-	Event_Handle(){}
+    Event_Handle() {}
 
-	virtual ~Event_Handle() { }
+    virtual ~Event_Handle() { }
 
-	virtual easy_int32 handle_input(easy_int32 __fd){ return -1; }
+    virtual easy_int32 handle_input(easy_int32 __fd) {
+        return -1;
+    }
 
-	virtual easy_int32 handle_output(easy_int32 __fd){ return -1; }
+    virtual easy_int32 handle_output(easy_int32 __fd) {
+        return -1;
+    }
 
-	virtual easy_int32 handle_exception(easy_int32 __fd){ return -1; }
+    virtual easy_int32 handle_exception(easy_int32 __fd) {
+        return -1;
+    }
 
-	virtual easy_int32 handle_close(easy_int32 __fd){ return -1; }
+    virtual easy_int32 handle_close(easy_int32 __fd) {
+        return -1;
+    }
 
-	virtual easy_int32 handle_timeout(easy_int32 __fd){ return -1; }
+    virtual easy_int32 handle_timeout(easy_int32 __fd) {
+        return -1;
+    }
 
-	virtual easy_int32 handle_packet(easy_int32 __fd,const easy_char* __packet,easy_int32 __length){ return -1; }
+    virtual easy_int32 handle_packet(easy_int32 __fd,const easy_char* __packet,easy_int32 __length) {
+        return -1;
+    }
 
-public:
-	easy_int32 read(easy_int32 __fd,easy_char* __buf, easy_int32 __length,easy_int32 __flags = 0);
+  public:
+    easy_int32 read(easy_int32 __fd,easy_char* __buf, easy_int32 __length,easy_int32 __flags = 0);
 
-	easy_int32 write(easy_int32 __fd,const easy_char* __data, easy_int32 __length);
+    easy_int32 write(easy_int32 __fd,const easy_char* __data, easy_int32 __length);
 
-protected:
-	Reactor* reactor() const { return reactor_; }
+  protected:
+    Reactor* reactor() const {
+        return reactor_;
+    }
 
-	Event_Handle(Reactor* __reactor){ reactor_ = __reactor;}
+    Event_Handle(Reactor* __reactor) {
+        reactor_ = __reactor;
+    }
 
-private:
-	Reactor* reactor_;
+  private:
+    Reactor* reactor_;
 };
 
 #endif // event_handle_h__

@@ -26,32 +26,33 @@
 #include "easy_allocator.h"
 #include "easy_lock.h"
 
-class Client_Impl : public Event_Handle_Cli
-{
-public:
-	Client_Impl(Reactor* __reactor,const easy_char* __host,easy_uint32 __port);
+class Client_Impl : public Event_Handle_Cli {
+  public:
+    Client_Impl(Reactor* __reactor,const easy_char* __host,easy_uint32 __port);
 
-	virtual ~Client_Impl();
+    virtual ~Client_Impl();
 
-	void on_read(easy_int32 __fd);
+    void on_read(easy_int32 __fd);
 
-	virtual easy_bool is_proxy_client() { return false; }
+    virtual easy_bool is_proxy_client() {
+        return false;
+    }
 
-	virtual easy_int32 handle_packet(easy_int32 __fd,const std::string& __string_packet,void* __user_data) = 0;
+    virtual easy_int32 handle_packet(easy_int32 __fd,const std::string& __string_packet,void* __user_data) = 0;
 
-private:
-	void	_read_thread();
+  private:
+    void	_read_thread();
 
-	void	_read_directly(easy_int32 __fd);
+    void	_read_directly(easy_int32 __fd);
 
-private:
-	easy::EasyRingbuffer<easy_uint8,easy::alloc,easy::mutex_lock>* ring_buf_;
+  private:
+    easy::EasyRingbuffer<easy_uint8,easy::alloc,easy::mutex_lock>* ring_buf_;
 
-	//	the max size of read/write buffer
-	static const easy_uint32		max_buffer_size_;
+    //	the max size of read/write buffer
+    static const easy_uint32		max_buffer_size_;
 
-	//	the max time of read/write sleep time
-	static const easy_uint32		max_sleep_time_;
+    //	the max time of read/write sleep time
+    static const easy_uint32		max_sleep_time_;
 
 };
 

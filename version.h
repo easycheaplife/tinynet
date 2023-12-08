@@ -19,4 +19,4 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
  ****************************************************************************/
-#define __TINY_NET_VERSION	2.0.0
+#define __TINY_NET_VERSION	2.1.0
